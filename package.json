@@ -4,10 +4,17 @@
   "description": "A digital adaptation of Root",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }
