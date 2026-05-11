@@ -3,10 +3,11 @@
 
 
 ## Classes
-A `mapping` can be represented by an object in TypeScript.
-A `tuple` can be represented by an array in TypeScript.
-A `predicate` is a callback function that returns a boolean.
-Enums in TypeScript can be represented with string literals.
+A `mapping` can be represented by an object in TypeScript.  
+A `tuple` can be represented by an array in TypeScript.  
+A `predicate` is a callback function that returns a boolean. (predicate[\<T>] = (T) => boolean)  
+`int` is used in this plan in place of `number`; we shouldn't have to work with non-integers.  
+Enums in TypeScript can be represented with string literals.  
 
 ### Game Classes (shared)
 #### RootGame
@@ -18,11 +19,13 @@ Enums in TypeScript can be represented with string literals.
 - currentTurn: Faction
 - currentPhase: PhaseType
 - version: string
+- winner?: Faction
+- gameOver: boolean
 ##### Methods
-- play(options: object, RootGameagents: RootGameAgent[])
+- play(options: object, agents: RootGameAgent[])
 - setup(type: SetupType)
 - isMoveLegal(faction: Faction, startingLocationID: int, endingLocationID: int): boolean
-- isBattleLegal(faction: Faction, clearingID: int, defender: faction): boolean
+- isBattleLegal(faction: Faction, clearingID: int, defender: Faction): boolean
 - move(mover: Faction, startingLocationID: int, endingLocationID: int)
 - battle(attacker: Faction, clearingID: int, defender: Faction)
 - getGlobalActions(): Action[]
@@ -76,7 +79,7 @@ Enums in TypeScript can be represented with string literals.
 #### Connection
 ##### Properties
 - id: int
-- locationIDs: tuple[int, int]
+- locationIDs: tuple[startingLocationID: int, endingLocationID: int]
 - type: ConnectionType
 
 #### RulesModule (interface)
@@ -84,17 +87,19 @@ Enums in TypeScript can be represented with string literals.
 - setup(RootGame)
 - globalActions(RootGame): Action[]
 
-#### Faction (abstract)
+#### Faction (interface)
 ##### Properties
 - name: string
 - pieceTypes: PieceType[]
 - supply: Piece[]
 - game: RootGame
-- hasCraftedBox: bool
+- hasCraftedBox: boolean
 
 #### PlayerFaction (implements RulesModule, Faction) (abstract)
 ##### Properties
 - agent: RootGameAgent
+- score: int
+- claimedDominance: boolean
 ##### Methods
 - phaseStartEvents(phase: PhaseType)
 - takePhase(phase: PhaseType)
@@ -119,6 +124,7 @@ Enums in TypeScript can be represented with string literals.
 
 #### Building (implements Piece)
 #### Token (implements Piece)
+##### Properties
 - faceUp: boolean
 #### Pawn (implements Piece)
 ##### Properties
@@ -138,6 +144,7 @@ Enums in TypeScript can be represented with string literals.
 - SetupType ('standard' | 'advanced')
 - PhaseType ('birdsong' | 'daylight' | 'evening' | 'none')
 - ItemType ('boot' | 'bag' | 'tea' | 'hammer' | 'crossbow' | 'sword' | 'coins')
+- Suit ('fox' | 'rabbit' | 'mouse' | 'bird')
 
 ### Agent Classes (shared)
 
