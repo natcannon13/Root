@@ -10,26 +10,28 @@ import { initializeSocketHandlers } from "../websocket/socketHandlers";
 import useGameStore from "../state/gameStore";
 
 function JoinPage() {
+  console.log(useParams());
 
-  const { inviteToken } = useParams();
+  const { lobbyId, seatIndex } = useParams();
 
   const navigate = useNavigate();
 
-  const setInviteToken = useGameStore(
-    state => state.setInviteToken
+  const setLobbyId = useGameStore(
+    state => state.setLobbyId
   );
 
   useEffect(() => {
 
     initializeSocketHandlers(navigate);
 
-    setInviteToken(inviteToken);
+    setLobbyId(lobbyId);
 
     socket.send(JSON.stringify({
-      type: "AUTHENTICATE",
+      type: "JOIN_SEAT",
 
       payload: {
-        inviteToken
+        lobbyId,
+        seatIndex: Number(seatIndex)
       }
     }));
 

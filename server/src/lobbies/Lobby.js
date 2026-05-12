@@ -15,11 +15,8 @@ class Lobby{
         }
     }
 
-    getSeatByToken(inviteToken) {
-
-        return this.seats.find(
-            seat => seat.inviteToken === inviteToken
-        );
+    getSeat(index) {
+        return this.seats[index];
     }
 
     broadcast(message){
