@@ -23,9 +23,9 @@ function App() {
 
         <Route path="/create" element={<CreateGamePage />} />
 
-        <Route path="/join" element = {<JoinPage/>}/>
+        <Route path="/join/:lobbyId/:seat" element = {<JoinPage/>}/>
 
-        <Route path="/lobby" element = {<LobbyPage/>}/>
+        <Route path="/lobby/:lobbyId" element = {<LobbyPage/>}/>
       </Routes>
     </div>
   );

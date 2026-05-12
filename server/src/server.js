@@ -13,6 +13,18 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 const lobbyManager = new LobbyManager();
 
+//REST API
+app.post("/lobby/create", (req, res) =>{
+  console.log("Create lobby request:", req.body);
+  const settings = req.body;
+  const lobby = lobbyManager.createLobby(settings);
+  res.json({
+    success: true,
+    lobbyID: lobby.id
+  });
+})
+
+//WEBSOCKET
 wss.on("connection", (ws) => {
   console.log("Client connected");
 

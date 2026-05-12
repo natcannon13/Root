@@ -4,7 +4,7 @@ const Seat = require("./Seat");
 
 class Lobby{
     constructor(size = 4){
-        this.id = crypto.randomUUID;
+        this.id = crypto.randomUUID();
 
         this.status = "waiting";
         this.seats = [];

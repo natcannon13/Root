@@ -5,6 +5,16 @@ function InviteLinks({ links }) {
     navigator.clipboard.writeText(link);
   }
 
+  function copyAll(){
+    let text = "Play Root\n";
+    for(let i = 0; i < links.length; i++){
+      text += `Player ${(i+1)}: `;
+      text += `${links[i].url}\n`;
+      console.log(text);
+    }
+    navigator.clipboard.writeText(text);
+  }
+
   return (
     <div>
 
@@ -16,16 +26,17 @@ function InviteLinks({ links }) {
           <div key={index}>
 
             <p>
-              Seat {index + 1}
+              Player {index + 1}
             </p>
 
             <input
-              value={linkData.link}
+            type = "text"
+              value={linkData.url}
               readOnly
             />
 
             <button
-              onClick={() => copyLink(linkData.link)}
+              onClick={() => copyLink(linkData.url)}
             >
               Copy
             </button>
@@ -33,6 +44,12 @@ function InviteLinks({ links }) {
           </div>
         ))
       }
+
+      <button
+        onClick={() => copyAll()}
+      >
+        Copy All
+      </button>
 
     </div>
   );

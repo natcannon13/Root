@@ -18,8 +18,15 @@ function CreateGamePage() {
       size: playerCount,
       map
     });
-
-    setInviteLinks(data.inviteLinks);
+    console.log(data);
+    const links = [];
+    for(let i = 0; i < playerCount; i++){
+      links.push({
+        seat: i + 1,
+        url: `${window.location.origin}/join/${data.lobbyID}/${i+1}`
+      });
+    }
+    setInviteLinks(links);
   }
 
   return (
