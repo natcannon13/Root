@@ -27,20 +27,36 @@ Enums in TypeScript can be represented with string literals.
 - play(options: object, agents: RootGameAgent[])
   - Each client and the server run their own `play()` loop. Agents fetch information over the network when input from remote players is required.
   - Iterates through turns. For each player's turn, for each phase: (1) `currentTimeStep` is advanced, (2) `takePhase` is called.
+  - Baseline Hireling rules are tracked here.
 - setup(type: SetupType)
-- isMoveLegal(faction: Faction, startingLocationID: int, endingLocationID: int): boolean
+- isMoveLegal(move: Move): boolean
   - Must be faction-specific: e.g. Crows can ignore rule, Otters can move on rivers, Knaves can move in/out of forests ignoring rule.
-- isBattleLegal(faction: Faction, clearingID: int, defender: Faction): boolean
-- move(mover: Faction, startingLocationID: int, endingLocationID: int)
-- battle(attacker: Faction, clearingID: int, defender: Faction)
-- getGlobalActions(): Action[]
-  - Returns actions available to the current faction independent of faction-specific rules, e.g. clearing paths on the mountain map or purchasing from Otters.
-  - Filters by current game state: only returns actions the current player can legally take right now (e.g. Otters cannot buy from themselves; path clearing is only available in daylight).
-  - Also returns Hireling-specific actions when called in the context of their controlling faction.
+- isBattleLegal(battle: Battle): boolean
+- chooseMove(faction: Faction, restriction: predicate[Move]): Move
+- chooseBattle(faction: Faction, restriction: predicate[Battle]): Battle
+- move(move: Move)
+- battle(battle: Battle)
 - getGlobalEvents(): Event[]
-  - Mirrors `getGlobalActions()` but for events that trigger at the start or end of phases.
-  - Also returns Hireling-specific events when called in the context of their controlling faction.
-  - Contains the backbone hireling event logic.
+  - Returns events added by `RulesModule`s, potentially available to all factions. Some of these events will be actions that a player may or may not take.
+  - Filters by current game state: only returns actions the current player can legally take right now (e.g. Otters cannot buy from themselves; path clearing is only available in daylight)/events that trigger right now.
+
+
+---
+
+### Move
+#### Properties
+- mover: Faction
+- pieces: Piece[]
+- startingLocationID: int
+- endingLocationID: int
+
+---
+
+### Battle
+#### Properties
+- attacker: Faction
+- defender: Faction
+- clearingID: int
 
 ---
 
@@ -58,18 +74,11 @@ A class encoding the current moment in the game for use in event triggering and 
 ### Event (interface)
 #### Properties
 - triggerCondition: predicate[RootGame]
-  - A predicate on the game state. Used both to determine when an event fires automatically, and to serve as the legality check for any Action that contains this event.
+  - A predicate on the game state. Determines when an event fires automatically or when it is available to be taken by a player.
 - execute: () => void
   - Closes over all required game state context.
-
----
-
-### Action (interface)
-#### Properties
-- description: string
-- event: Event
-  - Replaces the former `execute` callback. The action's legality is determined by `event.triggerCondition`. Executing the action fires `event.execute`.
-  - Action-embedded events are not structurally differentiated from automatic events; the distinction lies solely in how `takePhase` handles them (automatic events are evaluated after each state change; action events are fired when a player selects that action).
+- isAction: boolean
+  - Whether the event triggers automatically or needs player choice to happen.
 
 ---
 
@@ -89,7 +98,7 @@ A class encoding the current moment in the game for use in event triggering and 
 
 ---
 
-### Location (abstract)
+### Location (abstract) (implements RulesModule)
 #### Properties
 - id: int
 - tokens: Token[]
@@ -137,7 +146,7 @@ A class encoding the current moment in the game for use in event triggering and 
 ### RulesModule (interface)
 #### Methods
 - setup(game: RootGame)
-- globalActions(game: RootGame): Action[]
+- globalEvents(game: RootGame): Event[]
 
 ---
 
@@ -160,9 +169,8 @@ A class encoding the current moment in the game for use in event triggering and 
 
 #### Methods
 - takePhase(phase: PhaseType)
-  - Merges faction-specific actions (via `getActions`) and global actions (via `RootGame.getGlobalActions`) into the set of available actions for the player.
-  - Also merges faction-specific and global events (via `RootGame.getGlobalEvents`), evaluating `triggerCondition` after each state change within the phase and firing any newly-met events automatically.
-- getActions(phase: PhaseType): Action[]
+  - Merges faction-specific events (via `getEvents`) and global actions (via `RootGame.getGlobalEvents`) into the set of available actions/events for the player.
+- getEvents(phase: PhaseType): Event[]
 
 ---
 
