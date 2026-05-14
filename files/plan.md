@@ -18,10 +18,12 @@ Enums in TypeScript can be represented with string literals.
 - hirelings: Hireling[]
 - landmarks: Landmark[]
 - currentTimeStep: TimeStep
-  - Encodes phase, phase segment, battle segment, and active player. Mutated in place by `RootGame` as the game progresses. RootGame will register an observer on TimeStep that checks events every time it advances.
+  - Encodes phase, phase segment, battle segment, and active player.
 - version: string
-- winner?: Faction
+- winner: PlayerFactionType | null
 - gameOver: boolean
+- deck: Card[]
+- discardPile: Card[]
 
 #### Methods
 - play(options: object, agents: RootGameAgent[])
@@ -38,12 +40,14 @@ Enums in TypeScript can be represented with string literals.
   - Returns events added by `RulesModule`s, potentially available to all factions. Some of these events will be actions that a player may or may not take.
   - Filters by current game state: only returns actions the current player can legally take right now (e.g. Otters cannot buy from themselves; path clearing is only available in daylight) / events that trigger right now.
   - `triggerCondition` is evaluated by brute force on every relevant state change; may change this later if performance requires it.
+- getState(): RootGameState
+- updateState(state: RootGameState)
 
 ---
 
 ### Move
 #### Properties
-- mover: Faction
+- mover: FactionType
 - pieces: Piece[]
 - startingLocationID: int
 - endingLocationID: int
@@ -52,14 +56,14 @@ Enums in TypeScript can be represented with string literals.
 
 ### Battle
 #### Properties
-- attacker: Faction
-- defender: Faction
+- attacker: FactionType
+- defender: FactionType
 - clearingID: int
 
 ---
 
 ### TimeStep
-A class encoding the current moment in the game for use in event triggering and action legality checks. Mutated in place by `RootGame`; notifies registered observers after each phase step.
+A class encoding the current moment in the game for use in event triggering and action legality checks.
 
 Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prompting a non-active player for an ambush), `activePlayer` is updated to the player currently making a decision; it reverts when that decision is resolved.
 
@@ -70,10 +74,6 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 - battleSegment: (phases of battle, listed in the Law of Root)
   - A separate dimension from `phaseSegment`; a battle can occur during the `'main'` segment without changing the phase segment.
 - activePlayer: PlayerFaction
-
-#### Methods
-- registerObserver(fn: () => void): () => void
-  - Registers a callback to be invoked after each phase step. Returns an unsubscribe function.
 
 
 ---
@@ -101,7 +101,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### Board (implements RulesModule)
 #### Properties
-- name: string
+- name: BoardType
 - clearings: Clearing[]
 - forests: Forest[]
 - connections: Connection[]
@@ -133,18 +133,18 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### Clearing (extends Location)
 #### Properties
-- printedSuit?: Suit
+- printedSuit: Suit | null
 - buildingSlots: mapping[int, Building | Ruin]
   - Key is the slot index (0-based). Typed as `Building | Ruin` to make explicit that only these piece types may occupy building slots. Pawns and Tokens can never go in building slots.
 - landmarks: Landmark[]
 
 #### Methods
-- getWarriors(faction: Faction): Pawn[]
-- getCardboard(faction: Faction): (Building | Token)[]
+- getWarriors(faction: FactionType): Pawn[]
+- getCardboard(faction: FactionType): (Building | Token)[]
 - openSlots(): int[]
 - matches(suit: Suit): boolean
 - build(slot: int, building: Building)
-- getRuler(): Faction | null
+- getRuler(): FactionType | null
 
 ---
 
@@ -174,7 +174,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### Faction (interface)
 #### Properties
-- name: string
+- name: FactionType
 - pieceTypes: PieceType[]
 - supply: Piece[]
   - Contains all faction pieces not currently on the game board. Also includes crafted items. Does not include pieces that have been permanently removed from the game (e.g. destroyed Otter trade posts), which are simply discarded and not tracked.
@@ -186,9 +186,12 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### PlayerFaction (implements RulesModule, Faction) (abstract)
 #### Properties
+- name: PlayerFactionType
 - agent: RootGameAgent
 - score: int
 - claimedDominance: boolean
+- hand: Card[]
+- craftedImprovements: Card[]
 
 #### Methods
 - takePhase(phase: PhaseType)
@@ -201,13 +204,13 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 #### Properties
 - hirelingID: int
   - Denotes which promoted and demoted Hireling classes are paired together.
-- associatedFaction: Faction
-  - The faction that cannot be played alongside this hireling.
+- associatedFaction: PlayerFactionType | null
+  - The faction that cannot be played alongside this hireling, if any.
 - isDemoted: boolean
   - Relevant during setup, where promoted and demoted hirelings are treated differently. Promoted and demoted hirelings are represented by separate classes and cannot be swapped during play.
 - controlCounter: int
   - Counts how many turns remain until the controlling faction must relinquish control of this hireling.
-- controllingFaction?: PlayerFaction
+- controllingFaction: PlayerFactionType | null
 
 ---
 
@@ -217,6 +220,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### Piece (interface)
 #### Properties
+- id: int
 - type: PieceType
 
 ---
@@ -224,12 +228,12 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 ### PieceType
 #### Properties
 - name: string
-- owningFaction: Faction | null
+- owningFaction: FactionType | null
   - Null for ruins and items, which are used by multiple factions. Each faction defines its own `PieceType` instances (e.g. Marquise warrior, Eyrie warrior).
 
 ---
 
-### Building (implements Piece)
+### Building (implements Piece) (interface)
 
 ---
 
@@ -263,13 +267,28 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ---
 
+### Card (implements RulesModule)
+#### Properties
+- name: string
+- id: int
+- suit: Suit
+- craftingCost: Suit[] | null
+- isAmbush: boolean
+- isDominance: boolean
+
+---
+
 ## Enums
+- BoardType: `autumn | winter | lake | mountain | gorge | marsh`
 - ConnectionType: `'path' | 'river' | 'forest-adjacency'`
 - SetupType: `'standard' | 'advanced'`
 - PhaseType: `'birdsong' | 'daylight' | 'evening' | 'none'`
 - ItemType: `'boot' | 'bag' | 'tea' | 'hammer' | 'crossbow' | 'sword' | 'coins'`
-- Suit: `'fox' | 'rabbit' | 'mouse' | 'bird'`
+- Suit: `'fox' | 'rabbit' | 'mouse' | 'bird' | 'frog'`
 - ExtensionPointType: (enum of all valid rules extension points in `RootGame`; each value corresponds to a defined hook that `RulesChange` callbacks may target)
+- PlayerFactionType: (enum of all player factions)
+- HirelingFactionType: (enum of all hireling factions)
+- FactionType: (enum of all factions)
 
 ---
 
@@ -279,12 +298,46 @@ On a client machine, agents representing remote players are proxies that communi
 - chooseOne\<T>(message: string, options: T[]): T
 - chooseAny\<T>(message: string, options: T[], restriction: predicate[T[]]): T[]
 - chooseBoolean(message: string): boolean
-- chooseMove(faction: Faction, restriction: predicate[Move]): Move
-- chooseBattle(faction: Faction, restriction: predicate[Battle]): Battle
+- chooseMove(faction: FactionType, restriction: predicate[Move]): Move
+- chooseBattle(faction: FactionType, restriction: predicate[Battle]): Battle
 
 ---
 
 ## State management classes (shared)
+
+### RootGameState (interface)
+All referenced types will be defined explicitly instead of imported, to make it clear when `version` needs to be updated.
+#### Properties
+- version: string
+- boardState: RootBoardState
+- factionState: mapping[PlayerFactionType, RootFactionState]
+- hirelingState: mapping[HirelingFactionType, RootHirelingState]
+- timeState: TimeStep
+- deck: Card[] | null
+- deckSize: int
+- discardPile: Card[]
+
+### RootBoardState (interface)
+#### Properties
+- version: string
+- name: BoardType
+- clearings: {id: int, suit: Suit, tokens: Token[], pawns: Pawns[], buildings: mapping[int, Building | Ruin]}
+- forests: {id: int, tokens: Token[], pawns: Pawns[]}
+
+### RootFactionState (interface)
+#### Properties
+- version: string
+- name: PlayerFactionType
+- hand: Card[] | null
+- handSize: int
+- craftedImprovements: Card[]
+- score: int
+
+### RootHirelingState (interface)
+- version: string
+- name: HirelingFactionType
+- controlCounter: int
+- controllingFaction: PlayerFactionType
 
 ### StateStore
 Decouples the game loop from the rendering/network layer. The game loop calls `setState`; React (or any other renderer) subscribes via `useSyncExternalStore`. Neither side depends on the other. Network communication is also routed through `StateStore`, keeping all external concerns separate from game logic.
@@ -303,6 +356,8 @@ A list of serialized `RootGameState` snapshots is maintained here to support und
 - getState(): RootGameState
 - undo(): void
 - redo(): void
+- do(id: int): void
+  - Jump to the RootGameState with the given id.
 
 ---
 
