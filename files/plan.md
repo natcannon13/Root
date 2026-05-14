@@ -18,7 +18,7 @@ Enums in TypeScript can be represented with string literals.
 - hirelings: Hireling[]
 - landmarks: Landmark[]
 - currentTimeStep: TimeStep
-  - Encodes phase, phase segment, and battle segment. Mutated in place by `RootGame` as the game progresses.
+  - Encodes phase, phase segment, battle segment, and active player. Mutated in place by `RootGame` as the game progresses.
 - version: string
 - winner?: Faction
 - gameOver: boolean
@@ -30,7 +30,7 @@ Enums in TypeScript can be represented with string literals.
   - Baseline Hireling rules are tracked here.
 - setup(type: SetupType)
 - isMoveLegal(move: Move): boolean
-  - Must be faction-specific: e.g. Crows can ignore rule, Otters can move on rivers, Knaves can move in/out of forests ignoring rule.
+  - Checks clearing rule for the majority of factions. Factions that alter movement rules do so via static rules changes in their `RulesModule`.
 - isBattleLegal(battle: Battle): boolean
 - chooseMove(faction: Faction, restriction: predicate[Move]): Move
 - chooseBattle(faction: Faction, restriction: predicate[Battle]): Battle
@@ -38,8 +38,7 @@ Enums in TypeScript can be represented with string literals.
 - battle(battle: Battle)
 - getGlobalEvents(): Event[]
   - Returns events added by `RulesModule`s, potentially available to all factions. Some of these events will be actions that a player may or may not take.
-  - Filters by current game state: only returns actions the current player can legally take right now (e.g. Otters cannot buy from themselves; path clearing is only available in daylight)/events that trigger right now.
-
+  - Filters by current game state: only returns actions the current player can legally take right now (e.g. Otters cannot buy from themselves; path clearing is only available in daylight) / events that trigger right now.
 
 ---
 
@@ -68,21 +67,33 @@ A class encoding the current moment in the game for use in event triggering and 
 - phaseSegment: 'start' | 'main' | 'end'
 - battleSegment: (phases of battle, listed in the Law of Root)
   - A separate dimension from `phaseSegment`; a battle can occur during the `'main'` segment without changing the phase segment.
+- activePlayer: PlayerFaction
 
 ---
 
 ### Event (interface)
 #### Properties
+- label: string
+  - A human-readable name for display in the UI and for debugging (e.g. `"Craft Card"`, `"Battle"`).
 - triggerCondition: predicate[RootGame]
   - A predicate on the game state. Determines when an event fires automatically or when it is available to be taken by a player.
 - execute: () => void
-  - Closes over all required game state context.
+  - Closes over all required game state context. Events are not serialized; the set of events in the game can be determined from serializable state.
 - isAction: boolean
   - Whether the event triggers automatically or needs player choice to happen.
 
 ---
 
-### Board
+### RulesChange
+#### Properties
+- extensionName: string
+  - An identifier indicating which rules extension point should call this object's callback.
+- callback: (game: RootGame) => void
+  - Closes over any faction-specific context it needs. Called during game setup or when the rule's effect is evaluated.
+
+---
+
+### Board (implements RulesModule)
 #### Properties
 - name: string
 - clearings: Clearing[]
@@ -91,14 +102,15 @@ A class encoding the current moment in the game for use in event triggering and 
 - items: Item[]
 
 #### Methods
-- getClearingsAdjacent(location: Location, allowRivers: boolean): Clearing[]
+- getClearingsAdjacent(location: Location): Clearing[]
+- getClearingsAdjacentByRiver(location: Location): Clearing[]
 - getForestsAdjacent(location: Location): Forest[]
 - getLocation(id: int): Location
 - move(pieces: Piece[], startingLocationID: int, endingLocationID: int)
 
 ---
 
-### Location (abstract) (implements RulesModule)
+### Location (abstract)
 #### Properties
 - id: int
 - tokens: Token[]
@@ -126,7 +138,7 @@ A class encoding the current moment in the game for use in event triggering and 
 - openSlots(): int[]
 - matches(suit: Suit): boolean
 - build(slot: int, building: Building)
-- getRuler(): Faction
+- getRuler(): Faction | null
 
 ---
 
@@ -144,6 +156,10 @@ A class encoding the current moment in the game for use in event triggering and 
 ---
 
 ### RulesModule (interface)
+#### Properties
+- staticRulesChanges: RulesChange[]
+  - A list of static rules changes introduced by this module. Applied at defined "extension points" in RootGame.
+
 #### Methods
 - setup(game: RootGame)
 - globalEvents(game: RootGame): Event[]
@@ -155,9 +171,10 @@ A class encoding the current moment in the game for use in event triggering and 
 - name: string
 - pieceTypes: PieceType[]
 - supply: Piece[]
-  - Contains all faction pieces not currently on the game board. Does not include pieces that have been permanently removed from the game (e.g. destroyed Otter trade posts), which are simply discarded and not tracked.
+  - Contains all faction pieces not currently on the game board. Also includes crafted items. Does not include pieces that have been permanently removed from the game (e.g. destroyed Otter trade posts), which are simply discarded and not tracked.
 - game: RootGame
 - hasCraftedBox: boolean
+  - Indicates whether this faction can be stolen from (i.e. whether they have a crafted items box).
 
 ---
 
@@ -181,7 +198,7 @@ A class encoding the current moment in the game for use in event triggering and 
 - associatedFaction: Faction
   - The faction that cannot be played alongside this hireling.
 - isDemoted: boolean
-  - Relevant during setup, where promoted and demoted hirelings are treated differently. Promoted and demoted hirelings are represented by separate classes.
+  - Relevant during setup, where promoted and demoted hirelings are treated differently. Promoted and demoted hirelings are represented by separate classes and cannot be swapped during play.
 - controlCounter: int
   - Counts how many turns remain until the controlling faction must relinquish control of this hireling.
 - controllingFaction?: PlayerFaction
@@ -258,6 +275,23 @@ A class encoding the current moment in the game for use in event triggering and 
 - chooseBoolean(message: string): boolean
 - selectMove(): tuple[startingLocationID: int, endingLocationID: int]
 - selectBattle(message: string)
+
+---
+
+## State management classes (shared)
+
+### StateStore
+Decouples the game loop from the rendering/network layer. The game loop calls `setState`; React (or any other renderer) subscribes via `useSyncExternalStore`. Neither side depends on the other.
+
+#### Properties
+- state: RootGameState
+
+#### Methods
+- setState(updater: (g: RootGameState) => void): void
+  - Applies the updater function to `state`, then notifies all subscribers.
+- subscribe(fn: () => void): () => void
+  - Registers a listener. Returns an unsubscribe function. Compatible with React's `useSyncExternalStore`.
+- getState(): RootGameState
 
 ---
 
