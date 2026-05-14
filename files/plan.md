@@ -71,7 +71,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 - currentTurn: PlayerFaction
 - phase: PhaseType
 - phaseSegment: 'start' | 'main' | 'end'
-- battleSegment: (phases of battle, listed in the Law of Root)
+- battleSegment: BattlePhaseType
   - A separate dimension from `phaseSegment`; a battle can occur during the `'main'` segment without changing the phase segment.
 - activePlayer: PlayerFaction
 
@@ -267,7 +267,13 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ---
 
-### Card (implements RulesModule)
+### Deck (implements RulesModule)
+The Deck RulesModule implements all rules related to its cards. Persistent crafted effects have a condition that causes them only to apply when crafted: instant crafted effects define an event that triggers when that card has been crafted that then discards it.
+### Properties
+- name: DeckType
+- cards: Card[]
+
+### Card
 #### Properties
 - name: string
 - id: int
@@ -275,14 +281,17 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 - craftingCost: Suit[] | null
 - isAmbush: boolean
 - isDominance: boolean
+- item: ItemType | null
 
 ---
 
 ## Enums
 - BoardType: `autumn | winter | lake | mountain | gorge | marsh`
+- DeckType: `base | e&p | s&d`
 - ConnectionType: `'path' | 'river' | 'forest-adjacency'`
 - SetupType: `'standard' | 'advanced'`
 - PhaseType: `'birdsong' | 'daylight' | 'evening' | 'none'`
+- BattlePhaseType: `ambush | before-roll | roll | after-roll | hits`
 - ItemType: `'boot' | 'bag' | 'tea' | 'hammer' | 'crossbow' | 'sword' | 'coins'`
 - Suit: `'fox' | 'rabbit' | 'mouse' | 'bird' | 'frog'`
 - ExtensionPointType: (enum of all valid rules extension points in `RootGame`; each value corresponds to a defined hook that `RulesChange` callbacks may target)
@@ -293,7 +302,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 ---
 
 ## Agent Classes (shared)
-On a client machine, agents representing remote players are proxies that communicate through `StateStore`; all network logic is decoupled from the game loop. The game loop blocks while awaiting input; rendering logic must remain reactive and non-blocking.
+On a client machine, agents representing remote players are proxies that communicate through `StateStore`; all network logic is decoupled from the game loop. The game loop blocks while awaiting input; rendering logic must remain reactive and non-blocking. If a client disconnects and then reconnects, the deserialization procedure will restore the correct position in the game loop.
 ### RootGameAgent (interface)
 - chooseOne\<T>(message: string, options: T[]): T
 - chooseAny\<T>(message: string, options: T[], restriction: predicate[T[]]): T[]
@@ -346,7 +355,7 @@ A list of serialized `RootGameState` snapshots is maintained here to support und
 #### Properties
 - state: RootGameState
 - history: RootGameState[]
-  - Ordered list of past serialized snapshots. Used for undo/redo.
+  - Ordered list of past serialized snapshots. Used for undo/redo. If memory becomes a problem, we'll deal with it then.
 
 #### Methods
 - setState(updater: (g: RootGameState) => void): void
@@ -358,6 +367,7 @@ A list of serialized `RootGameState` snapshots is maintained here to support und
 - redo(): void
 - do(id: int): void
   - Jump to the RootGameState with the given id.
+  - Note that `undo`, `redo`, and `do` will require admin privilege if they undo or redo any actions taken by another player, or actions that give information (such as Expose) 
 
 ---
 
