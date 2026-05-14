@@ -18,14 +18,14 @@ Enums in TypeScript can be represented with string literals.
 - hirelings: Hireling[]
 - landmarks: Landmark[]
 - currentTimeStep: TimeStep
-  - Encodes phase, phase segment, battle segment, and active player. Mutated in place by `RootGame` as the game progresses.
+  - Encodes phase, phase segment, battle segment, and active player. Mutated in place by `RootGame` as the game progresses. RootGame will register an observer on TimeStep that checks events every time it advances.
 - version: string
 - winner?: Faction
 - gameOver: boolean
 
 #### Methods
 - play(options: object, agents: RootGameAgent[])
-  - Each client and the server run their own `play()` loop. Agents fetch information over the network when input from remote players is required.
+  - Each client and the server run their own `play()` loop. Agents fetch information over the network when input from remote players is required. All network communication is decoupled from game logic and routed through `StateStore`, the same as the rendering layer.
   - Iterates through turns. For each player's turn, for each phase: (1) `currentTimeStep` is advanced, (2) `takePhase` is called.
   - Baseline Hireling rules are tracked here.
 - setup(type: SetupType)
@@ -39,6 +39,7 @@ Enums in TypeScript can be represented with string literals.
 - getGlobalEvents(): Event[]
   - Returns events added by `RulesModule`s, potentially available to all factions. Some of these events will be actions that a player may or may not take.
   - Filters by current game state: only returns actions the current player can legally take right now (e.g. Otters cannot buy from themselves; path clearing is only available in daylight) / events that trigger right now.
+  - `triggerCondition` is evaluated by brute force on every relevant state change; may change this later if performance requires it.
 
 ---
 
@@ -60,7 +61,9 @@ Enums in TypeScript can be represented with string literals.
 ---
 
 ### TimeStep
-A class encoding the current moment in the game for use in event triggering and action legality checks. Mutated in place by `RootGame`.
+A class encoding the current moment in the game for use in event triggering and action legality checks. Mutated in place by `RootGame`; notifies registered observers after each phase step.
+
+Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prompting a non-active player for an ambush), `activePlayer` is updated to the player currently making a decision; it reverts when that decision is resolved.
 
 #### Properties
 - phase: PhaseType
@@ -69,6 +72,11 @@ A class encoding the current moment in the game for use in event triggering and 
   - A separate dimension from `phaseSegment`; a battle can occur during the `'main'` segment without changing the phase segment.
 - activePlayer: PlayerFaction
 
+#### Methods
+- registerObserver(fn: () => void): () => void
+  - Registers a callback to be invoked after each phase step. Returns an unsubscribe function.
+
+
 ---
 
 ### Event (interface)
@@ -76,7 +84,7 @@ A class encoding the current moment in the game for use in event triggering and 
 - label: string
   - A human-readable name for display in the UI and for debugging (e.g. `"Craft Card"`, `"Battle"`).
 - triggerCondition: predicate[RootGame]
-  - A predicate on the game state. Determines when an event fires automatically or when it is available to be taken by a player.
+  - A predicate on the game state. Determines when an event fires automatically or when it is available to be taken by a player. Evaluated by brute force; events are not serialized, as they close over game state and can be fully reconstructed from serializable state.
 - execute: () => void
   - Closes over all required game state context. Events are not serialized; the set of events in the game can be determined from serializable state.
 - isAction: boolean
@@ -86,8 +94,8 @@ A class encoding the current moment in the game for use in event triggering and 
 
 ### RulesChange
 #### Properties
-- extensionName: string
-  - An identifier indicating which rules extension point should call this object's callback.
+- extensionName: ExtensionPointType
+  - Identifies which rules extension point should invoke this object's callback. Using the `ExtensionPointType` enum ensures compile-time safety and makes all valid extension points discoverable.
 - callback: (game: RootGame) => void
   - Closes over any faction-specific context it needs. Called during game setup or when the rule's effect is evaluated.
 
@@ -129,7 +137,8 @@ A class encoding the current moment in the game for use in event triggering and 
 #### Properties
 - printedSuit?: Suit
 - buildingSlots: mapping[int, Building | Ruin]
-  - Typed as `Building | Ruin` to make explicit that only these piece types may occupy building slots. Pawns and Tokens can never go in building slots.
+  - Key is the slot index (0-based). Typed as `Building | Ruin` to make explicit that only these piece types may occupy building slots. Pawns and Tokens can never go in building slots.
+  - Slot count is fixed per clearing as printed on the board, with the exception of one landmark that can add slots; see `addSlot` / `removeSlot`.
 - landmarks: Landmark[]
 
 #### Methods
@@ -158,7 +167,7 @@ A class encoding the current moment in the game for use in event triggering and 
 ### RulesModule (interface)
 #### Properties
 - staticRulesChanges: RulesChange[]
-  - A list of static rules changes introduced by this module. Applied at defined "extension points" in RootGame.
+  - A list of static rules changes introduced by this module. Applied at defined "extension points" in RootGame, each identified by an `ExtensionPointType` value.
 
 #### Methods
 - setup(game: RootGame)
@@ -263,6 +272,7 @@ A class encoding the current moment in the game for use in event triggering and 
 - PhaseType: `'birdsong' | 'daylight' | 'evening' | 'none'`
 - ItemType: `'boot' | 'bag' | 'tea' | 'hammer' | 'crossbow' | 'sword' | 'coins'`
 - Suit: `'fox' | 'rabbit' | 'mouse' | 'bird'`
+- ExtensionPointType: (enum of all valid rules extension points in `RootGame`; each value corresponds to a defined hook that `RulesChange` callbacks may target)
 
 ---
 
@@ -270,7 +280,7 @@ A class encoding the current moment in the game for use in event triggering and 
 
 ### RootGameAgent (interface)
 - chooseOne\<T>(message: string, options: T[]): T
-  - On a client machine, agents representing remote players are proxies for the server. The server in turn holds a proxy for each player. The game loop blocks while awaiting input; rendering logic must remain reactive and non-blocking.
+  - On a client machine, agents representing remote players are proxies that communicate through `StateStore`; all network logic is decoupled from the game loop. The game loop blocks while awaiting input; rendering logic must remain reactive and non-blocking.
 - chooseAny\<T>(message: string, options: T[], restriction: predicate[T[]]): T[]
 - chooseBoolean(message: string): boolean
 - selectMove(): tuple[startingLocationID: int, endingLocationID: int]
@@ -281,17 +291,23 @@ A class encoding the current moment in the game for use in event triggering and 
 ## State management classes (shared)
 
 ### StateStore
-Decouples the game loop from the rendering/network layer. The game loop calls `setState`; React (or any other renderer) subscribes via `useSyncExternalStore`. Neither side depends on the other.
+Decouples the game loop from the rendering/network layer. The game loop calls `setState`; React (or any other renderer) subscribes via `useSyncExternalStore`. Neither side depends on the other. Network communication is also routed through `StateStore`, keeping all external concerns separate from game logic.
+
+A list of serialized `RootGameState` snapshots is maintained here to support undo/redo. Because `Event.execute` closes over game state and is not serializable, undo/redo works by storing full state snapshots rather than a replay log of actions. History depth should be capped to bound memory usage.
 
 #### Properties
 - state: RootGameState
+- history: RootGameState[]
+  - Ordered list of past serialized snapshots. Used for undo/redo.
 
 #### Methods
 - setState(updater: (g: RootGameState) => void): void
-  - Applies the updater function to `state`, then notifies all subscribers.
+  - Applies the updater function to `state`, pushes the previous state onto `history`, then notifies all subscribers.
 - subscribe(fn: () => void): () => void
   - Registers a listener. Returns an unsubscribe function. Compatible with React's `useSyncExternalStore`.
 - getState(): RootGameState
+- undo(): void
+- redo(): void
 
 ---
 
