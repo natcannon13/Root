@@ -27,13 +27,11 @@ Enums in TypeScript can be represented with string literals.
 - play(options: object, agents: RootGameAgent[])
   - Each client and the server run their own `play()` loop. Agents fetch information over the network when input from remote players is required. All network communication is decoupled from game logic and routed through `StateStore`, the same as the rendering layer.
   - Iterates through turns. For each player's turn, for each phase: (1) `currentTimeStep` is advanced, (2) `takePhase` is called.
-  - Baseline Hireling rules are tracked here.
+  - Baseline Hireling rules (obtaining, control countdown, redistribution) are tracked here.
 - setup(type: SetupType)
 - isMoveLegal(move: Move): boolean
   - Checks clearing rule for the majority of factions. Factions that alter movement rules do so via static rules changes in their `RulesModule`.
 - isBattleLegal(battle: Battle): boolean
-- chooseMove(faction: Faction, restriction: predicate[Move]): Move
-- chooseBattle(faction: Faction, restriction: predicate[Battle]): Battle
 - move(move: Move)
 - battle(battle: Battle)
 - getGlobalEvents(): Event[]
@@ -66,6 +64,7 @@ A class encoding the current moment in the game for use in event triggering and 
 Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prompting a non-active player for an ambush), `activePlayer` is updated to the player currently making a decision; it reverts when that decision is resolved.
 
 #### Properties
+- currentTurn: PlayerFaction
 - phase: PhaseType
 - phaseSegment: 'start' | 'main' | 'end'
 - battleSegment: (phases of battle, listed in the Law of Root)
@@ -84,9 +83,8 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 - label: string
   - A human-readable name for display in the UI and for debugging (e.g. `"Craft Card"`, `"Battle"`).
 - triggerCondition: predicate[RootGame]
-  - A predicate on the game state. Determines when an event fires automatically or when it is available to be taken by a player. Evaluated by brute force; events are not serialized, as they close over game state and can be fully reconstructed from serializable state.
-- execute: () => void
-  - Closes over all required game state context. Events are not serialized; the set of events in the game can be determined from serializable state.
+  - A predicate on the game state. Determines when an event fires automatically or when it is available to be taken by a player.
+- execute: (RootGame) => void
 - isAction: boolean
   - Whether the event triggers automatically or needs player choice to happen.
 
@@ -96,8 +94,8 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 #### Properties
 - extensionName: ExtensionPointType
   - Identifies which rules extension point should invoke this object's callback. Using the `ExtensionPointType` enum ensures compile-time safety and makes all valid extension points discoverable.
-- callback: (game: RootGame) => void
-  - Closes over any faction-specific context it needs. Called during game setup or when the rule's effect is evaluated.
+- callback: function
+  - Signature intentionally left vague. I don't yet know what needs to be supported with this.
 
 ---
 
@@ -138,7 +136,6 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 - printedSuit?: Suit
 - buildingSlots: mapping[int, Building | Ruin]
   - Key is the slot index (0-based). Typed as `Building | Ruin` to make explicit that only these piece types may occupy building slots. Pawns and Tokens can never go in building slots.
-  - Slot count is fixed per clearing as printed on the board, with the exception of one landmark that can add slots; see `addSlot` / `removeSlot`.
 - landmarks: Landmark[]
 
 #### Methods
@@ -277,14 +274,13 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 ---
 
 ## Agent Classes (shared)
-
+On a client machine, agents representing remote players are proxies that communicate through `StateStore`; all network logic is decoupled from the game loop. The game loop blocks while awaiting input; rendering logic must remain reactive and non-blocking.
 ### RootGameAgent (interface)
 - chooseOne\<T>(message: string, options: T[]): T
-  - On a client machine, agents representing remote players are proxies that communicate through `StateStore`; all network logic is decoupled from the game loop. The game loop blocks while awaiting input; rendering logic must remain reactive and non-blocking.
 - chooseAny\<T>(message: string, options: T[], restriction: predicate[T[]]): T[]
 - chooseBoolean(message: string): boolean
-- selectMove(): tuple[startingLocationID: int, endingLocationID: int]
-- selectBattle(message: string)
+- chooseMove(faction: Faction, restriction: predicate[Move]): Move
+- chooseBattle(faction: Faction, restriction: predicate[Battle]): Battle
 
 ---
 
@@ -293,8 +289,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 ### StateStore
 Decouples the game loop from the rendering/network layer. The game loop calls `setState`; React (or any other renderer) subscribes via `useSyncExternalStore`. Neither side depends on the other. Network communication is also routed through `StateStore`, keeping all external concerns separate from game logic.
 
-A list of serialized `RootGameState` snapshots is maintained here to support undo/redo. Because `Event.execute` closes over game state and is not serializable, undo/redo works by storing full state snapshots rather than a replay log of actions. History depth should be capped to bound memory usage.
-
+A list of serialized `RootGameState` snapshots is maintained here to support undo/redo.
 #### Properties
 - state: RootGameState
 - history: RootGameState[]
