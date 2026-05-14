@@ -5,8 +5,6 @@ class Seat{
     constructor(){
         this.id = crypto.randomUUID();
 
-        this.inviteToken = crypto.randomUUID();
-
         this.socket = null;
         this.connected = false;
         this.playerName = null;

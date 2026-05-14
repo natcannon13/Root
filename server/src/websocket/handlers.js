@@ -16,8 +16,7 @@ function handleMessage(ws, data, lobbyManager){
                 }));
                 return;
             }
-
-            const seat = lobby.getSeat(index);
+            const seat = lobby.getSeat(seatIndex);
 
             if(!seat){
                 ws.send(JSON.stringify({
@@ -30,10 +29,7 @@ function handleMessage(ws, data, lobbyManager){
             seat.connect(ws);
             ws.seat = seat;
             ws.lobby = lobby;
-            ws.send(JSON.stringify({
-                type: "LOBBY_UPDATED",
-                payload: lobby.getLobbyData()
-            }));
+            lobby.broadcastLobby();
 
             break;
         }

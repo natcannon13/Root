@@ -6,9 +6,9 @@ const useGameStore = create((set) => ({
 
   lobby: null,
 
-  seatId: null,
+  seatIndex: null,
 
-  inviteToken: null,
+  lobbyId: null,
 
   gameState: null,
 

@@ -19,11 +19,17 @@ class Lobby{
         return this.seats[index];
     }
 
-    broadcast(message){
-        const data = JSON.stringify(message);
-
-        for (const seat of this.seats) {
+    broadcastLobby(){
+        for (let i = 0; i < this.seats.length; i++) {
+            const seat = this.seats[i];
             if (seat.connected && seat.socket) {
+                const data = JSON.stringify({
+                    type: "LOBBY_UPDATED",
+                    payload:{
+                        lobby: this.getLobbyData(),
+                        seatIndex: i
+                    }
+                })
                 seat.socket.send(data);
             }
         }
@@ -31,7 +37,7 @@ class Lobby{
 
     getLobbyData(){
         return{
-            roomId: this.id,
+            lobbyId: this.id,
             status: this.status,
             seats: this.seats.map(
                 seat => seat.serialize()
@@ -39,11 +45,5 @@ class Lobby{
         };
     }
 
-    generateInviteLinks(baseURL){
-        return this.seats.map(seat => ({
-            seatID: seat.id,
-            link: `${baseURL}/join/${seat.inviteToken}`
-        }));
-    }
 }
 module.exports = Lobby;

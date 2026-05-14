@@ -30,7 +30,7 @@ function JoinPage() {
       type: "JOIN_SEAT",
 
       payload: {
-        lobbyId,
+        lobbyId: lobbyId,
         seatIndex: Number(seatIndex)
       }
     }));
