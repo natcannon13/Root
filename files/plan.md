@@ -39,7 +39,7 @@ Enums in TypeScript can be represented with string literals.
 - isCraftLegal(faction: PlayerFactionType, card: Card, craftingPieces: Piece[]): boolean
 - move(move: Move)
 - battle(battle: Battle)
-- place(pieces: Piece, locationID: int)
+- place(pieces: Piece[], locationID: int)
 - craft(faction: PlayerFactionType, card: Card, craftingPieces: Piece[])
 - getGlobalEvents(): Event[]
   - Returns events added by `RulesModule`s, potentially available to all factions. Some of these events will be actions that a player may or may not take.
@@ -96,11 +96,11 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ---
 
-### RulesChange
+### RulesChange\<T extends ExtensionPointType>
 #### Properties
-- extensionName: ExtensionPointType
+- extensionName: T
   - Identifies which rules extension point should invoke this object's callback. Using the `ExtensionPointType` enum ensures compile-time safety and makes all valid extension points discoverable.
-- callback: function
+- callback: RulesChangeCallbackMap[T]
   - Signature intentionally left vague. I don't yet know what needs to be supported with this.
 
 ---
@@ -211,6 +211,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 - getEvents(phase: PhaseType): Event[]
 - getCraftingPieces(): Piece[]
 - getState(public: boolean): RootFactionState
+  - PlayerFactions will only have access to private state that is private to them, so no need to pass a faction here- it would always be "yes this is this faction" or "no this is not this faction."
 - updateState(RootFactionState)
 
 ---
@@ -226,6 +227,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 - controlCounter: int
   - Counts how many turns remain until the controlling faction must relinquish control of this hireling.
 - controllingFaction: PlayerFactionType | null
+#### Methods
 - getState(): RootHirelingState
 - updateState(RootHirelingState)
 
@@ -286,9 +288,11 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### Deck (implements RulesModule)
 The Deck RulesModule implements all rules related to its craftable cards. Persistent crafted effects have a condition that causes them only to apply when crafted: instant crafted effects define an event that triggers when that card has been crafted that then discards it. Ambush and Dominance cards are handled by the base rules engine.
-### Properties
+#### Properties
 - name: DeckType
 - cards: Card[]
+
+---
 
 ### Card
 #### Properties
@@ -344,12 +348,16 @@ All referenced types will be defined explicitly instead of imported, to make it 
 - discardPile: Card[]
 - spentCraftingPieceIDs: int[]
 
+---
+
 ### RootBoardState (interface)
 #### Properties
 - version: string
 - name: BoardType
 - clearings: {id: int, suit: Suit, tokens: Token[], pawns: Pawn[], buildings: mapping[int, Building | Ruin]}
 - forests: {id: int, tokens: Token[], pawns: Pawn[]}
+
+---
 
 ### RootFactionState (interface)
 #### Properties
@@ -360,11 +368,23 @@ All referenced types will be defined explicitly instead of imported, to make it 
 - craftedImprovements: Card[]
 - score: int
 
+---
+
 ### RootHirelingState (interface)
+#### Properties
 - version: string
 - name: HirelingFactionType
 - controlCounter: int
 - controllingFaction: PlayerFactionType
+
+---
+
+### PendingAction\<T extends PendingActionType>
+#### Properties
+- type: T
+- actor: PlayerFactionType
+- resolve: PendingActionCallbackMap[T]
+---
 
 ### StateStore
 Decouples the game loop from the rendering/network layer. The game loop calls `setState`; React (or any other renderer) subscribes via `useSyncExternalStore`. Neither side depends on the other. Network communication is also routed through `StateStore`, keeping all external concerns separate from game logic.
@@ -374,6 +394,7 @@ A list of serialized `RootGameState` snapshots is maintained here to support und
 - state: RootGameState
 - history: RootGameState[]
   - Ordered list of past serialized snapshots. Used for undo/redo. If memory becomes a problem, we'll deal with it then.
+- pendingAction: PendingAction
 
 #### Methods
 - setState(updater: (g: RootGameState) => void): void
@@ -387,7 +408,17 @@ A list of serialized `RootGameState` snapshots is maintained here to support und
   - Jump to the RootGameState with the given id.
   - Note that `undo`, `redo`, and `do` will require admin privilege if they undo or redo any actions taken by another player, or actions that give information (such as Expose) 
 
----
+## Network Interfaces (shared)
+
+### RootServerInterface
+#### Methods
+- sendMessage(message: object, connectionID: int)
+- subscribe(fn: (message: object, connectionID: int) => void): () => void
+
+### RootClientInterface
+#### Methods
+- sendMessage(message: object)
+- subscribe(fn: (message: object) => void): () => void
 
 ## Server Classes
 
