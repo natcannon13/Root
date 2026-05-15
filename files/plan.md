@@ -24,23 +24,29 @@ Enums in TypeScript can be represented with string literals.
 - gameOver: boolean
 - deck: Card[]
 - discardPile: Card[]
+- spentCraftingPieces: Piece[]
 
 #### Methods
 - play(options: object, agents: RootGameAgent[])
   - Each client and the server run their own `play()` loop. Agents fetch information over the network when input from remote players is required. All network communication is decoupled from game logic and routed through `StateStore`, the same as the rendering layer.
   - Iterates through turns. For each player's turn, for each phase: (1) `currentTimeStep` is advanced, (2) `takePhase` is called.
-  - Baseline Hireling rules (obtaining, control countdown, redistribution) are tracked here.
+  - Baseline Hireling rules (rolling to obtainin, control countdown, redistribution) are tracked here.
 - setup(type: SetupType)
 - isMoveLegal(move: Move): boolean
   - Checks clearing rule for the majority of factions. Factions that alter movement rules do so via static rules changes in their `RulesModule`.
 - isBattleLegal(battle: Battle): boolean
+- isPlaceLegal(pieces: Piece[], locationID: int): boolean
+- isCraftLegal(faction: PlayerFactionType, card: Card, craftingPieces: Piece[]): boolean
 - move(move: Move)
 - battle(battle: Battle)
+- place(pieces: Piece, locationID: int)
+- craft(faction: PlayerFactionType, card: Card, craftingPieces: Piece[])
 - getGlobalEvents(): Event[]
   - Returns events added by `RulesModule`s, potentially available to all factions. Some of these events will be actions that a player may or may not take.
   - Filters by current game state: only returns actions the current player can legally take right now (e.g. Otters cannot buy from themselves; path clearing is only available in daylight) / events that trigger right now.
   - `triggerCondition` is evaluated by brute force on every relevant state change; may change this later if performance requires it.
-- getState(): RootGameState
+- getState(perspective: PlayerFaction | null): RootGameState
+  - If a faction is provided for perspective, only private information that faction has access to is included.
 - updateState(state: RootGameState)
 
 ---
@@ -113,6 +119,9 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 - getForestsAdjacent(location: Location): Forest[]
 - getLocation(id: int): Location
 - move(pieces: Piece[], startingLocationID: int, endingLocationID: int)
+- place(pieces: Piece[], location: id)
+- getState(perspective: PlayerFaction | null): RootBoardState
+- updateState(RootBoardState)
 
 ---
 
@@ -176,11 +185,14 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 #### Properties
 - name: FactionType
 - pieceTypes: PieceType[]
-- supply: Piece[]
-  - Contains all faction pieces not currently on the game board. Also includes crafted items. Does not include pieces that have been permanently removed from the game (e.g. destroyed Otter trade posts), which are simply discarded and not tracked.
 - game: RootGame
 - hasCraftedBox: boolean
-  - Indicates whether this faction can be stolen from (i.e. whether they have a crafted items box).
+  - Indicates whether this faction can be stolen from (i.e. whether they have a crafted items box). All factions that use items for their own mechanics do not have a crafted item box.
+#### Methods
+- addToSupply(piece: Piece)
+  - Adds the given piece to this faction's supply. (Factions maintain their own internal representation of their supply.) 
+- getPiece(pieceID: int) : Piece | null
+  - Returns the piece with the given ID if it exists within this faction's supply.
 
 ---
 
@@ -197,20 +209,25 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 - takePhase(phase: PhaseType)
   - Merges faction-specific events (via `getEvents`) and global actions (via `RootGame.getGlobalEvents`) into the set of available actions/events for the player.
 - getEvents(phase: PhaseType): Event[]
+- getCraftingPieces(): Piece[]
+- getState(public: boolean): RootFactionState
+- updateState(RootFactionState)
 
 ---
 
 ### Hireling (implements RulesModule, Faction) (abstract)
 #### Properties
 - hirelingID: int
-  - Denotes which promoted and demoted Hireling classes are paired together.
+  - Denotes which promoted and demoted Hireling classes are paired together. Relevant only because both cannot be in the same game; promoted/demoted hirelings are essentially entirely different factions rules-wise.
 - associatedFaction: PlayerFactionType | null
   - The faction that cannot be played alongside this hireling, if any.
 - isDemoted: boolean
-  - Relevant during setup, where promoted and demoted hirelings are treated differently. Promoted and demoted hirelings are represented by separate classes and cannot be swapped during play.
+  - Relevant during setup, where promoted and demoted hirelings are treated differently. Promoted and demoted hirelings are represented by separate classes.
 - controlCounter: int
   - Counts how many turns remain until the controlling faction must relinquish control of this hireling.
 - controllingFaction: PlayerFactionType | null
+- getState(): RootHirelingState
+- updateState(RootHirelingState)
 
 ---
 
@@ -268,7 +285,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 ---
 
 ### Deck (implements RulesModule)
-The Deck RulesModule implements all rules related to its cards. Persistent crafted effects have a condition that causes them only to apply when crafted: instant crafted effects define an event that triggers when that card has been crafted that then discards it.
+The Deck RulesModule implements all rules related to its craftable cards. Persistent crafted effects have a condition that causes them only to apply when crafted: instant crafted effects define an event that triggers when that card has been crafted that then discards it. Ambush and Dominance cards are handled by the base rules engine.
 ### Properties
 - name: DeckType
 - cards: Card[]
@@ -325,13 +342,14 @@ All referenced types will be defined explicitly instead of imported, to make it 
 - deck: Card[] | null
 - deckSize: int
 - discardPile: Card[]
+- spentCraftingPieceIDs: int[]
 
 ### RootBoardState (interface)
 #### Properties
 - version: string
 - name: BoardType
-- clearings: {id: int, suit: Suit, tokens: Token[], pawns: Pawns[], buildings: mapping[int, Building | Ruin]}
-- forests: {id: int, tokens: Token[], pawns: Pawns[]}
+- clearings: {id: int, suit: Suit, tokens: Token[], pawns: Pawn[], buildings: mapping[int, Building | Ruin]}
+- forests: {id: int, tokens: Token[], pawns: Pawn[]}
 
 ### RootFactionState (interface)
 #### Properties
@@ -375,7 +393,7 @@ A list of serialized `RootGameState` snapshots is maintained here to support und
 
 ### RootServer (implements RootServerInterface)
 - Holds the canonical `RootGame` state.
-- Broadcasts the full state to all clients after every state update.
+- Broadcasts the full state (minus secret information) to all clients after every state update.
 
 ---
 
