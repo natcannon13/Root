@@ -215,6 +215,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### Hireling (implements RulesModule, Faction) (abstract)
 #### Properties
+- name: HirelingFactionType
 - hirelingID: int
   - Denotes which promoted and demoted Hireling classes are paired together. Relevant only because both cannot be in the same game; promoted/demoted hirelings are essentially entirely different factions rules-wise.
 - associatedFaction: PlayerFactionType | null
@@ -270,8 +271,8 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### Item (implements Piece)
 #### Properties
-  - itemType: ItemType
-    - Computed property returning `this.name`.
+  - name: ItemType
+  - owningFaction: null
     - Items are the only pieces shared across factions; their `owningFaction` is null.
   - exhausted: boolean
 

@@ -1,4 +1,4 @@
-import type { RootGameState } from "../gameState/RootGameState";
+import type { RootGameState } from "./RootGameState";
 import type { PendingAction } from "../game/PendingAction";
 
 export class StateStore {

@@ -1,4 +1,4 @@
-import type { RootGameState } from "../gameState/RootGameState";
+import type { RootGameState } from "../state/RootGameState";
 
 export interface Event<G = RootGameState> {
   label: string;

@@ -1,6 +1,6 @@
 import type { PlayerFactionType } from "../Enums";
 import type { Faction } from "./Faction";
-import type { RootHirelingState } from "../gameState/RootHirelingState";
+import type { RootHirelingState } from "../state/RootHirelingState";
 
 export interface Hireling extends Faction {
   hirelingID: number;
