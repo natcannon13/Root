@@ -1,6 +1,11 @@
 const ValidSuits = ["fox", "rabbit", "mouse", "bird", "frog"] as const;
 const ValidPhaseTypes = ["birdsong", "daylight", "evening", "none"] as const;
-const ValidConnectionTypes = ["path", "river", "forest-adjacency"] as const;
+const ValidConnectionTypes = [
+  "path",
+  "river",
+  "forest-adjacency",
+  "corner",
+] as const;
 const ValidItemTypes = [
   "boot",
   "bag",

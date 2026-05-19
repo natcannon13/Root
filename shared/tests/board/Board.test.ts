@@ -7,7 +7,7 @@ import type { Connection } from "../../src/board/Connection";
 import type { Pawn } from "../../src/pieces/Pawn";
 import type { Token } from "../../src/pieces/Token";
 
-describe("Board — setup", () => {
+describe("Board - setup", () => {
   test("board initializes with correct name, clearings, forests, and connections", () => {
     const c1 = mock<Clearing>({ id: 1 });
     const f1 = mock<Forest>({ id: 10 });
@@ -56,7 +56,7 @@ describe("Board — setup", () => {
   });
 });
 
-describe("Board — adjacency via paths (§2.2.1)", () => {
+describe("Board - adjacency via paths (§2.2.1)", () => {
   test("getClearingsAdjacent returns clearings linked by a path", () => {
     const c1 = mock<Clearing>({ id: 1 });
     const c2 = mock<Clearing>({ id: 2 });
@@ -145,7 +145,7 @@ describe("Board — adjacency via paths (§2.2.1)", () => {
   });
 });
 
-describe("Board — river adjacency (§2.3)", () => {
+describe("Board - river adjacency (§2.3)", () => {
   test("getClearingsAdjacentByRiver returns clearings linked by a river", () => {
     const c1 = mock<Clearing>({ id: 1 });
     const c2 = mock<Clearing>({ id: 2 });
@@ -178,7 +178,7 @@ describe("Board — river adjacency (§2.3)", () => {
   });
 });
 
-describe("Board — forest adjacency (§2.4)", () => {
+describe("Board - forest adjacency (§2.4)", () => {
   test("getForestsAdjacent returns forests adjacent to a clearing", () => {
     const c1 = mock<Clearing>({ id: 1 });
     const f1 = mock<Forest>({ id: 10 });
@@ -240,7 +240,26 @@ describe("Board — forest adjacency (§2.4)", () => {
   });
 });
 
-describe("Board — getLocation", () => {
+describe("Board - corners", () => {
+  test("getCorners returns the corners of the board", () => {
+    const c1 = mock<Clearing>({ id: 1 });
+    const c2 = mock<Clearing>({ id: 2 });
+    const cornerConn = mock<Connection>({
+      id: 1,
+      locationIDs: [1, 2],
+      type: "corner",
+    });
+    const board = new Board({
+      name: "autumn",
+      clearings: [c1, c2],
+      forests: [],
+      connections: [cornerConn],
+    });
+    expect(board.getCorners()).toEqual([[c1, c2]]);
+  });
+});
+
+describe("Board - getLocation", () => {
   test("getLocation returns the clearing with the given id", () => {
     const c1 = mock<Clearing>({ id: 5 });
     const board = new Board({
@@ -263,7 +282,7 @@ describe("Board — getLocation", () => {
   });
 });
 
-describe("Board — move", () => {
+describe("Board - move", () => {
   test("move removes pieces from the origin clearing and places them in the destination clearing", () => {
     const c1 = mock<Clearing>({ id: 1 });
     const c2 = mock<Clearing>({ id: 2 });
@@ -308,7 +327,7 @@ describe("Board — move", () => {
   });
 });
 
-describe("Board — place", () => {
+describe("Board - place", () => {
   test("place puts pieces into a clearing", () => {
     const c1 = mock<Clearing>({ id: 1 });
     const t = mock<Token>({
@@ -328,7 +347,7 @@ describe("Board — place", () => {
   });
 });
 
-describe("Board — remove", () => {
+describe("Board - remove", () => {
   test("remove takes pieces out of a clearing", () => {
     const c1 = mock<Clearing>({ id: 1 });
     const t = mock<Token>({

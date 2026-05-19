@@ -63,6 +63,11 @@ export class Board implements RulesModule {
     return undefined;
   }
 
+  getCorners(): [Clearing, Clearing][] {
+    // TODO: Implement
+    return [];
+  }
+
   move(
     pieces: Piece[],
     startingLocationID: number,
