@@ -7,6 +7,55 @@ import type { Connection } from "../../src/board/Connection";
 import type { Pawn } from "../../src/pieces/Pawn";
 import type { Token } from "../../src/pieces/Token";
 
+describe("Board — setup", () => {
+  test("board initializes with correct name, clearings, forests, and connections", () => {
+    const c1 = mock<Clearing>({ id: 1 });
+    const f1 = mock<Forest>({ id: 10 });
+    const conn12 = mock<Connection>({
+      id: 12,
+      locationIDs: [1, 10],
+      type: "path",
+    });
+    const board = new Board({
+      name: "autumn",
+      clearings: [c1],
+      forests: [f1],
+      connections: [conn12],
+    });
+    expect(board.name).toBe("autumn");
+    expect(board.clearings).toEqual([c1]);
+    expect(board.forests).toEqual([f1]);
+    expect(board.connections).toEqual([conn12]);
+  });
+  test("board initializes with the correct 12 available items", () => {
+    const board = new Board({
+      name: "autumn",
+      clearings: [],
+      forests: [],
+      connections: [],
+    });
+    expect(board.items).toHaveLength(12);
+    const itemNames = board.items.map((i) => i.name);
+    const itemCounts = itemNames.reduce(
+      (acc, name) => {
+        acc[name] = (acc[name] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    // Starting items: 2 each of boot, bag, tea, sword, and coins, and 1 each of hammer and crossbow.
+    expect(itemCounts).toEqual({
+      boot: 2,
+      bag: 2,
+      tea: 2,
+      sword: 2,
+      coins: 2,
+      hammer: 1,
+      crossbow: 1,
+    });
+  });
+});
+
 describe("Board — adjacency via paths (§2.2.1)", () => {
   test("getClearingsAdjacent returns clearings linked by a path", () => {
     const c1 = mock<Clearing>({ id: 1 });
@@ -76,7 +125,9 @@ describe("Board — adjacency via paths (§2.2.1)", () => {
       forests: [],
       connections: [],
     });
-    expect(() => board.getClearingsAdjacent(mock<Clearing>({ id: 999 }))).toThrow();
+    expect(() =>
+      board.getClearingsAdjacent(mock<Clearing>({ id: 999 })),
+    ).toThrow();
   });
 
   test("getClearingsAdjacent does NOT return clearings linked by a river", () => {
@@ -165,7 +216,9 @@ describe("Board — forest adjacency (§2.4)", () => {
       forests: [],
       connections: [],
     });
-    expect(() => board.getForestsAdjacent(mock<Clearing>({ id: 999 }))).toThrow();
+    expect(() =>
+      board.getForestsAdjacent(mock<Clearing>({ id: 999 })),
+    ).toThrow();
   });
 
   test("getForestsAdjacent returns forests adjacent to a forest", () => {
