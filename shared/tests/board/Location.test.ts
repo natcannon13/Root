@@ -8,7 +8,7 @@ import { Location } from "../../src/board/Location";
 class TestLocation extends Location {
 }
 
-describe("Location — pieces (§1.5, §G.20, §G.24)", () => {
+describe("Location - pieces (§1.5, §G.20, §G.24)", () => {
   test("addPieces() adds tokens", () => {
     const c = new TestLocation();
     const t = mock<Token>();

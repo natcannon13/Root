@@ -6,7 +6,7 @@ import { Ruin } from "../../src/pieces/Ruin.ts";
 import { Pawn } from "../../src/pieces/Pawn.ts";
 import { Token } from "../../src/pieces/Token.ts";
 
-describe("Clearing — suit", () => {
+describe("Clearing - suit", () => {
   test("stores the printed suit", () => {
     const c = new Clearing({ id: 1, printedSuit: "fox", slotCount: 2 });
     expect(c.printedSuit).toBe("fox");
@@ -29,7 +29,7 @@ describe("Clearing — suit", () => {
   });
 });
 
-describe("Clearing — building slots (§2.2.3)", () => {
+describe("Clearing - building slots (§2.2.3)", () => {
   test("openSlots() returns all indices when no buildings placed", () => {
     const c = new Clearing({ id: 1, printedSuit: "fox", slotCount: 3 });
     expect(c.openSlots()).toEqual(3);
@@ -62,7 +62,7 @@ describe("Clearing — building slots (§2.2.3)", () => {
   });
 });
 
-describe("Clearing — rule (§2.5, §G.28)", () => {
+describe("Clearing - rule (§2.5, §G.28)", () => {
   test("getRuler() returns the faction with the most warriors", () => {
     const c = new Clearing({ id: 1, printedSuit: "fox", slotCount: 3 });
     c.addPieces([
@@ -227,7 +227,7 @@ describe("Clearing — rule (§2.5, §G.28)", () => {
   });
 });
 
-describe("Clearing — warrior and cardboard queries", () => {
+describe("Clearing - warrior and cardboard queries", () => {
   test("getWarriors(faction) returns only that faction's warriors", () => {
     const c = new Clearing({ id: 1, printedSuit: "fox", slotCount: 2 });
     const mq = mock<Pawn>({
