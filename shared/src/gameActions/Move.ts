@@ -1,4 +1,4 @@
-import type { Piece } from '../pieceInterfaces/Piece';
+import type { Piece } from '../pieces/Piece';
 import type { PlayerFactionType } from '../Enums';
 
 export interface Move {

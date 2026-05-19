@@ -2,7 +2,7 @@ import { Board } from "../board/Board";
 import type { RootGameState } from "../state/RootGameState";
 import { TimeStep } from "../state/TimeStep";
 import type { Card } from "../cards/Card";
-import type { Piece } from "../pieceInterfaces/Piece";
+import type { Piece } from "../pieces/Piece";
 import type { PlayerFactionType } from "../Enums";
 import type { RootGameAgent } from "../agents/RootGameAgent";
 import type { Move } from "../gameActions/Move";

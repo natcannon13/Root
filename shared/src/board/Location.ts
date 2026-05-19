@@ -1,6 +1,6 @@
-import type { Pawn } from "../pieceInterfaces/Pawn";
-import type { Piece } from "../pieceInterfaces/Piece";
-import type { Token } from "../pieceInterfaces/Token";
+import type { Pawn } from "../pieces/Pawn";
+import type { Piece } from "../pieces/Piece";
+import type { Token } from "../pieces/Token";
 
 
 

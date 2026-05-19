@@ -1,4 +1,4 @@
-import type { Piece } from "../pieceInterfaces/Piece";
+import type { Piece } from "../pieces/Piece";
 import type { PlayerFactionType } from "../Enums";
 import type { Event } from "../game/Event";
 import type { Faction } from "./Faction";

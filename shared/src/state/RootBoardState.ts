@@ -1,7 +1,7 @@
 import type { BoardType, Suit } from '../Enums';
-import type { Building } from '../pieceInterfaces/Building';
-import type { Pawn } from '../pieceInterfaces/Pawn';
-import type { Token } from '../pieceInterfaces/Token';
+import type { Building } from '../pieces/Building';
+import type { Pawn } from '../pieces/Pawn';
+import type { Token } from '../pieces/Token';
 
 export interface RootBoardState {
     version: string;

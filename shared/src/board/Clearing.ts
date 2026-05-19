@@ -1,9 +1,9 @@
-import type { Building } from "../pieceInterfaces/Building";
+import type { Building } from "../pieces/Building";
 import type { Suit, FactionType } from "../Enums";
 import { Location } from "./Location";
-import type { Piece } from "../pieceInterfaces/Piece";
-import type { Pawn } from "../pieceInterfaces/Pawn";
-import type { Token } from "../pieceInterfaces/Token";
+import type { Piece } from "../pieces/Piece";
+import type { Pawn } from "../pieces/Pawn";
+import type { Token } from "../pieces/Token";
 
 export class Clearing extends Location {
   id: number;

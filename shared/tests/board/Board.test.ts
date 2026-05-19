@@ -4,8 +4,8 @@ import { Board } from "../../src/board/Board";
 import type { Clearing } from "../../src/board/Clearing";
 import type { Forest } from "../../src/board/Forest";
 import type { Connection } from "../../src/board/Connection";
-import type { Pawn } from "../../src/pieceInterfaces/Pawn";
-import type { Token } from "../../src/pieceInterfaces/Token";
+import type { Pawn } from "../../src/pieces/Pawn";
+import type { Token } from "../../src/pieces/Token";
 
 describe("Board — adjacency via paths (§2.2.1)", () => {
   test("getClearingsAdjacent returns clearings linked by a path", () => {

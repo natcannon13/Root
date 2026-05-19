@@ -1,5 +1,5 @@
 import type { ItemType } from './Enums';
-import type { Piece } from './pieceInterfaces/Piece';
+import type { Piece } from './pieces/Piece';
 
 export class Item implements Piece {
     id: number;

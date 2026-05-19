@@ -1,5 +1,5 @@
-import type { Building } from './pieceInterfaces/Building';
-import type { Item } from './Item';
+import type { Building } from './Building';
+import type { Item } from '../Item';
 
 export class Ruin implements Building {
     id: number;

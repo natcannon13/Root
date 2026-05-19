@@ -4,7 +4,7 @@ import type { Forest } from "./Forest";
 import type { Connection } from "./Connection";
 import type { Item } from "../Item";
 import type { Location } from "./Location";
-import type { Piece } from "../pieceInterfaces/Piece";
+import type { Piece } from "../pieces/Piece";
 import type { RulesModule } from "../rulesModule/RulesModule";
 import type { Event } from "../game/Event";
 import type { RulesChange } from "../rulesModule/RulesChange";

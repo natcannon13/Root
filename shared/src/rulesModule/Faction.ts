@@ -1,4 +1,4 @@
-import type { Piece } from "../pieceInterfaces/Piece";
+import type { Piece } from "../pieces/Piece";
 import type { RulesModule } from "./RulesModule";
 import type { RootGame } from "../game/RootGame";
 import type { FactionType } from "../Enums";
