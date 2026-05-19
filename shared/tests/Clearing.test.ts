@@ -1,10 +1,10 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { mock } from "vitest-mock-extended";
 import { Clearing } from "../src/Clearing.ts";
-import type { Building } from "../src/Building.ts";
-import type { Token } from "../src/Token.ts";
-import type { Pawn } from "../src/Pawn.ts";
+import type { Building } from "../src/pieceInterfaces/Building.ts";
 import { Ruin } from "../src/Ruin.ts";
+import { Pawn } from "../src/pieceInterfaces/Pawn.ts";
+import { Token } from "../src/pieceInterfaces/Token.ts";
 
 describe("Clearing — suit", () => {
   test("stores the printed suit", () => {

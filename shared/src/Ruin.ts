@@ -1,7 +1,7 @@
+import type { Building } from './pieceInterfaces/Building';
 import type { Item } from './Item';
-import type { Piece } from './Piece';
 
-export class Ruin implements Piece {
+export class Ruin implements Building {
     id: number;
     name: string = 'ruin';
     owningFaction: null = null;
