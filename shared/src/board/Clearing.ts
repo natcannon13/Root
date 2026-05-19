@@ -10,15 +10,15 @@ export class Clearing extends Location {
   printedSuit: Suit | null;
   slotCount: number;
 
-  constructor(args: {
+  constructor({id, printedSuit, slotCount}: {
     id: number;
     printedSuit: Suit | null;
     slotCount: number;
   }) {
     super();
-    this.id = args.id;
-    this.printedSuit = args.printedSuit;
-    this.slotCount = args.slotCount;
+    this.id = id;
+    this.printedSuit = printedSuit;
+    this.slotCount = slotCount;
   }
 
   matches(suit: Suit | null): boolean {
