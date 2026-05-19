@@ -5,13 +5,25 @@ import type { Connection } from "./Connection";
 import type { Item } from "../Item";
 import type { Location } from "./Location";
 import type { Piece } from "../pieceInterfaces/Piece";
+import type { RulesModule } from "../rulesModule/RulesModule";
+import type { Event } from "../game/Event";
+import type { RulesChange } from "../rulesModule/RulesChange";
 
-export class Board {
+export class Board implements RulesModule {
   name: BoardType;
   clearings: Clearing[];
   forests: Forest[];
   connections: Connection[];
   items: Item[];
+  staticRulesChanges: RulesChange[] = [];
+
+  setup(): void {
+    // optional: rules module setup hook
+  }
+
+  globalEvents(): Event[] {
+    return [];
+  }
 
   constructor({
     name,

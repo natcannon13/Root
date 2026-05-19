@@ -1,10 +1,11 @@
 import type { PlayerFactionType } from '../Enums';
+import type { Card } from '../cards/Card';
 
 export interface RootFactionState {
     version: string;
     name: PlayerFactionType;
-    hand: string[] | null;
+    hand: Card[] | null;
     handSize: number;
-    craftedImprovements: string[];
+    craftedImprovements: Card[];
     score: number;
 }

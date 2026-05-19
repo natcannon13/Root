@@ -7,13 +7,19 @@ import type { PlayerFactionType } from "../Enums";
 import type { RootGameAgent } from "../agents/RootGameAgent";
 import type { Move } from "../gameActions/Move";
 import type { Battle } from "../gameActions/Battle";
+import type { Faction } from "../rulesModule/Faction";
+import type { Hireling } from "../rulesModule/Hireling";
+import type { Landmark } from "../rulesModule/Landmark";
+import type { PlayOptions } from "./PlayOptions";
+import type { SetupType } from "../Enums";
+import type { Event } from "./Event";
 
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
   board: Board | null = null;
-  factions: any[] = [];
-  hirelings: any[] = [];
-  landmarks: any[] = [];
+  factions: Faction[] = [];
+  hirelings: Hireling[] = [];
+  landmarks: Landmark[] = [];
   currentTimeStep: TimeStep | null = null;
   version = "0.0.0";
   winner: PlayerFactionType | null = null;
@@ -28,11 +34,11 @@ export class RootGame {
     }
   }
 
-  play(options: object, agents: RootGameAgent[]) {
+  play(options: PlayOptions, agents: RootGameAgent[]) {
     throw new Error("RootGame.play not implemented");
   }
 
-  setup(type: string) {
+  setup(type: SetupType) {
     throw new Error("RootGame.setup not implemented");
   }
 
@@ -68,7 +74,7 @@ export class RootGame {
     throw new Error("RootGame.craft not implemented");
   }
 
-  getGlobalEvents(): any[] {
+  getGlobalEvents(): Event[] {
     return [];
   }
 

@@ -181,7 +181,7 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 ### Faction (interface)
 #### Properties
 - name: FactionType
-- pieceTypes: PieceType[]
+- pieces: Piece[]
 - game: RootGame
 - hasCraftedBox: boolean
   - Indicates whether this faction can be stolen from (i.e. whether they have a crafted items box). All factions that use items for their own mechanics do not have a crafted item box.

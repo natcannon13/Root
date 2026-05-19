@@ -25,6 +25,11 @@ const ValidPlayerFactionTypes = [
   "twilight-council",
   "knaves-of-the-deepwood",
 ] as const;
+const ValidHirelingFactionTypes = [
+  "placeholder-1",
+  "placeholder-2",
+  "placeholder-3",
+] as const;
 const ValidBoardTypes = [
   "autumn",
   "winter",
@@ -33,6 +38,7 @@ const ValidBoardTypes = [
   "gorge",
   "marsh",
 ] as const;
+const ValidSetupTypes = ["standard", "advanced"] as const;
 const ValidBattlePhaseTypes = [
   `ambush`,
   `before-roll`,
@@ -46,8 +52,11 @@ export type PhaseType = (typeof ValidPhaseTypes)[number];
 export type ConnectionType = (typeof ValidConnectionTypes)[number];
 export type ItemType = (typeof ValidItemTypes)[number];
 export type PlayerFactionType = (typeof ValidPlayerFactionTypes)[number];
+export type HirelingFactionType = (typeof ValidHirelingFactionTypes)[number];
+export type FactionType = PlayerFactionType | HirelingFactionType;
 export type BoardType = (typeof ValidBoardTypes)[number];
 export type BattlePhaseType = (typeof ValidBattlePhaseTypes)[number];
+export type SetupType = (typeof ValidSetupTypes)[number];
 
 export function isSuit(value: string): value is Suit {
   return ValidSuits.includes(value as Suit);
@@ -69,4 +78,7 @@ export function isBoardType(value: string): value is BoardType {
 }
 export function isBattlePhaseType(value: string): value is BattlePhaseType {
   return ValidBattlePhaseTypes.includes(value as BattlePhaseType);
+}
+export function isSetupType(value: string): value is SetupType {
+  return ValidSetupTypes.includes(value as SetupType);
 }

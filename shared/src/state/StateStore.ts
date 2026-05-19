@@ -1,10 +1,11 @@
 import type { RootGameState } from "../gameState/RootGameState";
+import type { PendingAction } from "../game/PendingAction";
 
 export class StateStore {
   private state: RootGameState;
   private history: RootGameState[] = [];
   private subscribers: Array<() => void> = [];
-  pendingAction: any = null;
+  pendingAction: PendingAction | null = null;
 
   constructor(initialState: RootGameState) {
     this.state = initialState;

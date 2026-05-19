@@ -1,5 +1,5 @@
 import type { Building } from "../pieceInterfaces/Building";
-import type { Suit } from "../Enums";
+import type { Suit, FactionType } from "../Enums";
 import { Location } from "./Location";
 import type { Piece } from "../pieceInterfaces/Piece";
 import type { Pawn } from "../pieceInterfaces/Pawn";
@@ -36,13 +36,13 @@ export class Clearing extends Location {
     return [];
   }
   replace(oldPiece: Piece, newPiece: Piece): void {}
-  getRuler(): string | null {
+  getRuler(): FactionType | null {
     return null;
   }
-  getWarriors(faction: string): Pawn[] {
+  getWarriors(faction: FactionType): Pawn[] {
     return [];
   }
-  getCardboard(faction: string): Array<Building | Token> {
+  getCardboard(faction: FactionType): Array<Building | Token> {
     return [];
   }
 }
