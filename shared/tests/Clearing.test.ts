@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "vitest";
 import { mock } from "vitest-mock-extended";
-import { Clearing } from "../src/Clearing.ts";
+import { Clearing } from "../src/board/Clearing.ts";
 import type { Building } from "../src/pieceInterfaces/Building.ts";
 import { Ruin } from "../src/Ruin.ts";
 import { Pawn } from "../src/pieceInterfaces/Pawn.ts";

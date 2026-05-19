@@ -1,7 +1,8 @@
+import type { Pawn } from "../pieceInterfaces/Pawn";
+import type { Piece } from "../pieceInterfaces/Piece";
+import type { Token } from "../pieceInterfaces/Token";
 
-import type { Pawn } from "./pieceInterfaces/Pawn";
-import type { Piece } from "./pieceInterfaces/Piece";
-import type { Token } from "./pieceInterfaces/Token";
+
 
 
 export abstract class Location {
