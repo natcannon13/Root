@@ -2,9 +2,9 @@ import type { Suit } from './Enums';
 import { Location } from './Location';
 import type { Piece } from './Piece';
 import type { Token } from './Token';
-import type { Warrior } from './Warrior';
 import type { Building } from './Building';
 import { Ruin } from './Ruin';
+import type { Pawn } from './Pawn';
 
 export class Clearing extends Location {
     id: number;
@@ -29,6 +29,6 @@ export class Clearing extends Location {
     getPieces(predicate?: (p: Piece) => boolean): Piece[] { return []; }
     replace(oldPiece: Piece, newPiece: Piece): void { }
     getRuler(): string | null { return null; }
-    getWarriors(faction: string): Warrior[] { return []; }
+    getWarriors(faction: string): Pawn[] { return []; }
     getCardboard(faction: string): Array<Building | Token> { return []; }
 }

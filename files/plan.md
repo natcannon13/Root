@@ -239,16 +239,10 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### Piece (interface)
 #### Properties
-- id: int
-- type: PieceType
-
----
-
-### PieceType
-#### Properties
-- name: string
-- owningFaction: FactionType | null
-  - Null for ruins and items, which are used by multiple factions. Each faction defines its own `PieceType` instances (e.g. Marquise warrior, Eyrie warrior).
+  - id: int
+  - name: string
+  - owningFaction: PlayerFactionType | null
+    - Null for ruins and items, which are used by multiple factions. Each faction defines its own piece instances (e.g. Marquise warrior, Eyrie warrior).
 
 ---
 
@@ -270,19 +264,19 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 
 ### Ruin (implements Piece)
 #### Properties
-- items: Item[]
-- type: PieceType
-  - `owningFaction` is null, consistent with ruins being unowned.
-  - Placed in `buildingSlots` at game start; a slot containing a Ruin is not considered open.
+  - items: Item[]
+  - name: string (always 'ruin')
+  - owningFaction: null (ruins are unowned)
+    - Placed in `buildingSlots` at game start; a slot containing a Ruin is not considered open.
 
 ---
 
 ### Item (implements Piece)
 #### Properties
-- itemType: ItemType
-  - Computed property returning `this.type.name`.
-  - Items are the only pieces shared across factions; their `PieceType.owningFaction` is null.
-- exhausted: boolean
+  - itemType: ItemType
+    - Computed property returning `this.name`.
+    - Items are the only pieces shared across factions; their `owningFaction` is null.
+  - exhausted: boolean
 
 ---
 

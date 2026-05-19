@@ -1,6 +1,7 @@
-import type { PieceType } from './PieceType.ts';
+import type { PlayerFactionType } from './Enums';
 
 export interface Piece {
     id: number;
-    type: PieceType;
+    name: string;
+    owningFaction?: PlayerFactionType | null;
 }

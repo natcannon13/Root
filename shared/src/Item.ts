@@ -1,19 +1,19 @@
 import type { ItemType } from './Enums';
 import type { Piece } from './Piece';
-import type { PieceType } from './PieceType';
 
 export class Item implements Piece {
     id: number;
-    type: PieceType;
+    name: ItemType;
+    owningFaction = null;
     exhausted: boolean = false;
 
-    constructor(id = 0, type: PieceType) {
+    constructor(id = 0, name: ItemType) {
         this.id = id;
-        this.type = type;
+        this.name = name;
         this.exhausted = false;
     }
 
     get itemType(): ItemType {
-        return this.type?.name as ItemType;
+        return this.name;
     }
 }
