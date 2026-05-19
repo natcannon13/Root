@@ -13,6 +13,6 @@ export abstract class Location {
     addPieces(pieces: Piece[]): void {}
     removePieces(pieces: Piece[]): void {}
     hasPieces(pieces: Piece[]): boolean { return false; }
-    getPieces(predicate: (p: Piece) => boolean): Piece[] { return []; }
+    getPieces(predicate?: (p: Piece) => boolean): Piece[] { return []; }
     replace(targetPiece: Piece, newPiece: Piece): void {}
 }
