@@ -16,7 +16,7 @@ const ValidPlayerFactionTypes = [
     'lilypad-diaspora',
     'twilight-council',
     'knaves-of-the-deepwood'
-];
+] as const;
 
 export type Suit = typeof ValidSuits[number];
 export type PhaseType = typeof ValidPhaseTypes[number];

@@ -1,16 +1,14 @@
 import { describe, test, expect, beforeEach } from 'vitest';
+import { mock } from 'vitest-mock-extended';
 import { Clearing } from '../src/Clearing.ts';
-import {
-  makeWarrior,
-  makeBuilding,
-  makeToken,
-  makePawn,
-  makeRuin,
-  makeItem,
-  resetIds,
-} from './helpers.ts';
+import type { Building } from '../src/Building.ts';
+import type { Token } from '../src/Token.ts';
+import type { Pawn } from '../src/Pawn.ts';
+import { Ruin } from '../src/Ruin.ts';
+import { Item } from '../src/Item.ts';
+
  
-beforeEach(() => resetIds());
+
  
 describe('Clearing — suit', () => {
   test('stores the printed suit', () => {
@@ -28,7 +26,7 @@ describe('Clearing — suit', () => {
     expect(c.matches('fox')).toBe(false);
   });
  
-  test('bird card is NOT a suit a clearing can have (only fox/rabbit/mouse) — printedSuit null is valid', () => {
+  test('printedSuit null is valid', () => {
     // Clearings with no printed suit (e.g. Burrow) have null
     const c = new Clearing({ id: 1, printedSuit: null, slotCount: 0 });
     expect(c.printedSuit).toBeNull();
@@ -43,33 +41,33 @@ describe('Clearing — building slots (§2.2.3)', () => {
  
   test('openSlots() excludes occupied slots', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 3 });
-    const b = makeBuilding('marquise');
+    const b = mock<Building>();
     c.build(0, b);
     expect(c.openSlots()).toEqual([1, 2]);
   });
  
   test('build() places building in the specified slot', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const b = makeBuilding('marquise');
+    const b = mock<Building>();
     c.build(0, b);
     expect(c.buildingSlots.get(0)).toBe(b);
   });
  
   test('build() throws when slot is already occupied', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    c.build(0, makeBuilding('marquise'));
-    expect(() => c.build(0, makeBuilding('eyrie'))).toThrow();
+    c.build(0, mock<Building>());
+    expect(() => c.build(0, mock<Building>())).toThrow();
   });
  
   test('ruins occupy slots and those slots are not open (§2.2.4)', () => {
-    const ruin = makeRuin([makeItem('boot')]);
+    const ruin = mock<Ruin>();
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2, ruins: [{ slot: 0, ruin }] });
     expect(c.openSlots()).toEqual([1]);
   });
  
-  test('a clearing with no open slots cannot receive a building', () => {
+  test('openSlots() returns an empty array when all slots are occupied', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 1 });
-    c.build(0, makeBuilding('marquise'));
+    c.build(0, mock<Building>());
     expect(c.openSlots()).toHaveLength(0);
   });
 });
@@ -77,53 +75,71 @@ describe('Clearing — building slots (§2.2.3)', () => {
 describe('Clearing — pieces (§1.5, §G.20, §G.24)', () => {
   test('addPieces() adds tokens', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const t = makeToken();
+    const t = mock<Token>();
     c.addPieces([t]);
     expect(c.getPieces()).toContain(t);
   });
  
   test('addPieces() adds pawns', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const p = makePawn({ isWarrior: true });
+    const p = mock<Pawn>();
     c.addPieces([p]);
     expect(c.getPieces()).toContain(p);
   });
  
   test('removePieces() removes the specified pieces', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const t = makeToken();
+    const t = mock<Token>();
     c.addPieces([t]);
     c.removePieces([t]);
     expect(c.getPieces()).not.toContain(t);
   });
- 
+
+  test('removePieces() does not remove pieces not specified', () => {
+    const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
+    const t1 = mock<Token>();
+    const t2 = mock<Token>();
+    c.addPieces([t1, t2]);
+    c.removePieces([t1]);
+    expect(c.getPieces()).toContain(t2);
+  });
+
   test('hasPieces() returns true when pieces are present', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const t = makeToken();
-    c.addPieces([t]);
-    expect(c.hasPieces([t])).toBe(true);
+    const t1 = mock<Token>();
+    const t2 = mock<Pawn>();
+    c.addPieces([t1, t2]);
+    expect(c.hasPieces([t1, t2])).toBe(true);
   });
  
   test('hasPieces() returns false when pieces are absent', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const t = makeToken();
+    const t = mock<Token>();
     expect(c.hasPieces([t])).toBe(false);
+  });
+
+  test('hasPieces() returns false when only some pieces are present', () => {
+    const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
+    const t1 = mock<Token>();
+    const t2 = mock<Token>();
+    c.addPieces([t1]);
+    expect(c.hasPieces([t1, t2])).toBe(false);
   });
  
   test('getPieces() filters by predicate', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const w = makeWarrior('marquise');
-    const p = makePawn({ isWarrior: false });
+    const w = mock<Pawn>({ id: 1, type: { name: 'warrior', owningFaction: 'marquise-de-cat' }, isWarrior: true });
+    const p = mock<Pawn>({ id: 2, type: { name: 'pawn', owningFaction: 'vagabond' }, isWarrior: false });
     c.addPieces([w, p]);
-    const warriors = c.getPieces((piece) => (piece as typeof w).isWarrior === true);
+    const warriors = c.getPieces((piece) => (piece as any).isWarrior === true);
     expect(warriors).toContain(w);
     expect(warriors).not.toContain(p);
   });
  
   test('replace() swaps a target piece with a new piece', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const old = makeToken();
-    const fresh = makeToken();
+    const old = mock<Token>({ id: 1 });
+    const fresh = mock<Token>({ id: 2 });
     c.addPieces([old]);
     c.replace(old, fresh);
     expect(c.getPieces()).toContain(fresh);
@@ -132,16 +148,19 @@ describe('Clearing — pieces (§1.5, §G.20, §G.24)', () => {
 });
  
 describe('Clearing — rule (§2.5, §G.28)', () => {
-  test('getRuler() returns the faction with the most warriors + buildings', () => {
+  test('getRuler() returns the faction with the most warriors', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 3 });
-    c.addPieces([makeWarrior('marquise'), makeWarrior('marquise')]);
-    c.addPieces([makeWarrior('eyrie')]);
-    expect(c.getRuler()).toBe('marquise');
+    c.addPieces([
+        mock<Pawn>({ id: 1, type: { name: 'warrior', owningFaction: 'marquise-de-cat' }, isWarrior: true }), 
+        mock<Pawn>({ id: 2, type: { name: 'warrior', owningFaction: 'marquise-de-cat' }, isWarrior: true })
+    ]);
+    c.addPieces([mock<Pawn>({ id: 3, type: { name: 'warrior', owningFaction: 'eyrie-dynasties' }, isWarrior: true })]);
+    expect(c.getRuler()).toBe('marquise-de-cat');
   });
  
   test('getRuler() returns null on a tie (§2.5)', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 3 });
-    c.addPieces([makeWarrior('marquise'), makeWarrior('eyrie')]);
+    c.addPieces([mock<Pawn>({ id: 1, type: { name: 'warrior', owningFaction: 'marquise-de-cat' }, isWarrior: true }), mock<Pawn>({ id: 2, type: { name: 'warrior', owningFaction: 'eyrie-dynasties' }, isWarrior: true })]);
     expect(c.getRuler()).toBeNull();
   });
  
@@ -153,48 +172,45 @@ describe('Clearing — rule (§2.5, §G.28)', () => {
   test('tokens do NOT contribute to rule (§2.5)', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
     // Eyrie has 1 warrior; Alliance has 3 sympathy tokens but no warriors
-    c.addPieces([makeWarrior('eyrie')]);
-    c.addPieces([makeToken(), makeToken(), makeToken()]); // treat as alliance tokens
-    expect(c.getRuler()).toBe('eyrie');
+    c.addPieces([mock<Pawn>({ id: 1, type: { name: 'warrior', owningFaction: 'eyrie-dynasties' }, isWarrior: true })]);
+    c.addPieces([mock<Token>({ id: 2, type: { name: 'sympathy', owningFaction: 'woodland-alliance' }, faceUp: true }), mock<Token>({ id: 3, type: { name: 'sympathy', owningFaction: 'woodland-alliance' }, faceUp: true }), mock<Token>({ id: 4, type: { name: 'sympathy', owningFaction: 'woodland-alliance' }, faceUp: true })]);
+    expect(c.getRuler()).toBe('eyrie-dynasties');
   });
  
   test('buildings count toward rule (§2.5)', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 3 });
-    c.addPieces([makeWarrior('marquise')]); // marquise: 1 warrior + 1 building = 2
-    c.build(0, makeBuilding('marquise'));
-    c.addPieces([makeWarrior('eyrie'), makeWarrior('eyrie')]); // eyrie: 2 warriors
-    // tie: 2 vs 2 → no ruler
+    c.addPieces([mock<Pawn>({ id: 1, type: { name: 'warrior', owningFaction: 'marquise-de-cat' }, isWarrior: true })]);
+    c.build(0, mock<Building>({ id: 1, type: { name: 'keep', owningFaction: 'marquise-de-cat' } }));
+    c.addPieces([mock<Pawn>({ id: 2, type: { name: 'warrior', owningFaction: 'eyrie-dynasties' }, isWarrior: true }), mock<Pawn>({ id: 3, type: { name: 'warrior', owningFaction: 'eyrie-dynasties' }, isWarrior: true })]);
     expect(c.getRuler()).toBeNull();
   });
  
   test('pawns do NOT contribute to rule (§2.5)', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    c.addPieces([makeWarrior('marquise')]);
-    // Vagabond pawn: isWarrior = false
-    c.addPieces([makePawn({ isWarrior: false }), makePawn({ isWarrior: false })]);
-    expect(c.getRuler()).toBe('marquise');
+    c.addPieces([mock<Pawn>({ id: 1, type: { name: 'warrior', owningFaction: 'marquise-de-cat' }, isWarrior: true })]);
+    c.addPieces([mock<Pawn>({ id: 2, type: { name: 'pawn', owningFaction: 'vagabond' }, isWarrior: false }), mock<Pawn>({ id: 3, type: { name: 'pawn', owningFaction: 'vagabond' }, isWarrior: false })]);
+    expect(c.getRuler()).toBe('marquise-de-cat');
   });
 });
  
 describe('Clearing — warrior and cardboard queries', () => {
   test('getWarriors(faction) returns only that faction\'s warriors', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const mq = makeWarrior('marquise');
-    const ey = makeWarrior('eyrie');
+    const mq = mock<Pawn>({ id: 1, type: { name: 'warrior', owningFaction: 'marquise-de-cat' }, isWarrior: true });
+    const ey = mock<Pawn>({ id: 2, type: { name: 'warrior', owningFaction: 'eyrie-dynasties' }, isWarrior: true });
     c.addPieces([mq, ey]);
-    const result = c.getWarriors('marquise');
+    const result = c.getWarriors('marquise-de-cat');
     expect(result).toContain(mq);
     expect(result).not.toContain(ey);
   });
  
   test('getCardboard(faction) returns buildings and tokens owned by faction', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const b = makeBuilding('marquise');
-    const t = makeToken();
-    t.type = { name: 'keep', owningFaction: 'marquise' } as any;
+    const b = mock<Building>({ id: 1, type: { name: 'keep', owningFaction: 'marquise-de-cat' } });
+    const t = mock<Token>({ id: 2, type: { name: 'keep', owningFaction: 'marquise-de-cat' }, faceUp: true });
     c.build(0, b);
     c.addPieces([t]);
-    const result = c.getCardboard('marquise');
+    const result = c.getCardboard('marquise-de-cat');
     expect(result).toContain(b);
     expect(result).toContain(t);
   });
