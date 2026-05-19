@@ -143,16 +143,13 @@ Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prom
 ### Clearing (extends Location)
 #### Properties
 - printedSuit: Suit | null
-- buildingSlots: mapping[int, Building | Ruin]
-  - Key is the slot index (0-based). Typed as `Building | Ruin` to make explicit that only these piece types may occupy building slots. Pawns and Tokens can never go in building slots.
 - landmarks: Landmark[]
 
 #### Methods
 - getWarriors(faction: FactionType): Pawn[]
 - getCardboard(faction: FactionType): (Building | Token)[]
-- openSlots(): int[]
+- openSlots(): int
 - matches(suit: Suit): boolean
-- build(slot: int, building: Building)
 - getRuler(): FactionType | null
 
 ---

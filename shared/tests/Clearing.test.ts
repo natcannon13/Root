@@ -36,39 +36,33 @@ describe('Clearing — suit', () => {
 describe('Clearing — building slots (§2.2.3)', () => {
   test('openSlots() returns all indices when no buildings placed', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 3 });
-    expect(c.openSlots()).toHaveLength(3);
+    expect(c.openSlots()).toEqual(3);
   });
  
-  test('openSlots() excludes occupied slots', () => {
+  test('building reduces open slots', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 3 });
     const b = mock<Building>();
-    c.build(0, b);
-    expect(c.openSlots()).toEqual([1, 2]);
+    c.addPieces([b]);
+    expect(c.openSlots()).toEqual(2);
   });
  
-  test('build() places building in the specified slot', () => {
+  test('build() throws when there are no open slots', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    const b = mock<Building>();
-    c.build(0, b);
-    expect(c.buildingSlots.get(0)).toBe(b);
+    c.addPieces([mock<Building>(), mock<Building>()]);
+    expect(() => c.addPieces([mock<Building>()])).toThrow();
   });
  
-  test('build() throws when slot is already occupied', () => {
-    const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
-    c.build(0, mock<Building>());
-    expect(() => c.build(0, mock<Building>())).toThrow();
-  });
- 
-  test('ruins occupy slots and those slots are not open (§2.2.4)', () => {
+  test('ruins occupy slots (§2.2.4)', () => {
     const ruin = mock<Ruin>();
-    const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2, ruins: [{ slot: 0, ruin }] });
-    expect(c.openSlots()).toEqual([1]);
+    const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
+    c.addPieces([ruin]);
+    expect(c.openSlots()).toEqual(1);
   });
  
-  test('openSlots() returns an empty array when all slots are occupied', () => {
+  test('openSlots() returns 0 when all slots are occupied', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 1 });
-    c.build(0, mock<Building>());
-    expect(c.openSlots()).toHaveLength(0);
+    c.addPieces([mock<Building>()]);
+    expect(c.openSlots()).toEqual(0);
   });
 });
  
@@ -139,7 +133,7 @@ describe('Clearing — pieces (§1.5, §G.20, §G.24)', () => {
   test('replace() swaps a target piece with a new piece', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
     const old = mock<Token>({ id: 1 });
-    const fresh = mock<Token>({ id: 2 });
+    const fresh = mock<Building>({ id: 2 });
     c.addPieces([old]);
     c.replace(old, fresh);
     expect(c.getPieces()).toContain(fresh);
@@ -180,7 +174,7 @@ describe('Clearing — rule (§2.5, §G.28)', () => {
   test('buildings count toward rule (§2.5)', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 3 });
     c.addPieces([mock<Pawn>({ id: 1, name: 'warrior', owningFaction: 'marquise-de-cat', isWarrior: true })]);
-    c.build(0, mock<Building>({ id: 1, name: 'keep', owningFaction: 'marquise-de-cat' }));
+    c.addPieces([mock<Building>({ id: 1, name: 'keep', owningFaction: 'marquise-de-cat' })]);
     c.addPieces([mock<Pawn>({ id: 2, name: 'warrior', owningFaction: 'eyrie-dynasties', isWarrior: true }), mock<Pawn>({ id: 3, name: 'warrior', owningFaction: 'eyrie-dynasties', isWarrior: true })]);
     expect(c.getRuler()).toBeNull();
   });
@@ -208,8 +202,7 @@ describe('Clearing — warrior and cardboard queries', () => {
     const c = new Clearing({ id: 1, printedSuit: 'fox', slotCount: 2 });
     const b = mock<Building>({ id: 1, name: 'keep', owningFaction: 'marquise-de-cat' });
     const t = mock<Token>({ id: 2, name: 'keep', owningFaction: 'marquise-de-cat', faceUp: true });
-    c.build(0, b);
-    c.addPieces([t]);
+    c.addPieces([b, t]);
     const result = c.getCardboard('marquise-de-cat');
     expect(result).toContain(b);
     expect(result).toContain(t);
