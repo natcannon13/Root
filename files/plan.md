@@ -18,74 +18,110 @@ Enums in TypeScript can be represented with string literals.
 - hirelings: Hireling[]
 - landmarks: Landmark[]
 - currentTimeStep: TimeStep
-  - Encodes phase, phase segment, and battle segment. Mutated in place by `RootGame` as the game progresses.
+  - Encodes phase, phase segment, battle segment, and active player.
 - version: string
-- winner?: Faction
+- winner: PlayerFactionType | null
 - gameOver: boolean
+- deck: Card[]
+- discardPile: Card[]
+- spentCraftingPieces: Piece[]
 
 #### Methods
 - play(options: object, agents: RootGameAgent[])
-  - Each client and the server run their own `play()` loop. Agents fetch information over the network when input from remote players is required.
+  - Each client and the server run their own `play()` loop. Agents fetch information over the network when input from remote players is required. All network communication is decoupled from game logic and routed through `StateStore`, the same as the rendering layer.
   - Iterates through turns. For each player's turn, for each phase: (1) `currentTimeStep` is advanced, (2) `takePhase` is called.
+  - Baseline Hireling rules (rolling to obtainin, control countdown, redistribution) are tracked here.
 - setup(type: SetupType)
-- isMoveLegal(faction: Faction, startingLocationID: int, endingLocationID: int): boolean
-  - Must be faction-specific: e.g. Crows can ignore rule, Otters can move on rivers, Knaves can move in/out of forests ignoring rule.
-- isBattleLegal(faction: Faction, clearingID: int, defender: Faction): boolean
-- move(mover: Faction, startingLocationID: int, endingLocationID: int)
-- battle(attacker: Faction, clearingID: int, defender: Faction)
-- getGlobalActions(): Action[]
-  - Returns actions available to the current faction independent of faction-specific rules, e.g. clearing paths on the mountain map or purchasing from Otters.
-  - Filters by current game state: only returns actions the current player can legally take right now (e.g. Otters cannot buy from themselves; path clearing is only available in daylight).
-  - Also returns Hireling-specific actions when called in the context of their controlling faction.
+- isMoveLegal(move: Move): boolean
+  - Checks clearing rule for the majority of factions. Factions that alter movement rules do so via static rules changes in their `RulesModule`.
+- isBattleLegal(battle: Battle): boolean
+- isPlaceLegal(pieces: Piece[], locationID: int): boolean
+- isCraftLegal(faction: PlayerFactionType, card: Card, craftingPieces: Piece[]): boolean
+- move(move: Move)
+- battle(battle: Battle)
+- place(pieces: Piece[], locationID: int)
+- craft(faction: PlayerFactionType, card: Card, craftingPieces: Piece[])
 - getGlobalEvents(): Event[]
-  - Mirrors `getGlobalActions()` but for events that trigger at the start or end of phases.
-  - Also returns Hireling-specific events when called in the context of their controlling faction.
-  - Contains the backbone hireling event logic.
+  - Returns events added by `RulesModule`s, potentially available to all factions. Some of these events will be actions that a player may or may not take.
+  - Filters by current game state: only returns actions the current player can legally take right now (e.g. Otters cannot buy from themselves; path clearing is only available in daylight) / events that trigger right now.
+  - `triggerCondition` is evaluated by brute force on every relevant state change; may change this later if performance requires it.
+- getState(perspective: PlayerFaction | null): RootGameState
+  - If a faction is provided for perspective, only private information that faction has access to is included.
+- updateState(state: RootGameState)
+
+---
+
+### Move
+#### Properties
+- mover: FactionType
+- pieces: Piece[]
+- startingLocationID: int
+- endingLocationID: int
+
+---
+
+### Battle
+#### Properties
+- attacker: FactionType
+- defender: FactionType
+- clearingID: int
 
 ---
 
 ### TimeStep
-A class encoding the current moment in the game for use in event triggering and action legality checks. Mutated in place by `RootGame`.
+A class encoding the current moment in the game for use in event triggering and action legality checks.
+
+Root has no simultaneous decisions. Whenever priority shifts mid-turn (e.g. prompting a non-active player for an ambush), `activePlayer` is updated to the player currently making a decision; it reverts when that decision is resolved.
 
 #### Properties
+- currentTurn: PlayerFaction
 - phase: PhaseType
 - phaseSegment: 'start' | 'main' | 'end'
-- battleSegment: (phases of battle, listed in the Law of Root)
+- battleSegment: BattlePhaseType
   - A separate dimension from `phaseSegment`; a battle can occur during the `'main'` segment without changing the phase segment.
+- activePlayer: PlayerFaction
+
 
 ---
 
 ### Event (interface)
 #### Properties
+- label: string
+  - A human-readable name for display in the UI and for debugging (e.g. `"Craft Card"`, `"Battle"`).
 - triggerCondition: predicate[RootGame]
-  - A predicate on the game state. Used both to determine when an event fires automatically, and to serve as the legality check for any Action that contains this event.
-- execute: () => void
-  - Closes over all required game state context.
+  - A predicate on the game state. Determines when an event fires automatically or when it is available to be taken by a player.
+- execute: (RootGame) => void
+- isAction: boolean
+  - Whether the event triggers automatically or needs player choice to happen.
 
 ---
 
-### Action (interface)
+### RulesChange\<T extends ExtensionPointType>
 #### Properties
-- description: string
-- event: Event
-  - Replaces the former `execute` callback. The action's legality is determined by `event.triggerCondition`. Executing the action fires `event.execute`.
-  - Action-embedded events are not structurally differentiated from automatic events; the distinction lies solely in how `takePhase` handles them (automatic events are evaluated after each state change; action events are fired when a player selects that action).
+- extensionName: T
+  - Identifies which rules extension point should invoke this object's callback. Using the `ExtensionPointType` enum ensures compile-time safety and makes all valid extension points discoverable.
+- callback: RulesChangeCallbackMap[T]
+  - Signature intentionally left vague. I don't yet know what needs to be supported with this.
 
 ---
 
-### Board
+### Board (implements RulesModule)
 #### Properties
-- name: string
+- name: BoardType
 - clearings: Clearing[]
 - forests: Forest[]
 - connections: Connection[]
 - items: Item[]
 
 #### Methods
-- getClearingsAdjacent(location: Location, allowRivers: boolean): Clearing[]
+- getClearingsAdjacent(location: Location): Clearing[]
+- getClearingsAdjacentByRiver(location: Location): Clearing[]
 - getForestsAdjacent(location: Location): Forest[]
 - getLocation(id: int): Location
 - move(pieces: Piece[], startingLocationID: int, endingLocationID: int)
+- place(pieces: Piece[], location: id)
+- getState(perspective: PlayerFaction | null): RootBoardState
+- updateState(RootBoardState)
 
 ---
 
@@ -106,18 +142,15 @@ A class encoding the current moment in the game for use in event triggering and 
 
 ### Clearing (extends Location)
 #### Properties
-- printedSuit?: Suit
-- buildingSlots: mapping[int, Building | Ruin]
-  - Typed as `Building | Ruin` to make explicit that only these piece types may occupy building slots. Pawns and Tokens can never go in building slots.
+- printedSuit: Suit | null
 - landmarks: Landmark[]
 
 #### Methods
-- getWarriors(faction: Faction): Pawn[]
-- getCardboard(faction: Faction): (Building | Token)[]
-- openSlots(): int[]
+- getWarriors(faction: FactionType): Pawn[]
+- getCardboard(faction: FactionType): (Building | Token)[]
+- openSlots(): int
 - matches(suit: Suit): boolean
-- build(slot: int, building: Building)
-- getRuler(): Faction
+- getRuler(): FactionType | null
 
 ---
 
@@ -135,48 +168,66 @@ A class encoding the current moment in the game for use in event triggering and 
 ---
 
 ### RulesModule (interface)
+#### Properties
+- staticRulesChanges: RulesChange[]
+  - A list of static rules changes introduced by this module. Applied at defined "extension points" in RootGame, each identified by an `ExtensionPointType` value.
+
 #### Methods
 - setup(game: RootGame)
-- globalActions(game: RootGame): Action[]
+- globalEvents(game: RootGame): Event[]
 
 ---
 
 ### Faction (interface)
 #### Properties
-- name: string
-- pieceTypes: PieceType[]
-- supply: Piece[]
-  - Contains all faction pieces not currently on the game board. Does not include pieces that have been permanently removed from the game (e.g. destroyed Otter trade posts), which are simply discarded and not tracked.
+- name: FactionType
+- pieces: Piece[]
 - game: RootGame
 - hasCraftedBox: boolean
+  - Indicates whether this faction can be stolen from (i.e. whether they have a crafted items box). All factions that use items for their own mechanics do not have a crafted item box.
+#### Methods
+- addToSupply(piece: Piece)
+  - Adds the given piece to this faction's supply. (Factions maintain their own internal representation of their supply.) 
+- getPiece(pieceID: int) : Piece | null
+  - Returns the piece with the given ID if it exists within this faction's supply.
 
 ---
 
 ### PlayerFaction (implements RulesModule, Faction) (abstract)
 #### Properties
+- name: PlayerFactionType
 - agent: RootGameAgent
 - score: int
 - claimedDominance: boolean
+- hand: Card[]
+- craftedImprovements: Card[]
 
 #### Methods
 - takePhase(phase: PhaseType)
-  - Merges faction-specific actions (via `getActions`) and global actions (via `RootGame.getGlobalActions`) into the set of available actions for the player.
-  - Also merges faction-specific and global events (via `RootGame.getGlobalEvents`), evaluating `triggerCondition` after each state change within the phase and firing any newly-met events automatically.
-- getActions(phase: PhaseType): Action[]
+  - Merges faction-specific events (via `getEvents`) and global actions (via `RootGame.getGlobalEvents`) into the set of available actions/events for the player.
+- getEvents(phase: PhaseType): Event[]
+- getCraftingPieces(): Piece[]
+- getState(public: boolean): RootFactionState
+  - PlayerFactions will only have access to private state that is private to them, so no need to pass a faction here- it would always be "yes this is this faction" or "no this is not this faction."
+- updateState(RootFactionState)
 
 ---
 
 ### Hireling (implements RulesModule, Faction) (abstract)
 #### Properties
+- name: HirelingFactionType
 - hirelingID: int
-  - Denotes which promoted and demoted Hireling classes are paired together.
-- associatedFaction: Faction
-  - The faction that cannot be played alongside this hireling.
+  - Denotes which promoted and demoted Hireling classes are paired together. Relevant only because both cannot be in the same game; promoted/demoted hirelings are essentially entirely different factions rules-wise.
+- associatedFaction: PlayerFactionType | null
+  - The faction that cannot be played alongside this hireling, if any.
 - isDemoted: boolean
   - Relevant during setup, where promoted and demoted hirelings are treated differently. Promoted and demoted hirelings are represented by separate classes.
 - controlCounter: int
   - Counts how many turns remain until the controlling faction must relinquish control of this hireling.
-- controllingFaction?: PlayerFaction
+- controllingFaction: PlayerFactionType | null
+#### Methods
+- getState(): RootHirelingState
+- updateState(RootHirelingState)
 
 ---
 
@@ -186,19 +237,14 @@ A class encoding the current moment in the game for use in event triggering and 
 
 ### Piece (interface)
 #### Properties
-- type: PieceType
+  - id: int
+  - name: string
+  - owningFaction: PlayerFactionType | null
+    - Null for ruins and items, which are used by multiple factions. Each faction defines its own piece instances (e.g. Marquise warrior, Eyrie warrior).
 
 ---
 
-### PieceType
-#### Properties
-- name: string
-- owningFaction: Faction | null
-  - Null for ruins and items, which are used by multiple factions. Each faction defines its own `PieceType` instances (e.g. Marquise warrior, Eyrie warrior).
-
----
-
-### Building (implements Piece)
+### Building (implements Piece) (interface)
 
 ---
 
@@ -216,48 +262,161 @@ A class encoding the current moment in the game for use in event triggering and 
 
 ### Ruin (implements Piece)
 #### Properties
-- items: Item[]
-- type: PieceType
-  - `owningFaction` is null, consistent with ruins being unowned.
-  - Placed in `buildingSlots` at game start; a slot containing a Ruin is not considered open.
+  - items: Item[]
+  - name: string (always 'ruin')
+  - owningFaction: null (ruins are unowned)
+    - Placed in `buildingSlots` at game start; a slot containing a Ruin is not considered open.
 
 ---
 
 ### Item (implements Piece)
 #### Properties
-- itemType: ItemType
-  - Computed property returning `this.type.name`.
-  - Items are the only pieces shared across factions; their `PieceType.owningFaction` is null.
-- exhausted: boolean
+  - name: ItemType
+  - owningFaction: null
+    - Items are the only pieces shared across factions; their `owningFaction` is null.
+  - exhausted: boolean
+
+---
+
+### Deck (implements RulesModule)
+The Deck RulesModule implements all rules related to its craftable cards. Persistent crafted effects have a condition that causes them only to apply when crafted: instant crafted effects define an event that triggers when that card has been crafted that then discards it. Ambush and Dominance cards are handled by the base rules engine.
+#### Properties
+- name: DeckType
+- cards: Card[]
+
+---
+
+### Card
+#### Properties
+- name: string
+- id: int
+- suit: Suit
+- craftingCost: Suit[] | null
+- isAmbush: boolean
+- isDominance: boolean
+- item: ItemType | null
 
 ---
 
 ## Enums
+- BoardType: `autumn | winter | lake | mountain | gorge | marsh`
+- DeckType: `base | e&p | s&d`
 - ConnectionType: `'path' | 'river' | 'forest-adjacency'`
 - SetupType: `'standard' | 'advanced'`
 - PhaseType: `'birdsong' | 'daylight' | 'evening' | 'none'`
+- BattlePhaseType: `ambush | before-roll | roll | after-roll | hits`
 - ItemType: `'boot' | 'bag' | 'tea' | 'hammer' | 'crossbow' | 'sword' | 'coins'`
-- Suit: `'fox' | 'rabbit' | 'mouse' | 'bird'`
+- Suit: `'fox' | 'rabbit' | 'mouse' | 'bird' | 'frog'`
+- ExtensionPointType: (enum of all valid rules extension points in `RootGame`; each value corresponds to a defined hook that `RulesChange` callbacks may target)
+- PlayerFactionType: (enum of all player factions)
+- HirelingFactionType: (enum of all hireling factions)
+- FactionType: (enum of all factions)
 
 ---
 
 ## Agent Classes (shared)
-
+On a client machine, agents representing remote players are proxies that communicate through `StateStore`; all network logic is decoupled from the game loop. The game loop blocks while awaiting input; rendering logic must remain reactive and non-blocking. If a client disconnects and then reconnects, the deserialization procedure will restore the correct position in the game loop.
 ### RootGameAgent (interface)
 - chooseOne\<T>(message: string, options: T[]): T
-  - On a client machine, agents representing remote players are proxies for the server. The server in turn holds a proxy for each player. The game loop blocks while awaiting input; rendering logic must remain reactive and non-blocking.
 - chooseAny\<T>(message: string, options: T[], restriction: predicate[T[]]): T[]
 - chooseBoolean(message: string): boolean
-- selectMove(): tuple[startingLocationID: int, endingLocationID: int]
-- selectBattle(message: string)
+- chooseMove(faction: FactionType, restriction: predicate[Move]): Move
+- chooseBattle(faction: FactionType, restriction: predicate[Battle]): Battle
 
 ---
+
+## State management classes (shared)
+
+### RootGameState (interface)
+All referenced types will be defined explicitly instead of imported, to make it clear when `version` needs to be updated.
+#### Properties
+- version: string
+- boardState: RootBoardState
+- factionState: mapping[PlayerFactionType, RootFactionState]
+- hirelingState: mapping[HirelingFactionType, RootHirelingState]
+- timeState: TimeStep
+- deck: Card[] | null
+- deckSize: int
+- discardPile: Card[]
+- spentCraftingPieceIDs: int[]
+
+---
+
+### RootBoardState (interface)
+#### Properties
+- version: string
+- name: BoardType
+- clearings: {id: int, suit: Suit, tokens: Token[], pawns: Pawn[], buildings: mapping[int, Building | Ruin]}
+- forests: {id: int, tokens: Token[], pawns: Pawn[]}
+
+---
+
+### RootFactionState (interface)
+#### Properties
+- version: string
+- name: PlayerFactionType
+- hand: Card[] | null
+- handSize: int
+- craftedImprovements: Card[]
+- score: int
+
+---
+
+### RootHirelingState (interface)
+#### Properties
+- version: string
+- name: HirelingFactionType
+- controlCounter: int
+- controllingFaction: PlayerFactionType
+
+---
+
+### PendingAction\<T extends PendingActionType>
+#### Properties
+- type: T
+- actor: PlayerFactionType
+- resolve: PendingActionCallbackMap[T]
+---
+
+### StateStore
+Decouples the game loop from the rendering/network layer. The game loop calls `setState`; React (or any other renderer) subscribes via `useSyncExternalStore`. Neither side depends on the other. Network communication is also routed through `StateStore`, keeping all external concerns separate from game logic.
+
+A list of serialized `RootGameState` snapshots is maintained here to support undo/redo.
+#### Properties
+- state: RootGameState
+- history: RootGameState[]
+  - Ordered list of past serialized snapshots. Used for undo/redo. If memory becomes a problem, we'll deal with it then.
+- pendingAction: PendingAction
+
+#### Methods
+- setState(updater: (g: RootGameState) => void): void
+  - Applies the updater function to `state`, pushes the previous state onto `history`, then notifies all subscribers.
+- subscribe(fn: () => void): () => void
+  - Registers a listener. Returns an unsubscribe function. Compatible with React's `useSyncExternalStore`.
+- getState(): RootGameState
+- undo(): void
+- redo(): void
+- do(id: int): void
+  - Jump to the RootGameState with the given id.
+  - Note that `undo`, `redo`, and `do` will require admin privilege if they undo or redo any actions taken by another player, or actions that give information (such as Expose) 
+
+## Network Interfaces (shared)
+
+### RootServerInterface
+#### Methods
+- sendMessage(message: object, connectionID: int)
+- subscribe(fn: (message: object, connectionID: int) => void): () => void
+
+### RootClientInterface
+#### Methods
+- sendMessage(message: object)
+- subscribe(fn: (message: object) => void): () => void
 
 ## Server Classes
 
 ### RootServer (implements RootServerInterface)
 - Holds the canonical `RootGame` state.
-- Broadcasts the full state to all clients after every state update.
+- Broadcasts the full state (minus secret information) to all clients after every state update.
 
 ---
 

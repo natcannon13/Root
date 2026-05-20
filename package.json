@@ -4,7 +4,7 @@
   "description": "A digital adaptation of Root",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npx vitest run",
     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\""
   },
   "keywords": [],
@@ -15,6 +15,8 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "vitest": "^4.1.6",
+    "vitest-mock-extended": "^4.0.0"
   }
 }
