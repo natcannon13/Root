@@ -43,7 +43,9 @@ export class RootGame {
         throw new Error("initializeBoard not implemented");
     }
 
-    private initializeFactions(initialState?: RootFactionState[]): PlayerFaction[] {
+    private initializeFactions(
+        initialState?: RootFactionState[],
+    ): PlayerFaction[] {
         throw new Error("initializeFactions not implemented");
     }
 

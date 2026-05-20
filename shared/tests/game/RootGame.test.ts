@@ -33,23 +33,23 @@ describe("RootGame.rollDie", () => {
     test("returns a value between 0 and 3 inclusive", () => {});
 });
 
-// --- isMoveLegal (§4.2, §4.2.1) ----------------------------------------------
+// --- isMoveLegal  ----------------------------------------------
 
-describe("RootGame.isMoveLegal (§4.2)", () => {
+describe("RootGame.isMoveLegal ", () => {
     test("is legal when mover rules the origin clearing", () => {});
 
     test("is legal when mover rules the destination clearing", () => {});
 
-    test("is illegal when mover rules neither origin nor destination (§4.2.1)", () => {});
+    test("is illegal when mover rules neither origin nor destination ", () => {});
 
     test("is illegal when origin and destination are not adjacent", () => {});
 
-    test("is illegal to move zero pieces (§4.2)", () => {});
+    test("is illegal to move zero pieces ", () => {});
 });
 
-// --- isBattleLegal (§4.3) ----------------------------------------------------
+// --- isBattleLegal  ----------------------------------------------------
 
-describe("RootGame.isBattleLegal (§4.3)", () => {
+describe("RootGame.isBattleLegal ", () => {
     test("is legal when attacker has warriors in the clearing and there is a defender", () => {});
 
     test("is illegal when attacker has no pieces in the clearing", () => {});
@@ -58,125 +58,127 @@ describe("RootGame.isBattleLegal (§4.3)", () => {
 
     test("is illegal to battle yourself", () => {});
 
-    test("is illegal to battle with zero attacking warriors (§4.3)", () => {});
+    test("is illegal to battle with zero attacking warriors ", () => {});
 
     test("is illegal to battle a hireling you control", () => {});
+
+    test("is illegal to battle a player that is not an opponent", () => {});
 });
 
-// --- battle - dice and hit counting (§4.3.3, §4.3.5) ------------------------
+// --- battle - dice and hit counting  ------------------------
 
 describe("RootGame.battle - hit counting", () => {
-    test("attacker deals hits equal to the higher roll (§4.3.3)", () => {});
+    test("attacker deals hits equal to the higher roll ", () => {});
 
-    test("defender deals hits equal to the lower roll (§4.3.3)", () => {});
+    test("defender deals hits equal to the lower roll ", () => {});
 
-    test("equal rolls give both sides the same number of hits (§4.3.3)", () => {});
+    test("equal rolls give both sides the same number of hits ", () => {});
 
-    test("rolled hits are capped by attacker warrior count (§4.3.3.I)", () => {});
+    test("rolled hits are capped by attacker warrior count ", () => {});
 
-    test("rolled hits are capped by defender warrior count (§4.3.3.I)", () => {});
+    test("rolled hits are capped by defender warrior count ", () => {});
 
-    test("defenseless: attacker deals extra hit when defender has no warriors (§4.3.5.II)", () => {});
+    test("defenseless: attacker deals extra hit when defender has no warriors ", () => {});
 });
 
-describe("RootGame.battle - deal hits (§4.3.6)", () => {
-    test("warriors are removed before buildings and tokens (§4.3.6)", () => {});
+describe("RootGame.battle - deal hits ", () => {
+    test("warriors are removed before buildings and tokens ", () => {});
 
-    test("defender can choose which buildings or tokens take hits (§4.3.6)", () => {});
+    test("defender can choose which buildings or tokens take hits ", () => {});
 
-    test("scoring: removing enemy building scores 1 VP (§3.2.1)", () => {});
+    test("scoring: removing enemy building scores 1 VP ", () => {});
 });
 
-describe("RootGame.battle - ambush (§4.3.1)", () => {
+describe("RootGame.battle - ambush ", () => {
     test("defender can play ambush matching the clearing suit to deal 2 immediate hits", () => {});
 
     test("defender cannot play an ambush that doesn't match the clearing suit", () => {});
 
-    test("attacker can foil ambush with an ambush card matching the clearing suit (§4.3.1.I)", () => {});
+    test("attacker can foil ambush with an ambush card matching the clearing suit ", () => {});
 
-    test("attacker cannot foil ambush with an ambush card that doesn't match the clearing suit (§4.3.1.I)", () => {});
+    test("attacker cannot foil ambush with an ambush card that doesn't match the clearing suit ", () => {});
 
-    test("battle ends immediately if no attacking warriors remain after ambush, even if the attacker has other pieces (§4.3.1.II)", () => {});
+    test("battle ends immediately if no attacking warriors remain after ambush, even if the attacker has other pieces ", () => {});
 
-    test("battle continues as normal if at least 1 attacking warrior remains after ambush (§4.3.1.II)", () => {});
+    test("battle continues as normal if at least 1 attacking warrior remains after ambush ", () => {});
 });
 
-// --- isPlaceLegal (§2.2.3) ---------------------------------------------------
+// --- isPlaceLegal  ---------------------------------------------------
 
 describe("RootGame.isPlaceLegal", () => {
     test("placing a building is legal when there is an open slot", () => {});
 
-    test("placing a building is illegal when there are no open slots (§2.2.3)", () => {});
+    test("placing a building is illegal when there are no open slots ", () => {});
 });
 
-// --- isCraftLegal (§4.1) -----------------------------------------------------
+// --- isCraftLegal  -----------------------------------------------------
 
 describe("RootGame.isCraftLegal", () => {
-    test("is legal when unexhausted crafting pieces cover all required suits(§4.1.1)", () => {});
+    test("is legal when unexhausted crafting pieces cover all required suits", () => {});
 
-    test("is illegal when crafting pieces do not cover all required suits (§4.1.1)", () => {});
+    test("is illegal when crafting pieces do not cover all required suits ", () => {});
 
-    test("is illegal to craft with exhausted pieces (§4.1.2)", () => {});
+    test("is illegal to craft with exhausted pieces ", () => {});
 
-    test("presence of extra crafting pieces does not affect legality, even if exhausted (§4.1.3)", () => {});
+    test("presence of extra crafting pieces does not affect legality, even if exhausted ", () => {});
 
     test("is illegal when no crafting pieces are provided", () => {});
 
-    test("cannot craft an ambush card (§2.1.2)", () => {});
+    test("cannot craft an ambush card ", () => {});
 
-    test("cannot craft a dominance card (§2.1.3)", () => {});
+    test("cannot craft a dominance card ", () => {});
 
-    test("cannot craft duplicate persistent effects (§4.1.4)", () => {});
+    test("cannot craft duplicate persistent effects ", () => {});
 });
 
-// --- Victory - score tracking (§3.1, §3.2) --------------------------------
+// --- Victory - score tracking  --------------------------------
 
-describe("RootGame - victory conditions (§3.1)", () => {
+describe("RootGame - victory conditions ", () => {
     test("gameOver is false at the start", () => {});
 
-    test("first player to reach 30 VP wins (§3.1)", () => {});
+    test("first player to reach 30 VP wins ", () => {});
 
-    test("winning is immediate - game stops at exactly 30 (§3.1)", () => {});
+    test("winning is immediate - game stops at exactly 30 ", () => {});
 
-    test("on a VP tie, the player closest clockwise to current player wins (§3.1.1)", () => {});
+    test("on a VP tie, the player closest clockwise to current player wins ", () => {});
 
     test("non-bird dominance victory: a player ruling three or more clearings matching a claimed dominance card at start of birdsong wins", () => {});
 
     test("bird dominance victory: a player ruling two opposite corner clearings at start of birdsong wins", () => {});
 });
 
-// --- Dominance (§3.3) --------------------------------------------------------
+// --- Dominance  --------------------------------------------------------
 
-describe("RootGame - dominance (§3.3)", () => {
-    test("players may activate a dominance card in their hand during their daylight (§3.3.1)", () => {});
+describe("RootGame - dominance ", () => {
+    test("players may activate a dominance card in their hand during their daylight ", () => {});
 
-    test("players cannot activate a dominance card without having 10 VP (§3.3.1)", () => {});
+    test("players cannot activate a dominance card without having 10 VP ", () => {});
 
-    test("players cannot activate dominance cards outside of their daylight (§3.3.1)", () => {});
+    test("players cannot activate dominance cards outside of their daylight ", () => {});
 
-    test("after activating dominance, score marker is removed (score is set to -1) (§3.3.1)", () => {});
+    test("after activating dominance, score marker is removed (score is set to -1) ", () => {});
 
-    test("players cannot activate a dominance card if they have an active dominance card (§3.3.2)", () => {});
+    test("players cannot activate a dominance card if they have an active dominance card ", () => {});
 
-    test("when discarded, dominance cards go to a separate pile and are not reshuffled into the deck (§3.3.3)", () => {});
+    test("when discarded, dominance cards go to a separate pile and are not reshuffled into the deck ", () => {});
 
-    test("a faction can take an available dominance card by spending a matching card (§3.3.4)", () => {});
+    test("a faction can take an available dominance card by spending a matching card ", () => {});
 
-    test("cannot treat a bird dominance card as another suit when taking it (§3.3.4)", () => {});
+    test("cannot treat a bird dominance card as another suit when taking it ", () => {});
 });
 
-// --- Deck reshuffling (§2.1) --------------------------------------------------
+// --- Deck reshuffling  --------------------------------------------------
 
-describe("RootGame - deck management (§2.1)", () => {
+describe("RootGame - deck management ", () => {
     test("reshuffles discard pile into deck when deck is empty", () => {});
 
     test("drawn card comes from top of deck", () => {});
 
-    test("dominance cards are not reshuffled into the deck (§3.3.3)", () => {});
+    test("dominance cards are not reshuffled into the deck ", () => {});
 });
 
-// --- Piece placement limits (§1.5.1) -----------------------------------------
+// --- Piece placement limits  -----------------------------------------
 
-describe("RootGame - piece limits (§1.5.1)", () => {
+describe("RootGame - piece limits ", () => {
     test("does not place pieces beyond supply limit", () => {});
 });
