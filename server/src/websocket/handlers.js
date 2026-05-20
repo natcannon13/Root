@@ -6,7 +6,7 @@ function handleMessage(ws, data, lobbyManager){
     switch (data.type){
 
         case "JOIN_SEAT":{
-            const {lobbyId, seatIndex} = data.payload;
+            const {lobbyId, seatIndex, name} = data.payload;
             const lobby = lobbyManager.getLobby(lobbyId);
 
             if(!lobby){
@@ -17,6 +17,7 @@ function handleMessage(ws, data, lobbyManager){
                 return;
             }
             const seat = lobby.getSeat(seatIndex);
+            seat.playerName = name;
 
             if(!seat){
                 ws.send(JSON.stringify({
