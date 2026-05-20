@@ -1,7 +1,8 @@
-import type { PlayerFactionType } from './Enums';
+import type { PlayerFactionType } from "../Enums";
+
 
 export interface Piece {
     id: number;
     name: string;
-    owningFaction?: PlayerFactionType | null;
+    owningFaction: PlayerFactionType | null;
 }

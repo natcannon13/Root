@@ -42,6 +42,7 @@ const ValidBoardTypes = [
   "mountain",
   "gorge",
   "marsh",
+  "custom",
 ] as const;
 const ValidSetupTypes = ["standard", "advanced"] as const;
 const ValidBattlePhaseTypes = [
