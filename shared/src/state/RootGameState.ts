@@ -5,6 +5,7 @@ import type { TimeStep } from './TimeStep';
 import type { PlayerFactionType, HirelingFactionType, LandmarkType } from '../Enums';
 import type { Card } from '../cards/Card';
 import type { PlayOptions } from '../game/PlayOptions';
+import type { BattleState } from './BattleState';
 
 export interface RootGameState {
     version: string;
@@ -14,6 +15,7 @@ export interface RootGameState {
     hirelingState: Record<HirelingFactionType, RootHirelingState>;
     landmarks: LandmarkType[]; 
     timeState: TimeStep;
+    battleState: BattleState | null;
     deck: Card[] | null;
     deckSize: number;
     discardPile: Card[];

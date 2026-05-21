@@ -3,7 +3,7 @@ import type { RootGameState } from "../state/RootGameState";
 import { TimeStep } from "../state/TimeStep";
 import type { Card } from "../cards/Card";
 import type { Piece } from "../pieces/Piece";
-import type { LandmarkType, PlayerFactionType } from "../Enums";
+import type { BattlePhaseType, LandmarkType, PlayerFactionType } from "../Enums";
 import type { RootGameAgent } from "../agents/RootGameAgent";
 import type { Move } from "../gameActions/Move";
 import type { Battle } from "../gameActions/Battle";
@@ -18,9 +18,11 @@ import type { PlayerFaction } from "../rulesModule/PlayerFaction";
 import type { Supply } from "../pieces/Supply";
 import type { RootHirelingState } from "../state/RootHirelingState";
 import type { PlayOptions } from "./PlayOptions";
+import type { BattleState } from "../state/BattleState";
 
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
+    version = "0.0.0";
     board: Board | null = null;
     players: RootGameAgent[] = [];
     playOptions: PlayOptions = {};
@@ -28,7 +30,7 @@ export class RootGame {
     hirelings: Hireling[] = [];
     landmarks: Landmark[] = [];
     currentTimeStep: TimeStep = new TimeStep();
-    version = "0.0.0";
+    battleState: BattleState | null = null;
     winner: PlayerFactionType | null = null;
     gameOver = false;
     deck: Card[] = [];
@@ -75,7 +77,7 @@ export class RootGame {
     }
 
     rollDie(): number {
-        return Math.floor(Math.random() * 3) + 1;
+        return Math.floor(Math.random() * 4);
     }
 
     isMoveLegal(move: Move): boolean {
