@@ -52,6 +52,11 @@ const ValidBattlePhaseTypes = [
     `after-roll`,
     `hits`,
 ] as const;
+const ValidLandmarkTypes = [
+    "placeholder-1",
+    "placeholder-2",
+    "placeholder-3",
+] as const;
 
 export type Suit = (typeof ValidSuits)[number];
 export type PhaseType = (typeof ValidPhaseTypes)[number];
@@ -63,6 +68,7 @@ export type FactionType = PlayerFactionType | HirelingFactionType;
 export type BoardType = (typeof ValidBoardTypes)[number];
 export type BattlePhaseType = (typeof ValidBattlePhaseTypes)[number];
 export type SetupType = (typeof ValidSetupTypes)[number];
+export type LandmarkType = (typeof ValidLandmarkTypes)[number];
 
 export function isSuit(value: string): value is Suit {
     return ValidSuits.includes(value as Suit);
@@ -87,4 +93,7 @@ export function isBattlePhaseType(value: string): value is BattlePhaseType {
 }
 export function isSetupType(value: string): value is SetupType {
     return ValidSetupTypes.includes(value as SetupType);
+}
+export function isLandmarkType(value: string): value is LandmarkType {
+    return ValidLandmarkTypes.includes(value as LandmarkType);
 }

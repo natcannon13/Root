@@ -3,28 +3,31 @@ import type { RootGameState } from "../state/RootGameState";
 import { TimeStep } from "../state/TimeStep";
 import type { Card } from "../cards/Card";
 import type { Piece } from "../pieces/Piece";
-import type { PlayerFactionType } from "../Enums";
+import type { LandmarkType, PlayerFactionType } from "../Enums";
 import type { RootGameAgent } from "../agents/RootGameAgent";
 import type { Move } from "../gameActions/Move";
 import type { Battle } from "../gameActions/Battle";
 import type { Faction } from "../rulesModule/Faction";
 import type { Hireling } from "../rulesModule/Hireling";
 import type { Landmark } from "../rulesModule/Landmark";
-import type { PlayOptions } from "./PlayOptions";
 import type { SetupType } from "../Enums";
 import type { Event } from "./Event";
 import type { RootBoardState } from "../state/RootBoardState";
 import type { RootFactionState } from "../state/RootFactionState";
 import type { PlayerFaction } from "../rulesModule/PlayerFaction";
 import type { Supply } from "../pieces/Supply";
+import type { RootHirelingState } from "../state/RootHirelingState";
+import type { PlayOptions } from "./PlayOptions";
 
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
     board: Board | null = null;
+    players: RootGameAgent[] = [];
+    playOptions: PlayOptions = {};
     factions: Faction[] = [];
     hirelings: Hireling[] = [];
     landmarks: Landmark[] = [];
-    currentTimeStep: TimeStep | null = null;
+    currentTimeStep: TimeStep = new TimeStep();
     version = "0.0.0";
     winner: PlayerFactionType | null = null;
     gameOver = false;
@@ -33,10 +36,14 @@ export class RootGame {
     dominancePile: Card[] = [];
     spentCraftingPieces: Piece[] = [];
 
-    constructor(initialState?: RootGameState) {
-        if (initialState) {
-            this.version = initialState.version;
-        }
+    constructor(agents: RootGameAgent[], initialState?: RootGameState) {}
+
+    getState(perspective: PlayerFactionType | null): RootGameState | null {
+        return null;
+    }
+
+    setState(state: RootGameState) {
+        throw new Error("RootGame.setState not implemented");
     }
 
     private initializeBoard(initialState?: RootBoardState): Board {
@@ -49,11 +56,21 @@ export class RootGame {
         throw new Error("initializeFactions not implemented");
     }
 
-    play(options: PlayOptions, agents: RootGameAgent[]) {
+    private initializeHirelings(
+        initialState?: RootHirelingState[],
+    ): Hireling[] {
+        throw new Error("initializeHirelings not implemented");
+    }
+
+    private initializeLandmarks(initialState?: LandmarkType[]): Landmark[] {
+        throw new Error("initializeLandmarks not implemented");
+    }
+
+    playTurn() {
         throw new Error("RootGame.play not implemented");
     }
 
-    setup(type: SetupType) {
+    setup() {
         throw new Error("RootGame.setup not implemented");
     }
 
@@ -103,13 +120,5 @@ export class RootGame {
 
     getGlobalEvents(): Event[] {
         return [];
-    }
-
-    getState(perspective: PlayerFactionType | null): RootGameState | null {
-        return null;
-    }
-
-    updateState(state: RootGameState) {
-        throw new Error("RootGame.updateState not implemented");
     }
 }

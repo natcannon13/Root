@@ -1,23 +1,24 @@
 import type { PlayerFactionType, PhaseType, BattlePhaseType } from "../Enums";
 
 export class TimeStep {
-  currentTurn: PlayerFactionType;
-  phase: PhaseType;
-  phaseSegment: "start" | "main" | "end";
-  battleSegment?: BattlePhaseType;
-  activePlayer: PlayerFactionType;
+    currentTurn: PlayerFactionType | "none";
+    phase: PhaseType;
+    phaseSegment: "start" | "main" | "end";
+    battleSegment: BattlePhaseType | null;
+    activePlayer: PlayerFactionType | "none";
 
-  constructor(
-    currentTurn: PlayerFactionType,
-    phase: PhaseType,
-    phaseSegment: "start" | "main" | "end",
-    activePlayer: PlayerFactionType,
-    battleSegment?: BattlePhaseType,
-  ) {
-    this.currentTurn = currentTurn;
-    this.phase = phase;
-    this.phaseSegment = phaseSegment;
-    this.activePlayer = activePlayer;
-    this.battleSegment = battleSegment;
-  }
+    constructor(
+        currentTurn: PlayerFactionType | "none" = "none",
+        phase: PhaseType = "none",
+        phaseSegment: "start" | "main" | "end" = "start",
+        activePlayer: PlayerFactionType | "none" = "none",
+        battleSegment: BattlePhaseType | null = null,
+    ) {
+        this.currentTurn = currentTurn;
+        this.phase = phase;
+        this.phaseSegment = phaseSegment;
+        this.activePlayer = activePlayer;
+        this.battleSegment = battleSegment;
+    }
+
 }

@@ -10,21 +10,40 @@ import type { Building } from "../../src/pieces/Building";
 import type { Card } from "../../src/cards/Card";
 import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
 import { PlayerFactionType } from "../../src/Enums";
+import { RootGameAgent } from "../../src/agents/RootGameAgent";
 let game: RootGame;
-let board: Board;
-let factions: { [key in PlayerFactionType]: PlayerFaction } = {} as any;
+let factions: { [key in PlayerFactionType]?: PlayerFaction } = {};
+let agents: { [id: number]: RootGameAgent } = {};
 
 beforeEach(() => {
-    game = new RootGame();
-    board = mock<Board>();
-    vi.spyOn(game as any, "initializeBoard").mockReturnValue(board);
-
-    factions = {} as any;
-    for (const factionType of ["marquise-de-cat", "eyrie-dynasties", "woodland-alliance"] as const) {
-        const faction = mock<PlayerFaction>();
-        faction.name = factionType;
-        factions[factionType] = faction;
+    factions = {};
+    agents = {};
+    let id = 0;
+    for (const factionType of [
+        "marquise-de-cat",
+        "eyrie-dynasties",
+        "woodland-alliance",
+    ] as const) {
+        factions[factionType] = mock<PlayerFaction>({ name: factionType });
+        agents[id] = mock<RootGameAgent>({ id: id });
+        id++;
     }
+
+    game = new RootGame(Object.values(agents));
+});
+
+function mockBoard() {
+    let board = mock<Board>();
+    vi.spyOn(game as any, "initializeBoard").mockReturnValue(board);
+    return board;
+}
+
+// --- constructor ----------------------------------------------------------------
+
+describe("RootGame constructor", () => {
+    test("calls setState with default values when no state is provided", () => {});
+    test("calls setState with provided state", () => {});
+    test("initializes with provided agents", () => {});
 });
 
 // --- rollDie -----------------------------------------------------------------

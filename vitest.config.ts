@@ -4,6 +4,9 @@ export default defineConfig({
   test: {
     projects: [
       './shared/vitest.config.ts',
-    ]
+    ],
+    clearMocks: true,
+    mockReset: true,
+    restoreMocks: true,
   },
 })
