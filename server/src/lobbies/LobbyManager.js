@@ -30,10 +30,7 @@ class LobbyManager{
                 if(seat.socket === socket){
                     seat.disconnect();
 
-                    lobby.broadcast({
-                        type: "LOBBY_UPDATED",
-                        payload: lobby.getLobbyData()
-                    });
+                    lobby.broadcastLobby();
                     return;
                 }
             }

@@ -10,7 +10,9 @@ function SeatCard({ seat, isMe }) {
     >
 
       <p>
-        {isMe ? "You" : "Player"}
+        Name: {
+          seat.playerName || "None"
+        }
       </p>
 
       <p>

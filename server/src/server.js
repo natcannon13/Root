@@ -4,7 +4,7 @@ const http = require("http");
 const cors = require("cors");
 
 const LobbyManager = require("./lobbies/LobbyManager.js");
-const handleMessage = require("./websocket/handlers.js");
+const handlers = require("./websocket/handlers.js");
 
 const app = express();
 app.use(cors());
@@ -30,15 +30,12 @@ wss.on("connection", (ws) => {
 
   ws.on("message", (message) => {
     const data = JSON.parse(message);
-    handleMessage(
+    handlers.handleMessage(
             ws,
             data,
             lobbyManager
         );
     console.log("Received:", data);
-
-    // echo back for now
-    ws.send(JSON.stringify({ type: "PONG", payload: data }));
   });
 
   ws.send(JSON.stringify({ type: "CONNECTED" }));

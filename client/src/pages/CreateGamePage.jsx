@@ -8,22 +8,19 @@ function CreateGamePage() {
 
   const [playerCount, setPlayerCount] = useState(4);
 
-  const [map, setMap] = useState("autumn");
-
   const [inviteLinks, setInviteLinks] = useState([]);
 
   async function handleCreateLobby() {
 
     const data = await createLobby({
       size: playerCount,
-      map
     });
     console.log(data);
     const links = [];
     for(let i = 0; i < playerCount; i++){
       links.push({
         seat: i + 1,
-        url: `${window.location.origin}/join/${data.lobbyID}/${i+1}`
+        url: `${window.location.origin}/join/${data.lobbyID}/${i}`
       });
     }
     setInviteLinks(links);
@@ -46,22 +43,6 @@ function CreateGamePage() {
           <option value={4}>4</option>
           <option value={5}>5</option>
           <option value={6}>6</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Map:</label>
-
-        <select
-          value={map}
-          onChange={(e) => setMap(e.target.value)}
-        >
-          <option value="autumn">Autumn</option>
-          <option value="winter">Winter</option>
-          <option value="lake">Lake</option>
-          <option value="mountain">Mountain</option>
-          <option value="marsh">Marsh</option>
-          <option value="gorge">Gorge</option>
         </select>
       </div>
 

@@ -6,9 +6,9 @@ const useGameStore = create((set) => ({
 
   lobby: null,
 
-  seatId: null,
+  seatIndex: null,
 
-  inviteToken: null,
+  lobbyId: null,
 
   gameState: null,
 
@@ -20,11 +20,11 @@ const useGameStore = create((set) => ({
   setLobby: (lobby) =>
     set({ lobby }),
 
-  setSeatId: (seatId) =>
-    set({ seatId }),
+  setSeatIndex: (seatIndex) =>
+    set({ seatIndex }),
 
-  setInviteToken: (inviteToken) =>
-    set({ inviteToken }),
+  setLobbyId: (lobbyId) =>
+    set({ lobbyId }),
 
   setGameState: (gameState) =>
     set({ gameState }),

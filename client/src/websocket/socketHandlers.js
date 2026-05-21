@@ -38,7 +38,7 @@ export function initializeSocketHandlers(navigate) {
 
         useGameStore
           .getState()
-          .setSeatId(data.payload.seatId);
+          .setSeatId(data.payload.seatIndex);
 
         navigate("/lobby");
 
@@ -49,7 +49,9 @@ export function initializeSocketHandlers(navigate) {
 
         useGameStore
           .getState()
-          .setLobby(data.payload);
+          .setLobby(data.payload.lobby);
+          console.log(data);
+          navigate(`/lobby/${data.payload.lobby.lobbyId}/${data.payload.seatIndex}`);
 
         break;
       }
