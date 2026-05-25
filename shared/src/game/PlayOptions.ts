@@ -1,1 +1,5 @@
-export type PlayOptions = Record<string, unknown>;
+import type { AdvancedSetupOptions, StandardSetupOptions } from "./SetupOptions";
+
+export interface PlayOptions {
+    setup: AdvancedSetupOptions | StandardSetupOptions;
+};

@@ -71,15 +71,60 @@ describe("RootGame.setState", () => {
 describe("RootGame.playTurn", () => {
     test("calls setup if timestep currentTurn is none", () => {});
     test("calls takePhase 3 times for the current player and updates timestep correctly in between", () => {});
+    test("calls takePhase with the correct phase for each of the three phases in a turn", () => {});
+    test("triggers the appropriate start-of-phase events for each phase of the turn", () => {});
     test("correctly advances the current player and time step at the end of the turn", () => {});
     test("if given a mid-turn time step, skips to the correct phase", () => {});
+});
+
+// --- setup ----------------------------------------------------------------
+
+describe("RootGame.setup", () => {
+    test("sets up chosen map", () => {});
+    test("sets up chosen deck", () => {});
+    test("randomizes seating order", () => {});
+    test("removes dominance cards from the deck in 2-player games", () => {});
+    describe("standard setup", () => {
+        test("sets up chosen factions", () => {});
+        test("assigns the correct player to each faction", () => {});
+        test("throws an error if an invalid player id is provided", () => {});
+        test("each player draws three cards", () => {});
+        test("throws an error if the setup options are incomplete", () => {});
+    });
+    describe("advanced setup", () => {
+        test("order of events is correct", () => {}); // Landmarks -> Hirelings -> Draw Cards -> Factions -> Discard Cards
+        
+        test("generates the correct number of landmarks", () => {});
+        test("players place landmarks in reverse turn order", () => {});
+
+        test("generates the correct number of promoted/demoted hirelings for the player count", () => {});
+        test("players set up hirelings in reverse turn order", () => {});
+
+        test("each player draws five cards", () => {});
+        test("each player returns two cards to the deck", () => {});
+
+        test("(# of players + 1) factions are selected for the draft", () => {});
+        test("factions cannot be added to the draft if their corresponding hireling is in the game", () => {});
+        test("the first faction in the draft is militant (7+ reach)", () => {});
+        test("no insurgents are selected for the draft in 2-player games", () => {});
+
+        test("players draft factions in reverse turn order", () => {});
+        test("players cannot draft the last faction in the draft if it is an insurgent and no militant faction has been drafted yet", () => {});
+        test("players setup their faction before the next player picks", () => {});
+
+        test("players cannot pick a homeland clearing that has already been chosen by another player", () => {});
+        test("players must follow homeland distance rules if possible", () => {});
+        test("if players cannot follow the homeland distance rules, they must follow the next most lenient placement rule if possible", () => {});
+
+        test("throws an error if the setup options are incomplete", () => {});
+    });
 });
 
 // --- rollDie -----------------------------------------------------------------
 
 describe("RootGame.rollDie", () => {
     test("returns a value between 0 and 3 inclusive", () => {});
-    test("can return all possible values", () => {});
+    test("returns all possible values with equal probability", () => {});
 });
 
 // --- isMoveLegal  ----------------------------------------------

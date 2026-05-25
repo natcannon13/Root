@@ -15,4 +15,5 @@ export interface PlayerFaction extends Faction {
   getState: (publicView: boolean) => RootFactionState;
   updateState: (s: RootFactionState) => void;
   name: PlayerFactionType;
+  reach: number;
 }

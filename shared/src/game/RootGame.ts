@@ -10,7 +10,6 @@ import type { Battle } from "../gameActions/Battle";
 import type { Faction } from "../rulesModule/Faction";
 import type { Hireling } from "../rulesModule/Hireling";
 import type { Landmark } from "../rulesModule/Landmark";
-import type { SetupType } from "../Enums";
 import type { Event } from "./Event";
 import type { RootBoardState } from "../state/RootBoardState";
 import type { RootFactionState } from "../state/RootFactionState";
@@ -25,7 +24,7 @@ export class RootGame {
     version = "0.0.0";
     board: Board | null = null;
     players: RootGameAgent[] = [];
-    playOptions: PlayOptions = {};
+    playOptions?: PlayOptions;
     factions: Faction[] = [];
     hirelings: Hireling[] = [];
     landmarks: Landmark[] = [];
@@ -38,7 +37,8 @@ export class RootGame {
     dominancePile: Card[] = [];
     spentCraftingPieces: Piece[] = [];
 
-    constructor(agents: RootGameAgent[], initialState?: RootGameState) {}
+    constructor(agents: RootGameAgent[], initialState?: RootGameState) {
+    }
 
     getState(perspective: PlayerFactionType | null): RootGameState | null {
         return null;

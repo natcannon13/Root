@@ -29,6 +29,7 @@ const ValidPlayerFactionTypes = [
     "lilypad-diaspora",
     "twilight-council",
     "knaves-of-the-deepwood",
+    "custom",
 ] as const;
 const ValidHirelingFactionTypes = [
     "placeholder-1",
@@ -44,7 +45,12 @@ const ValidBoardTypes = [
     "marsh",
     "custom",
 ] as const;
-const ValidSetupTypes = ["standard", "advanced"] as const;
+const ValidDeckTypes = [
+    "base",
+    "exiles-and-partisans",
+    "squires-and-disciples",
+    "custom",
+] as const;
 const ValidBattlePhaseTypes = [
     `ambush`,
     `before-roll`,
@@ -66,8 +72,8 @@ export type PlayerFactionType = (typeof ValidPlayerFactionTypes)[number];
 export type HirelingFactionType = (typeof ValidHirelingFactionTypes)[number];
 export type FactionType = PlayerFactionType | HirelingFactionType;
 export type BoardType = (typeof ValidBoardTypes)[number];
+export type DeckType = (typeof ValidDeckTypes)[number];
 export type BattlePhaseType = (typeof ValidBattlePhaseTypes)[number];
-export type SetupType = (typeof ValidSetupTypes)[number];
 export type LandmarkType = (typeof ValidLandmarkTypes)[number];
 
 export function isSuit(value: string): value is Suit {
@@ -85,14 +91,20 @@ export function isItemType(value: string): value is ItemType {
 export function isPlayerFactionType(value: string): value is PlayerFactionType {
     return ValidPlayerFactionTypes.includes(value as PlayerFactionType);
 }
+export function isHirelingFactionType(value: string): value is HirelingFactionType {
+    return ValidHirelingFactionTypes.includes(value as HirelingFactionType);
+}
+export function isFactionType(value: string): value is FactionType {
+    return isPlayerFactionType(value) || isHirelingFactionType(value);
+}
 export function isBoardType(value: string): value is BoardType {
     return ValidBoardTypes.includes(value as BoardType);
 }
+export function isDeckType(value: string): value is DeckType {
+    return ValidDeckTypes.includes(value as DeckType);
+}
 export function isBattlePhaseType(value: string): value is BattlePhaseType {
     return ValidBattlePhaseTypes.includes(value as BattlePhaseType);
-}
-export function isSetupType(value: string): value is SetupType {
-    return ValidSetupTypes.includes(value as SetupType);
 }
 export function isLandmarkType(value: string): value is LandmarkType {
     return ValidLandmarkTypes.includes(value as LandmarkType);
