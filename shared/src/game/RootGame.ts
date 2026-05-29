@@ -3,7 +3,7 @@ import type { RootGameState } from "../state/RootGameState";
 import { TimeStep } from "../state/TimeStep";
 import type { Card } from "../cards/Card";
 import type { Piece } from "../pieces/Piece";
-import type { BattlePhaseType, LandmarkType, PlayerFactionType } from "../Enums";
+import type { BattlePhaseType, FactionType, LandmarkType, PlayerFactionType } from "../Enums";
 import type { RootGameAgent } from "../agents/RootGameAgent";
 import type { Move } from "../gameActions/Move";
 import type { Battle } from "../gameActions/Battle";
@@ -116,7 +116,7 @@ export class RootGame {
         throw new Error("RootGame.craft not implemented");
     }
 
-    dealHits(faction: PlayerFactionType, locationID: number, hits: number) {
+    dealHits(hitFaction: FactionType, hittingFaction: FactionType, locationID: number, hits: number) {
         throw new Error("RootGame.dealHits not implemented");
     }
 
