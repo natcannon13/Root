@@ -1,6 +1,9 @@
 const lobbyManager = require("../lobbies/LobbyManager.js");
 const Lobby = require("../lobbies/Lobby.js");
 const WebSocket = require("ws");
+const crypto = require("crypto");
+const { validateChat } = require("../chat/chatValidation.js");
+const ChatMessage = require("../chat/ChatMessage.js");
 
 function handleMessage(ws, data, lobbyManager){
     switch (data.type){
@@ -17,7 +20,6 @@ function handleMessage(ws, data, lobbyManager){
                 return;
             }
             const seat = lobby.getSeat(seatIndex);
-            seat.playerName = name;
 
             if(!seat){
                 ws.send(JSON.stringify({
@@ -27,11 +29,45 @@ function handleMessage(ws, data, lobbyManager){
                 return;
             }
 
+            seat.playerName = name;
             seat.connect(ws);
             ws.seat = seat;
             ws.lobby = lobby;
             lobby.broadcastLobby();
+            ws.send(JSON.stringify({
+                type: "CHAT_HISTORY",
+                payload: {
+                    messages: (lobby.chat.getMessages().map(m => m.toPayload()))
+                }
+            }));
 
+            break;
+        }
+
+        case "SET_READY":{
+            ws.seat.ready = data.payload.ready;
+            ws.lobby.broadcastLobby();
+            break;
+        }
+
+        case "CHAT_MESSAGE":{
+            if(!ws.lobby || !ws.seat){
+                return;
+            }
+            const {text} = data.payload;
+            if(!validateChat(text)){
+                return;
+            }
+            const msg = new ChatMessage(
+                crypto.randomUUID(),
+                ws.seat.index,
+                ws.seat.playerName,
+                "user",
+                text.trim(),
+                Date.now()
+            );
+            ws.lobby.chat.addMessage(msg);
+            ws.lobby.broadcastChat(msg.toPayload());
             break;
         }
 

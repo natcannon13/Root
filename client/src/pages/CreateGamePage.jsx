@@ -7,6 +7,7 @@ import InviteLinks from "../components/InviteLinks";
 function CreateGamePage() {
 
   const [playerCount, setPlayerCount] = useState(4);
+  const [setupType, setSetupType] = useState("std");
 
   const [inviteLinks, setInviteLinks] = useState([]);
 
@@ -43,6 +44,17 @@ function CreateGamePage() {
           <option value={4}>4</option>
           <option value={5}>5</option>
           <option value={6}>6</option>
+        </select>
+    </div>
+    <div>
+        <label>Setup:</label>
+        <select
+        value = {setupType}
+        onChange = {(e) => setSetupType(e.target.value)}
+        >
+          <option value = {"std"}>Standard Setup</option>
+          <option value = {"adv"}>Advanced Setup</option>
+          <option value = {"trn"}>Advanced Setup - Tournament Rules</option>
         </select>
       </div>
 

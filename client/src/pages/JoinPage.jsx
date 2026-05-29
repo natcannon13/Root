@@ -1,45 +1,31 @@
-import { useEffect } from "react";
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 
 import socket from "../websocket/socket";
-
-import { initializeSocketHandlers } from "../websocket/socketHandlers";
-
 import useGameStore from "../state/gameStore";
 
 function JoinPage() {
-
-  const [name, setName] = useState('');
-  const handleNameChange = (event) =>{
-    setName(event.target.value);
-  }
+  const [name, setName] = useState("");
 
   const { lobbyId, seatIndex } = useParams();
 
-  const navigate = useNavigate();
-
-  const setLobbyId = useGameStore(
-    state => state.setLobbyId
-  );
+  const setLobbyId = useGameStore((state) => state.setLobbyId);
 
   useEffect(() => {
-    initializeSocketHandlers(navigate);
     setLobbyId(lobbyId);
-  }, []);
+  }, [lobbyId, setLobbyId]);
 
-  async function join(){
-    socket.send(JSON.stringify({
-      type: "JOIN_SEAT",
-
-      payload:{
-        lobbyId: lobbyId,
-        seatIndex: Number(seatIndex),
-        name: name
-      }
-    }));
+  function join() {
+    socket.send(
+      JSON.stringify({
+        type: "JOIN_SEAT",
+        payload: {
+          lobbyId,
+          seatIndex: Number(seatIndex),
+          name,
+        },
+      })
+    );
   }
 
   return (
@@ -47,16 +33,12 @@ function JoinPage() {
       Joining lobby...
       <div>
         <input
-          type = "text"
-          value = {name}
-          onChange = {handleNameChange}
+          type="text"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
           placeholder="Your name here"
         />
-        <button
-          onClick={() => join(name)}
-        >
-          Join Game
-        </button>
+        <button onClick={join}>Join Game</button>
       </div>
     </div>
   );

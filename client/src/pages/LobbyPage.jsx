@@ -1,8 +1,15 @@
 import useGameStore from "../state/gameStore";
 
 import SeatCard from "../components/SeatCard";
+import ChatBox from "../components/ChatBox";
 
 import socket from "../websocket/socket";
+
+const gridStyle = {
+  display: 'grid',
+  gridTemplateColumns: '3fr 1fr',
+  padding: '10px'
+}
 
 function LobbyPage() {
 
@@ -10,9 +17,10 @@ function LobbyPage() {
     state => state.lobby
   );
 
-  const seatId = useGameStore(
-    state => state.seatId
+  const seatIndex = useGameStore(
+    state => state.seatIndex
   );
+
 
   if (!lobby) {
     return <div>Loading lobby...</div>;
@@ -29,11 +37,10 @@ function LobbyPage() {
     }));
   }
 
-  const mySeat = lobby.seats.find(
-    seat => seat.id === seatId
-  );
+  const mySeat = seatIndex != null ? lobby.seats[seatIndex] : undefined;
 
   return (
+    <div style = {gridStyle}>
     <div>
 
       <h1>Lobby</h1>
@@ -43,9 +50,9 @@ function LobbyPage() {
       {
         lobby.seats.map(seat => (
           <SeatCard
-            key={seat.id}
+            key={seat.index}
             seat={seat}
-            isMe={seat.id === seatId}
+            isMe={seat.index === seatIndex}
           />
         ))
       }
@@ -63,6 +70,11 @@ function LobbyPage() {
           </button>
         )
       }
+
+    </div>
+    <div className="lobby-chat-column">
+      <ChatBox/>
+    </div>
 
     </div>
   );

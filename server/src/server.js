@@ -8,6 +8,7 @@ const handlers = require("./websocket/handlers.js");
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });

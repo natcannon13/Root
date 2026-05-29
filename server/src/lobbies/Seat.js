@@ -1,10 +1,8 @@
-const crypto = require("crypto");
 
 class Seat{
 
-    constructor(){
-        this.id = crypto.randomUUID();
-
+    constructor(index){
+        this.index = index;
         this.socket = null;
         this.connected = false;
         this.playerName = null;
@@ -24,7 +22,7 @@ class Seat{
     
     serialize(){
         return{
-            id: this.id,
+            index: this.index,
             connected: this.connected,
             playerName: this.playerName,
             ready: this.ready,

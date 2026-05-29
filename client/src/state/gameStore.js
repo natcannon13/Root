@@ -14,6 +14,10 @@ const useGameStore = create((set) => ({
 
   socketConnected: false,
 
+  chatMessages: [],
+
+  chatError: null,
+
   setConnected: (connected) =>
     set({ connected }),
 
@@ -30,7 +34,22 @@ const useGameStore = create((set) => ({
     set({ gameState }),
 
   setSocketConnected: (socketConnected) =>
-    set({ socketConnected })
+    set({ socketConnected }),
+
+  appendChatMessage: (message) =>
+    set((state) => ({
+      chatMessages: [...state.chatMessages, message],
+      chatError: null,
+    })),
+  
+  setChatHistory: (messages) =>
+    set({chatMessages: messages ?? [], chatError: null}),
+
+  clearChat: () => 
+    set({chatMessages: [], chatError: null}),
+
+  setChatError: (chatError) =>
+    set({chatError})
 }));
 
 export default useGameStore;

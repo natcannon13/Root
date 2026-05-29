@@ -7,7 +7,8 @@ class LobbyManager{
         this.inviteTokenMap = new Map();
     }
 
-    createLobby(size = 4){
+    createLobby(settings = {}){
+        const size = settings.size ?? 4;
         const lobby = new Lobby(size);
         this.lobbies.set(lobby.id, lobby);
         for(const seat of lobby.seats){

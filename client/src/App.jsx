@@ -1,21 +1,19 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
-
 import { useEffect } from "react";
-import socket from "./websocket/socket";
-
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import { initializeSocketHandlers } from "./websocket/socketHandlers";
+import "./App.css";
 
 import HomePage from "./pages/HomePage";
 import CreateGamePage from "./pages/CreateGamePage";
-import JoinPage from './pages/JoinPage';
-import LobbyPage from './pages/LobbyPage';
+import JoinPage from "./pages/JoinPage";
+import LobbyPage from "./pages/LobbyPage";
 //import GamePage from "./pages/GamePage";
 
 function App() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    initializeSocketHandlers(navigate);
+  }, [navigate]);
   return (
     <div>
       <Routes>
@@ -23,9 +21,9 @@ function App() {
 
         <Route path="/create" element={<CreateGamePage />} />
 
-        <Route path="/join/:lobbyId/:seatIndex" element = {<JoinPage/>}/>
+        <Route path="/join/:lobbyId/:seatIndex" element={<JoinPage />} />
 
-        <Route path="/lobby/:lobbyId/:seatIndex" element = {<LobbyPage/>}/>
+        <Route path="/lobby/:lobbyId/:seatIndex" element={<LobbyPage />} />
       </Routes>
     </div>
   );
