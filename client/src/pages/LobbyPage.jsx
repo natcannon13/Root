@@ -2,12 +2,13 @@ import useGameStore from "../state/gameStore";
 
 import SeatCard from "../components/SeatCard";
 import ChatBox from "../components/ChatBox";
+import SetupSettings from "../components/SetupSettings";
 
 import socket from "../websocket/socket";
 
 const gridStyle = {
   display: 'grid',
-  gridTemplateColumns: '3fr 1fr',
+  gridTemplateColumns: '1fr 3fr 1fr',
   padding: '10px'
 }
 
@@ -41,6 +42,9 @@ function LobbyPage() {
 
   return (
     <div style = {gridStyle}>
+      <div>
+        <SetupSettings/>
+      </div>
     <div>
 
       <h1>Lobby</h1>
