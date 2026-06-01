@@ -1,0 +1,35 @@
+
+actor Player
+participant Client Presenter
+participant Client StateStore
+participant Client RootGame
+participant Client NetworkCommunicator
+participant Server NetworkCommunicator
+participant Server Logic
+participant Server StateStore
+participant Server RootGame
+
+autoactivation on
+
+Player->Client Presenter:Start Game
+Client Presenter->Client NetworkCommunicator:sendMessage(startGame)
+deactivateafter Client Presenter
+Client NetworkCommunicator->Server NetworkCommunicator:"startGame"
+Server NetworkCommunicator->Server Logic:initialize
+deactivateafter Server NetworkCommunicator
+Server Logic->Server StateStore: create new from options
+Server Logic<--Server StateStore: RootGameState
+Server Logic->Server RootGame: create new from RootGameState
+Server Logic<--Server RootGame:
+note over Server Logic: initializes \nlisteners
+Server NetworkCommunicator<-Server Logic: sendMessage(RootGameState)
+Server Logic->Server RootGame:play
+deactivateafter Server Logic
+Client NetworkCommunicator<--Server NetworkCommunicator: RootGameState
+Client NetworkCommunicator->Client StateStore: setState
+deactivateafter Client NetworkCommunicator
+Client StateStore->Client RootGame:setState
+deactivateafter Client RootGame
+Client StateStore->Client Presenter: Render board
+deactivateafter Client Presenter
+deactivateafter Client StateStore

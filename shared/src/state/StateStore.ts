@@ -1,3 +1,4 @@
+import type { PlayOptions } from "../game/PlayOptions";
 import type { RootGameState } from "./RootGameState";
 import type { PendingAction } from "../game/PendingAction";
 
@@ -9,6 +10,10 @@ export class StateStore {
 
   constructor(initialState: RootGameState) {
     this.state = initialState;
+  }
+
+  static fromOptions(options: PlayOptions): StateStore {
+    throw new Error("StateStore.fromOptions not implemented in stub");
   }
 
   getState(): RootGameState {
