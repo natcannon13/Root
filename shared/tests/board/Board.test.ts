@@ -6,6 +6,8 @@ import type { Forest } from "../../src/board/Forest";
 import type { Connection } from "../../src/board/Connection";
 import type { Pawn } from "../../src/pieces/Pawn";
 import type { Token } from "../../src/pieces/Token";
+import type { Building } from "../../src/pieces/Building";
+import type { Piece } from "../../src/pieces/Piece";
 
 describe("Board - setup", () => {
   test("board initializes with correct name, clearings, forests, and connections", () => {
@@ -382,5 +384,80 @@ describe("Board - remove", () => {
       connections: [],
     });
     expect(() => board.remove([t], 1)).toThrow();
+  });
+});
+
+describe("Board - getState", () => {
+  test("getState returns a RootBoardState that reflects the current board state", () => {
+    const clearingPawn = mock<Pawn>({
+      id: 1,
+      name: "warrior",
+      owningFaction: "marquise-de-cat",
+      isWarrior: true,
+    });
+    const clearingToken = mock<Token>({
+      id: 2,
+      name: "sympathy",
+      owningFaction: "woodland-alliance",
+      faceUp: true,
+    });
+    const clearingBuilding = mock<Building>({
+      id: 3,
+      name: "sawmill",
+      owningFaction: "marquise-de-cat",
+    });
+    const forestPawn = mock<Pawn>({
+      id: 4,
+      name: "pawn",
+      owningFaction: "vagabond",
+      isWarrior: false,
+    });
+    const forestToken = mock<Token>({
+      id: 5,
+      name: "keep",
+      owningFaction: "marquise-de-cat",
+      faceUp: true,
+    });
+
+    const clearingPieces = [clearingPawn, clearingToken, clearingBuilding];
+    const forestPieces = [forestPawn, forestToken];
+
+    const c1 = mock<Clearing>({
+      id: 1,
+      printedSuit: "fox",
+      getPieces: () => clearingPieces,
+    });
+    const f1 = mock<Forest>({
+      id: 10,
+      getPieces: () => forestPieces,
+    });
+
+    const board = new Board({
+      name: "autumn",
+      clearings: [c1],
+      forests: [f1],
+      connections: [],
+    });
+
+    expect(board.getState()).toEqual({
+      version: expect.any(String),
+      name: "autumn",
+      clearings: [
+        {
+          id: 1,
+          suit: "fox",
+          tokens: [clearingToken],
+          pawns: [clearingPawn],
+          buildings: [clearingBuilding],
+        },
+      ],
+      forests: [
+        {
+          id: 10,
+          tokens: [forestToken],
+          pawns: [forestPawn],
+        },
+      ],
+    });
   });
 });
