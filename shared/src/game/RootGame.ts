@@ -40,7 +40,7 @@ export class RootGame {
     spentCraftingPieces: Piece[] = [];
     pendingChoice: PendingChoice | null = null;
 
-    constructor(stateStore: StateStore<RootGameState>) {
+    constructor(stateStore: StateStore<RootGameState, RootGameUpdate>, agents: RootGameAgent[]) {
     }
 
     static stateFromOptions(options: PlayOptions): RootGameState {

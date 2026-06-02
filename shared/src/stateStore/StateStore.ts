@@ -1,31 +1,47 @@
-export class StateStore<T> {
-  private state?: T;
-  private history: T[] = [];
-  private subscribers: Array<() => void> = [];
+import { HistoryNode, StateHistory } from "./StateHistory";
 
-  constructor(initialState?: T) {
+export class StateStore<State, Transition> {
+  private state?: State;
+  private history: StateHistory<State, Transition> = new StateHistory();
+  private subscribers: Array<() => void> = [];
+  private stateUpdateFunction: (state: State, transition: Transition) => void;
+
+  constructor(stateUpdateFunction: (state: State, transition: Transition) => void, initialState?: State) {
+    this.stateUpdateFunction = stateUpdateFunction;
     this.state = initialState;
   }
 
-  getState(): T {
+  initializeState(initialState: State) {
+    throw new Error("StateStore.initializeState not implemented in stub");
+  }
+
+  getState(): State {
     if (!this.state) {
       throw new Error("State has not been initialized!");
     }
     return this.state;
   }
 
-  setState(updater: (s: T) => void): void {
+  getLastTransition(): Transition | null {
+    return this.history.currentNode.transitionFromPrev;
+  }
+
+  getHistoryNodes(): HistoryNode<State, Transition>[] {
+    return this.history.historyNodes;
+  }
+
+  updateState(transition: Transition): void {
     if (!this.state) {
       throw new Error("State has not been initialized!");
     }
     // Shallow snapshot for history; serialized clone would be safer in production.
     try {
-      const snapshot = JSON.parse(JSON.stringify(this.state)) as T;
-      this.history.push(snapshot);
+      const snapshot = JSON.parse(JSON.stringify(this.state)) as State;
+      this.history.add(snapshot, transition);
     } catch (e) {
       // ignore cloning errors in this stub
     }
-    updater(this.state);
+    this.stateUpdateFunction(this.state, transition);
     this.subscribers.forEach((s) => s());
   }
 
@@ -37,11 +53,7 @@ export class StateStore<T> {
   }
 
   undo(): void {
-    const prev = this.history.pop();
-    if (prev) {
-      this.state = prev;
-      this.subscribers.forEach((s) => s());
-    }
+    throw new Error("StateStore.undo not implemented in stub");
   }
 
   redo(): void {
