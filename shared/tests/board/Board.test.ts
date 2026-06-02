@@ -7,7 +7,7 @@ import type { Connection } from "../../src/board/Connection";
 import type { Pawn } from "../../src/pieces/Pawn";
 import type { Token } from "../../src/pieces/Token";
 import type { Building } from "../../src/pieces/Building";
-import type { Piece } from "../../src/pieces/Piece";
+import { Ruin } from "../../src/pieces/Ruin";
 
 describe("Board - setup", () => {
   test("board initializes with correct name, clearings, forests, and connections", () => {
@@ -460,4 +460,32 @@ describe("Board - getState", () => {
       ],
     });
   });
+  test("getState hides items in ruins when perspective is provided", () => {
+    const ruinItem = { id: 1, name: "boot" } as const;
+    const ruin = mock<Ruin>({
+      id: 20,
+      items: [ruinItem],
+      remainingItemCount: 1,
+    });
+    const c1 = mock<Clearing>({
+      id: 1,
+      printedSuit: "fox",
+      getPieces: () => [ruin],
+    });
+    const board = new Board({
+      name: "autumn",
+      clearings: [c1],
+      forests: [],
+      connections: [],
+    });
+    const state = board.getState("marquise-de-cat");
+    expect(state.clearings[0].pieces).toEqual([
+      {
+        id: 20,
+        items: [],
+        remainingItemCount: 1,
+      },
+    ]);
+  });
+
 });

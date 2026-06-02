@@ -1,6 +1,7 @@
 import type { BoardType, Suit } from '../Enums';
 import type { Building } from '../pieces/Building';
 import type { Pawn } from '../pieces/Pawn';
+import type { Piece } from '../pieces/Piece';
 import type { Token } from '../pieces/Token';
 
 export interface RootBoardState {
@@ -9,13 +10,10 @@ export interface RootBoardState {
     clearings: {
         id: number;
         suit: Suit;
-        tokens: Token[];
-        pawns: Pawn[];
-        buildings: Building[];
+        pieces: Piece[];
     }[];
     forests: {
         id: number;
-        tokens: Token[];
-        pawns: Pawn[];
+        pieces: Piece[];
     }[];
 }

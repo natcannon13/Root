@@ -1,4 +1,4 @@
-import type { BoardType } from "../Enums";
+import type { BoardType, PlayerFactionType } from "../Enums";
 import type { Clearing } from "./Clearing";
 import type { Forest } from "./Forest";
 import type { Connection } from "./Connection";
@@ -80,7 +80,7 @@ export class Board implements RulesModule {
     throw new Error("Board.remove not implemented");
   }
 
-  getState(): RootBoardState {
+  getState(perspective?: PlayerFactionType): RootBoardState {
     throw new Error("Board.getState not implemented");
   }
 }
