@@ -1,27 +1,26 @@
-import type { PlayOptions } from "../game/PlayOptions";
-import type { RootGameState } from "./RootGameState";
-
-export class StateStore {
-  private state: RootGameState;
-  private history: RootGameState[] = [];
+export class StateStore<T> {
+  private state?: T;
+  private history: T[] = [];
   private subscribers: Array<() => void> = [];
 
-  constructor(initialState: RootGameState) {
+  constructor(initialState?: T) {
     this.state = initialState;
   }
 
-  static fromOptions(options: PlayOptions): StateStore {
-    throw new Error("StateStore.fromOptions not implemented in stub");
-  }
-
-  getState(): RootGameState {
+  getState(): T {
+    if (!this.state) {
+      throw new Error("State has not been initialized!");
+    }
     return this.state;
   }
 
-  setState(updater: (s: RootGameState) => void): void {
+  setState(updater: (s: T) => void): void {
+    if (!this.state) {
+      throw new Error("State has not been initialized!");
+    }
     // Shallow snapshot for history; serialized clone would be safer in production.
     try {
-      const snapshot = JSON.parse(JSON.stringify(this.state)) as RootGameState;
+      const snapshot = JSON.parse(JSON.stringify(this.state)) as T;
       this.history.push(snapshot);
     } catch (e) {
       // ignore cloning errors in this stub

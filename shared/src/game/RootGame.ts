@@ -19,6 +19,7 @@ import type { RootHirelingState } from "../state/RootHirelingState";
 import type { PlayOptions } from "./PlayOptions";
 import type { BattleState } from "../state/BattleState";
 import type { PendingChoice } from "./PendingChoice";
+import type { StateStore } from "../state/StateStore";
 
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
@@ -39,7 +40,11 @@ export class RootGame {
     spentCraftingPieces: Piece[] = [];
     pendingChoice: PendingChoice | null = null;
 
-    constructor(initialState: RootGameState) {
+    constructor(stateStore: StateStore<RootGameState>) {
+    }
+
+    static stateFromOptions(options: PlayOptions): RootGameState {
+        throw new Error("RootGame.stateFromOptions not implemented");
     }
 
     getState(perspective: PlayerFactionType | null): RootGameState | null {
