@@ -18,6 +18,7 @@ import type { Supply } from "../pieces/Supply";
 import type { RootHirelingState } from "../state/RootHirelingState";
 import type { PlayOptions } from "./PlayOptions";
 import type { BattleState } from "../state/BattleState";
+import type { PendingChoice } from "./PendingChoice";
 
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
@@ -36,6 +37,7 @@ export class RootGame {
     discardPile: Card[] = [];
     dominancePile: Card[] = [];
     spentCraftingPieces: Piece[] = [];
+    pendingChoice: PendingChoice | null = null;
 
     constructor(initialState: RootGameState) {
     }

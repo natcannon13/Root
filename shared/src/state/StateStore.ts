@@ -1,12 +1,10 @@
 import type { PlayOptions } from "../game/PlayOptions";
 import type { RootGameState } from "./RootGameState";
-import type { PendingAction } from "../game/PendingAction";
 
 export class StateStore {
   private state: RootGameState;
   private history: RootGameState[] = [];
   private subscribers: Array<() => void> = [];
-  pendingAction: PendingAction | null = null;
 
   constructor(initialState: RootGameState) {
     this.state = initialState;

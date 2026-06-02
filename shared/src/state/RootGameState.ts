@@ -6,6 +6,7 @@ import type { PlayerFactionType, HirelingFactionType, LandmarkType } from '../En
 import type { Card } from '../cards/Card';
 import type { PlayOptions } from '../game/PlayOptions';
 import type { BattleState } from './BattleState';
+import type { PendingChoice } from '../game/PendingChoice';
 
 export interface RootGameState {
     version: string;
@@ -20,4 +21,5 @@ export interface RootGameState {
     deckSize: number;
     discardPile: Card[];
     spentCraftingPieceIDs: number[];
+    pendingChoice: PendingChoice | null;
 }

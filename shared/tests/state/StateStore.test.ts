@@ -54,12 +54,4 @@ describe("StateStore", () => {
     store.undo();
     expect(store.getState().deckSize).toBe(0);
   });
-
-  test("pendingAction is initially null and can be set", () => {
-    const store = new StateStore(makeState());
-    expect(store.pendingAction).toBeNull();
-    // set a fake pending action
-    (store.pendingAction as any) = { id: 123 };
-    expect(store.pendingAction).toEqual({ id: 123 });
-  });
 });
