@@ -37,7 +37,7 @@ export class RootGame {
     dominancePile: Card[] = [];
     spentCraftingPieces: Piece[] = [];
 
-    constructor(agents: RootGameAgent[], initialState?: RootGameState) {
+    constructor(initialState: RootGameState) {
     }
 
     getState(perspective: PlayerFactionType | null): RootGameState | null {
@@ -48,28 +48,35 @@ export class RootGame {
         throw new Error("RootGame.setState not implemented");
     }
 
-    private initializeBoard(initialState?: RootBoardState): Board {
+    awaitPlayerChoice() {
+        throw new Error("RootGame.awaitPlayerChoice not implemented");
+    }
+
+    private initializeBoard(initialState: RootBoardState): Board {
         throw new Error("initializeBoard not implemented");
     }
 
     private initializeFactions(
-        initialState?: RootFactionState[],
+        initialState: RootFactionState[],
     ): PlayerFaction[] {
         throw new Error("initializeFactions not implemented");
     }
 
     private initializeHirelings(
-        initialState?: RootHirelingState[],
+        initialState: RootHirelingState[],
     ): Hireling[] {
         throw new Error("initializeHirelings not implemented");
     }
 
-    private initializeLandmarks(initialState?: LandmarkType[]): Landmark[] {
+    private initializeLandmarks(initialState: LandmarkType[]): Landmark[] {
         throw new Error("initializeLandmarks not implemented");
+    }
+    play() {
+        throw new Error("RootGame.play not implemented");
     }
 
     playTurn() {
-        throw new Error("RootGame.play not implemented");
+        throw new Error("RootGame.playTurn not implemented");
     }
 
     setup() {

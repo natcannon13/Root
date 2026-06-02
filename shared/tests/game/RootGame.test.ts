@@ -11,13 +11,12 @@ import type { Card } from "../../src/cards/Card";
 import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
 import { PlayerFactionType } from "../../src/Enums";
 import { RootGameAgent } from "../../src/agents/RootGameAgent";
+import { RootGameState } from "../../src/state/RootGameState";
 let game: RootGame;
 let factions: { [key in PlayerFactionType]?: PlayerFaction } = {};
-let agents: { [id: number]: RootGameAgent } = {};
 
 beforeEach(() => {
     factions = {};
-    agents = {};
     let id = 0;
     for (const factionType of [
         "marquise-de-cat",
@@ -25,11 +24,9 @@ beforeEach(() => {
         "woodland-alliance",
     ] as const) {
         factions[factionType] = mock<PlayerFaction>({ name: factionType });
-        agents[id] = mock<RootGameAgent>({ id: id });
-        id++;
     }
 
-    game = new RootGame(Object.values(agents));
+    game = new RootGame(mock<RootGameState>());
 });
 
 function mockBoard() {
