@@ -19,7 +19,7 @@ import type { RootHirelingState } from "../state/RootHirelingState";
 import type { PlayOptions } from "./PlayOptions";
 import type { BattleState } from "../state/BattleState";
 import type { PendingChoice } from "./PendingChoice";
-import type { StateStore } from "../state/StateStore";
+import type { StateStore } from "../stateStore/StateStore";
 import type { RootGameUpdate } from "./RootGameUpdate";
 
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.

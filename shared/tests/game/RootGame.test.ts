@@ -12,7 +12,7 @@ import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
 import { PlayerFactionType } from "../../src/Enums";
 import { RootGameAgent } from "../../src/agents/RootGameAgent";
 import { RootGameState } from "../../src/state/RootGameState";
-import { StateStore } from "../../src/state/StateStore";
+import { StateStore } from "../../src/stateStore/StateStore";
 let game: RootGame;
 let factions: { [key in PlayerFactionType]?: PlayerFaction } = {};
 
