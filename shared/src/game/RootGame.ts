@@ -22,11 +22,13 @@ import type { PendingChoice } from "./PendingChoice";
 import type { StateStore } from "../stateStore/StateStore";
 import type { RootGameUpdate } from "./RootGameUpdate";
 
+export type RootGameStateStore = StateStore<RootGameState, RootGameUpdate>;
+
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
     version = "0.0.0";
     board: Board | null = null;
-    playOptions?: PlayOptions;
+    playOptions: PlayOptions;
     factions: Faction[] = [];
     hirelings: Hireling[] = [];
     landmarks: Landmark[] = [];
@@ -40,15 +42,16 @@ export class RootGame {
     spentCraftingPieces: Piece[] = [];
     pendingChoice: PendingChoice | null = null;
 
-    constructor(stateStore: StateStore<RootGameState, RootGameUpdate>) {
+    constructor(stateStore: RootGameStateStore, options: PlayOptions) {
+        throw new Error("RootGame constructor not implemented");
     }
 
     static stateFromOptions(options: PlayOptions): RootGameState {
         throw new Error("RootGame.stateFromOptions not implemented");
     }
 
-    getState(perspective: PlayerFactionType | null): RootGameState | null {
-        return null;
+    getState(perspective?: PlayerFactionType): RootGameState {
+        throw new Error("RootGame.getState not implemented");
     }
 
     initializeState(state: RootGameState) {

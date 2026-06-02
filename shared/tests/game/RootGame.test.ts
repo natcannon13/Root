@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import { RootGame } from "../../src/game/RootGame";
+import { RootGame, RootGameStateStore } from "../../src/game/RootGame";
 import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
 import type { Move } from "../../src/gameActions/Move";
@@ -14,22 +14,47 @@ import { RootGameAgent } from "../../src/agents/RootGameAgent";
 import { RootGameState } from "../../src/state/RootGameState";
 import { StateStore } from "../../src/stateStore/StateStore";
 import { RootGameUpdate } from "../../src/game/RootGameUpdate";
+import { PlayOptions } from "../../src/game/PlayOptions";
+import { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
 let game: RootGame;
-let factions: { [key in PlayerFactionType]?: PlayerFaction } = {};
+let stateStore: RootGameStateStore;
+let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
+
+const basePlayOptions = {
+    setup: {
+        type: "standard",
+        map: "autumn",
+        chosenFactions: new Map([
+            ["marquise-de-cat", 1],
+            ["eyrie-dynasties", 2],
+            ["woodland-alliance", 3],
+        ]),
+        deck: "base",
+    },
+    playerIDs: [1, 2, 3],
+} satisfies PlayOptions;
 
 beforeEach(() => {
-    factions = {};
-    let id = 0;
-    for (const factionType of [
-        "marquise-de-cat",
-        "eyrie-dynasties",
-        "woodland-alliance",
-    ] as const) {
+    mockGame();
+});
+
+function mockGame(options: PlayOptions = basePlayOptions) {
+    const unsubscribe = vi.fn();
+    const subscribe = vi.fn().mockReturnValue(unsubscribe);
+    stateStore = mock<RootGameStateStore>({ subscribe });
+    stateStoreSubscribeMock = subscribe;
+    game = new RootGame(stateStore, basePlayOptions);
+}
+
+function mockFactions(factionTypes: PlayerFactionType[]) {
+    let factions: { [key in PlayerFactionType]?: PlayerFaction } = {};
+    for (const factionType of factionTypes) {
         factions[factionType] = mock<PlayerFaction>({ name: factionType });
     }
+    vi.spyOn(game as any, "initializeFactions").mockReturnValue(Object.values(factions));
+    return factions;
+}
 
-    game = new RootGame(mock<StateStore<RootGameState, RootGameUpdate>>());
-});
 
 function mockBoard() {
     let board = mock<Board>();
@@ -40,16 +65,34 @@ function mockBoard() {
 // --- constructor ----------------------------------------------------------------
 
 describe("RootGame constructor", () => {
-    test("registers the correct listeners with the state store", () => { });
+    test("registers a listener with the state store", () => {
+
+        expect(stateStoreSubscribeMock).toHaveBeenCalled();
+        const listener = stateStoreSubscribeMock.mock.calls[0][0];
+        expect(typeof listener).toBe("function");
+    });
+    // TODO: figure out what this listener is supposed to do and test that it does it.
+    test("calls stateFromOptions with the provided play options and calls initializeState with the resulting state", () => {
+            const stateFromOptionsSpy = vi.spyOn(RootGame, "stateFromOptions").mockReturnValue({} as RootGameState);
+            const initializeStateSpy = vi.spyOn(game, "initializeState").mockReturnValue(undefined);
+            mockGame();
+            expect(stateFromOptionsSpy).toHaveBeenCalledWith(basePlayOptions);
+            expect(initializeStateSpy).toHaveBeenCalledWith(stateFromOptionsSpy.mock.results[0].value);
+    });
 });
 
 // --- getState ----------------------------------------------------------------
 
 describe("RootGame.getState", () => {
-    test("returns null if game state is not initialized", () => { });
-    test("returns a state object with correct structure", () => { });
-    test("returns a state object that reflects the current game state", () => { });
-    test("calls getState on the board, each faction, and each hireling", () => { });
+    test("returns a state object that reflects the current game state", () => {
+        // Spy on the appropriate methods to verify that the returned state reflects the current game
+        // state. This will likely involve setting up a mock board and factions with known states, 
+        // then verifying that the returned state includes those states. It should not be necessary
+        // to create a fully accurate mock of the board, deck and factions for this test - just enough to 
+        // verify that getState is correctly including their states in the returned object.
+    });
+
+    // Note that cards in hand are the only hidden information in default rules.
     test("when given a faction perspective, returns a state object that excludes hidden information from other factions", () => { });
     test("when given a faction perspective, returns a state object that includes information about the requesting faction", () => { });
 });

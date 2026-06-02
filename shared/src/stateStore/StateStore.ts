@@ -3,7 +3,7 @@ import { HistoryNode, StateHistory } from "./StateHistory";
 export class StateStore<State, Transition> {
   private state?: State;
   private history: StateHistory<State, Transition> = new StateHistory();
-  private subscribers: Array<() => void> = [];
+  private subscribers: Array<(transition: Transition) => void> = [];
   private stateUpdateFunction: (state: State, transition: Transition) => void;
 
   constructor(stateUpdateFunction: (state: State, transition: Transition) => void, initialState?: State) {
@@ -42,10 +42,10 @@ export class StateStore<State, Transition> {
       // ignore cloning errors in this stub
     }
     this.stateUpdateFunction(this.state, transition);
-    this.subscribers.forEach((s) => s());
+    this.subscribers.forEach((s) => s(transition));
   }
 
-  subscribe(fn: () => void): () => void {
+  subscribe(fn: (transition: Transition) => void): () => void {
     this.subscribers.push(fn);
     return () => {
       this.subscribers = this.subscribers.filter((s) => s !== fn);

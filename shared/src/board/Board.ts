@@ -8,6 +8,7 @@ import type { Piece } from "../pieces/Piece";
 import type { RulesModule } from "../rulesModule/RulesModule";
 import type { Event } from "../game/Event";
 import type { RulesChange } from "../rulesModule/RulesChange";
+import type { RootBoardState } from "../state/RootBoardState";
 
 export class Board implements RulesModule {
   name: BoardType;
@@ -44,28 +45,23 @@ export class Board implements RulesModule {
   }
 
   getClearingsAdjacent(location: Location): Clearing[] {
-    // TODO: Implement
-    return [];
+    throw new Error("Board.getClearingsAdjacent not implemented");
   }
 
   getClearingsAdjacentByRiver(location: Location): Clearing[] {
-    // TODO: Implement
-    return [];
+    throw new Error("Board.getClearingsAdjacentByRiver not implemented");
   }
 
   getForestsAdjacent(location: Location): Forest[] {
-    // TODO: Implement
-    return [];
+    throw new Error("Board.getForestsAdjacent not implemented");
   }
 
   getLocation(id: number): Location | undefined {
-    // TODO: Implement
-    return undefined;
+    throw new Error("Board.getLocation not implemented");
   }
 
   getCorners(): [Clearing, Clearing][] {
-    // TODO: Implement
-    return [];
+    throw new Error("Board.getCorners not implemented");
   }
 
   move(
@@ -73,14 +69,18 @@ export class Board implements RulesModule {
     startingLocationID: number,
     endingLocationID: number,
   ): void {
-    // TODO: Implement
+    throw new Error("Board.move not implemented");
   }
 
   place(pieces: Piece[], locationID: number): void {
-    // TODO: Implement
+    throw new Error("Board.place not implemented");
   }
 
   remove(pieces: Piece[], locationID: number): void {
-    // TODO: Implement
+    throw new Error("Board.remove not implemented");
+  }
+
+  getState(): RootBoardState {
+    throw new Error("Board.getState not implemented");
   }
 }
