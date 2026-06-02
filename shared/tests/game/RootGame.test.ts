@@ -13,6 +13,7 @@ import { PlayerFactionType } from "../../src/Enums";
 import { RootGameAgent } from "../../src/agents/RootGameAgent";
 import { RootGameState } from "../../src/state/RootGameState";
 import { StateStore } from "../../src/stateStore/StateStore";
+import { RootGameUpdate } from "../../src/game/RootGameUpdate";
 let game: RootGame;
 let factions: { [key in PlayerFactionType]?: PlayerFaction } = {};
 
@@ -27,7 +28,7 @@ beforeEach(() => {
         factions[factionType] = mock<PlayerFaction>({ name: factionType });
     }
 
-    game = new RootGame(mock<StateStore<RootGameState>>());
+    game = new RootGame(mock<StateStore<RootGameState, RootGameUpdate>>());
 });
 
 function mockBoard() {
