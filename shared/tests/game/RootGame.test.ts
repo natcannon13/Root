@@ -85,16 +85,54 @@ describe("RootGame constructor", () => {
 
 describe("RootGame.getState", () => {
     test("returns a state object that reflects the current game state", () => {
-        // Spy on the appropriate methods to verify that the returned state reflects the current game
-        // state. This will likely involve setting up a mock board and factions with known states, 
-        // then verifying that the returned state includes those states. It should not be necessary
-        // to create a fully accurate mock of the board, deck and factions for this test - just enough to 
-        // verify that getState is correctly including their states in the returned object.
+        const board = mock<Board>();
+        const boardState = { version: "b1", name: "autumn", clearings: [], forests: [] };
+        board.getState.mockReturnValue(boardState as any);
+
+        const pf1 = mock<PlayerFaction>({ name: "marquise-de-cat" });
+        const pf2 = mock<PlayerFaction>({ name: "eyrie-dynasties" });
+        const pf1State = { version: "f1", name: "marquise-de-cat", agentID: null, hand: null, handSize: 0, craftedImprovements: [], score: 0 };
+        const pf2State = { version: "f2", name: "eyrie-dynasties", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 };
+        pf1.getState.mockReturnValue(pf1State as any);
+        pf2.getState.mockReturnValue(pf2State as any);
+
+        // Inject mocks into game instance
+        game.board = board;
+        game.factions = [pf1, pf2];
+        game.hirelings = [];
+        game.landmarks = ["keep"] as any;
+        game.version = "vtest";
+        game.playOptions = { setup: { type: "standard", map: "autumn", chosenFactions: new Map(), deck: "base" }, playerIDs: [1,2,3] } as any;
+        game.deck = [{ id: 1 } as any];
+        game.discardPile = [{ id: 2 } as any];
+        game.spentCraftingPieces = [{ id: 7 } as any];
+        game.pendingChoice = null;
+
+        const state = game.getState?.();
+
+        expect(state).not.toBeNull();
+        expect(state.version).toBe("vtest");
+        expect(state.options).toBe(game.playOptions);
+        expect(state.boardState).toBe(boardState);
+        expect(state.factionState["marquise-de-cat"].name).toBe("marquise-de-cat");
+        expect(state.factionState["eyrie-dynasties"].name).toBe("eyrie-dynasties");
+        expect(state.landmarks).toEqual([game.landmarks[0]]);
+        expect(state.deckSize).toBe(game.deck.length);
+        expect(state.discardPile).toEqual(game.discardPile);
+        expect(state.spentCraftingPieceIDs).toEqual([game.spentCraftingPieces[0].id]);
     });
 
-    // Note that cards in hand are the only hidden information in default rules.
-    test("when given a faction perspective, returns a state object that excludes hidden information from other factions", () => { });
-    test("when given a faction perspective, returns a state object that includes information about the requesting faction", () => { });
+    test("when given a faction perspective, calls getState on the board with that perspective, and on each faction with the correct publicView flag", () => {
+        const board = mock<Board>();
+        const pf1 = mock<PlayerFaction>({ name: "marquise-de-cat" });
+        const pf2 = mock<PlayerFaction>({ name: "eyrie-dynasties" });
+        game.board = board;
+        game.factions = [pf1, pf2];
+        game.getState("marquise-de-cat");
+        expect(board.getState).toHaveBeenCalledWith("marquise-de-cat");
+        expect(pf1.getState).toHaveBeenCalledWith(false);
+        expect(pf2.getState).toHaveBeenCalledWith(true);
+    });
 });
 
 // --- initializeState ----------------------------------------------------------------
