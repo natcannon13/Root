@@ -10,4 +10,12 @@ export class Ruin implements Building {
         this.id = id;
         this.items = items;
     }
+
+    removeItem(itemId: number): Item {
+        const itemIndex = this.items.findIndex((i) => i.id === itemId);
+        if (itemIndex === -1) {
+            throw new Error(`Item with id ${itemId} not found in ruin ${this.id}`);
+        }
+        return this.items.splice(itemIndex, 1)[0];
+    }
 }
