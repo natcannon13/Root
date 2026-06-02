@@ -20,12 +20,12 @@ import type { PlayOptions } from "./PlayOptions";
 import type { BattleState } from "../state/BattleState";
 import type { PendingChoice } from "./PendingChoice";
 import type { StateStore } from "../state/StateStore";
+import type { RootGameUpdate } from "./RootGameUpdate";
 
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
     version = "0.0.0";
     board: Board | null = null;
-    players: RootGameAgent[] = [];
     playOptions?: PlayOptions;
     factions: Faction[] = [];
     hirelings: Hireling[] = [];
@@ -51,8 +51,12 @@ export class RootGame {
         return null;
     }
 
-    setState(state: RootGameState) {
-        throw new Error("RootGame.setState not implemented");
+    initializeState(state: RootGameState) {
+        throw new Error("RootGame.initializeState not implemented");
+    }
+
+    updateState(update: RootGameUpdate) {
+        throw new Error("RootGame.updateState not implemented");
     }
 
     awaitPlayerChoice() {

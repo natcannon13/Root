@@ -1,6 +1,6 @@
 export type PendingChoiceType = string;
 
-type PendingChoiceValueMap = Record<string, any>;
+type PendingChoiceValueMap = Record<PendingChoiceType, any>;
 
 type PendingChoiceBase<
   T extends PendingChoiceType,

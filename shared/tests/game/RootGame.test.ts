@@ -39,9 +39,7 @@ function mockBoard() {
 // --- constructor ----------------------------------------------------------------
 
 describe("RootGame constructor", () => {
-    test("calls setState with default values when no state is provided", () => { });
-    test("calls setState with provided state", () => { });
-    test("initializes with provided agents", () => { });
+    test("registers the correct listeners with the state store", () => { });
 });
 
 // --- getState ----------------------------------------------------------------
@@ -55,14 +53,29 @@ describe("RootGame.getState", () => {
     test("when given a faction perspective, returns a state object that includes information about the requesting faction", () => { });
 });
 
-// --- setState ----------------------------------------------------------------
+// --- initializeState ----------------------------------------------------------------
 
-describe("RootGame.setState", () => {
+describe("RootGame.initializeState", () => {
     test("initializes all RulesModules", () => { });
     test("calls initialization helper methods for board, factions, hirelings, and landmarks", () => { });
     test("initializes all other relevant game properties correctly", () => { });
     test("throws an error if given an invalid state object", () => { });
 });
+
+// --- updateState ----------------------------------------------------------------
+
+describe("RootGame.updateState", () => {
+    // TODO: Add more specific tests for each type of update once the update types are defined and implemented.
+    test("throws an error if given an invalid update object", () => { });
+});
+
+// --- awaitPlayerChoice ----------------------------------------------------------------
+describe("RootGame.awaitPlayerChoice", () => {
+    test("returns when pending choice is resolved", () => { });
+    test("throws an error if called when there is no pending choice", () => { });
+    test("throws an interruption error if pending choice id changes while awaiting resolution", () => { });
+});
+
 
 // --- playTurn ----------------------------------------------------------------
 
