@@ -96,11 +96,14 @@ describe("RootGame.setup", () => {
     test("sets up chosen deck", () => { });
     test("randomizes seating order", () => { });
     test("removes dominance cards from the deck in 2-player games", () => { });
+
     test("generates the correct number of landmarks", () => { });
     test("players place landmarks in reverse turn order", () => { });
+    test("landmarks are skipped if the number is zero", () => { });
 
     test("generates the correct number of promoted/demoted hirelings for the player count", () => { });
     test("players set up hirelings in reverse turn order", () => { });
+    test("hirelings are skipped if the option is not enabled", () => { });
 
     describe("standard setup", () => {
         test("sets up chosen factions", () => { });
@@ -152,7 +155,7 @@ describe("RootGame.isMoveLegal ", () => {
 
     test("is illegal when origin and destination are not adjacent", () => { });
 
-    test("is illegal to move zero pieces ", () => { });
+    test("is illegal to move zero pieces", () => { });
 });
 
 // --- isBattleLegal  ----------------------------------------------------
@@ -170,7 +173,7 @@ describe("RootGame.isBattleLegal ", () => {
 
     test("is illegal to battle a hireling you control", () => { });
 
-    test("is illegal to battle a player that is not an opponent", () => { });
+    test("is illegal to battle a faction that is not an enemy", () => { });
 });
 
 // --- isPlaceLegal  ---------------------------------------------------
