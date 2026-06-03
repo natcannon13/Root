@@ -1,6 +1,10 @@
 import { HistoryNode, StateHistory } from "./StateHistory";
 
-export class StateStore<State, Transition> {
+interface TransitionType {
+  id: string;
+}
+
+export class StateStore<State, Transition extends TransitionType> {
   private state?: State;
   private history: StateHistory<State, Transition> = new StateHistory();
   private subscribers: Array<(transition: Transition) => void> = [];

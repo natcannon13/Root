@@ -1,11 +1,11 @@
 export type PendingChoiceType = string;
 
-type PendingChoiceValueMap = Record<PendingChoiceType, any>;
+export type PendingChoiceValueMap = Record<PendingChoiceType, any>;
 
 type PendingChoiceBase<
   T extends PendingChoiceType,
 > = {
-  id: number;
+  id: string; // Composed of turn number + sequence number for matching when initializing a mid-turn state
   type: T;
   playerID: number;
 }

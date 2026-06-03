@@ -163,6 +163,7 @@ describe("RootGame.initializeState", () => {
             discardPile: [{ id: 2 } as any],
             spentCraftingPieceIDs: [7, 8],
             pendingChoice: { id: 9 } as any,
+            pastChoices: [{ id: 10 } as any],
         } satisfies RootGameState;
 
         game.initializeState(state);
@@ -192,6 +193,7 @@ describe("RootGame.initializeState", () => {
             discardPile: [{ id: 3 } as any],
             spentCraftingPieceIDs: [4, 5],
             pendingChoice: { id: 6 } as any,
+            pastChoices: [{ id: 10 } as any],
         } satisfies RootGameState;
 
         game.initializeState(state);
@@ -204,20 +206,28 @@ describe("RootGame.initializeState", () => {
         expect(game.discardPile).toBe(state.discardPile);
         expect(game.spentCraftingPieces).toEqual(state.spentCraftingPieceIDs.map((id) => ({ id })));
         expect(game.pendingChoice).toBe(state.pendingChoice);
+        expect(game.pastChoices).toEqual(state.pastChoices);
     });
 });
 
 // --- updateState ----------------------------------------------------------------
 
 describe("RootGame.updateState", () => {
-    // TODO: Add more specific tests for each type of update once the update types are defined and implemented.
+    // TODO: Add more specific tests for each type of update once the update types are defined.
 });
 
 // --- awaitPlayerChoice ----------------------------------------------------------------
 describe("RootGame.awaitPlayerChoice", () => {
-    test("returns when pending choice is resolved", () => { });
-    test("throws an error if called when there is no pending choice", () => { });
-    test("throws an interruption error if pending choice id changes while awaiting resolution", () => { });
+    test("returns right away with the appropriate value if a matching choice exists in past choices", () => { });
+    test("throws an error if a different choice with the same id exists in past choices", () => { });
+    test("waits for the choice to be resolved if it's not in past choices", () => {
+        // In order to resolve a choice, pendingChoice.resolved must be set to true, pendingChoice.value must be set 
+        // to the appropriate value, and gameplayPendingPromise must be resolved.
+    });
+    test("throws an error if the pending promise is rejected", () => { });
+    test("throws an error if the pending choice has changed after resolution", () => { });
+    test("returns the value of the choice after resolution", () => { });
+    test("adds choice to past choices and sets pending choice to null after resolution", () => { });
 });
 
 

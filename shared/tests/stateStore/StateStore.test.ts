@@ -17,6 +17,10 @@ describe("StateStore", () => {
 
   test("updateState notifies subscribers", () => {});
 
+  test("updateState throws an error if called with a transition that has the same id but is different from a previous transition", () => {});
+
+  test("updateState does nothing if called with a duplicate transition", () => {});
+
   test("subscribe returns an unsubscribe function that removes the subscriber", () => {});
 
   test("initializeState sets the initial state", () => {});

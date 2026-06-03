@@ -18,7 +18,7 @@ import type { Supply } from "../pieces/Supply";
 import type { RootHirelingState } from "../state/RootHirelingState";
 import type { PlayOptions } from "./PlayOptions";
 import type { BattleState } from "../state/BattleState";
-import type { PendingChoice } from "./PendingChoice";
+import type { PendingChoice, PendingChoiceType, PendingChoiceValueMap } from "./PendingChoice";
 import type { StateStore } from "../stateStore/StateStore";
 import type { RootGameUpdate } from "./RootGameUpdate";
 
@@ -40,7 +40,9 @@ export class RootGame {
     discardPile: Card[] = [];
     dominancePile: Card[] = [];
     spentCraftingPieces: Piece[] = [];
-    pendingChoice: PendingChoice | null = null;
+    pendingChoice: PendingChoice | null = null; // Seperate from gameplayPendingPromise for serializability.
+    pastChoices: PendingChoice[] = [];
+    gameplayPendingPromise: Promise<void> | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.
 
     constructor(stateStore: RootGameStateStore, options: PlayOptions) {
         throw new Error("RootGame constructor not implemented");
@@ -62,7 +64,7 @@ export class RootGame {
         throw new Error("RootGame.updateState not implemented");
     }
 
-    awaitPlayerChoice() {
+    async awaitPlayerChoice<T extends PendingChoiceType>(choice: PendingChoice<T>): Promise<PendingChoiceValueMap[T]> {
         throw new Error("RootGame.awaitPlayerChoice not implemented");
     }
 
@@ -85,15 +87,15 @@ export class RootGame {
     private initializeLandmarks(initialState: LandmarkType[]): Landmark[] {
         throw new Error("initializeLandmarks not implemented");
     }
-    play() {
+    async play() {
         throw new Error("RootGame.play not implemented");
     }
 
-    playTurn() {
+    async playTurn() {
         throw new Error("RootGame.playTurn not implemented");
     }
 
-    setup() {
+    async setup() {
         throw new Error("RootGame.setup not implemented");
     }
 
@@ -101,43 +103,43 @@ export class RootGame {
         return Math.floor(Math.random() * 4);
     }
 
-    isMoveLegal(move: Move): boolean {
+    async isMoveLegal(move: Move): Promise<boolean> {
         throw new Error("RootGame.isMoveLegal not implemented");
     }
 
-    isBattleLegal(battle: Battle): boolean {
+    async isBattleLegal(battle: Battle): Promise<boolean> {
         throw new Error("RootGame.isBattleLegal not implemented");
     }
 
-    isPlaceLegal(pieces: Piece[], locationID: number): boolean {
+    async isPlaceLegal(pieces: Piece[], locationID: number): Promise<boolean> {
         throw new Error("RootGame.isPlaceLegal not implemented");
     }
 
-    isCraftLegal(
+    async isCraftLegal(
         faction: PlayerFactionType,
         card: Card,
         craftingPieces: Piece[],
-    ): boolean {
+    ): Promise<boolean> {
         throw new Error("RootGame.isCraftLegal not implemented");
     }
 
-    move(move: Move) {
+    async move(move: Move) {
         throw new Error("RootGame.move not implemented");
     }
 
-    battle(battle: Battle) {
+    async battle(battle: Battle) {
         throw new Error("RootGame.battle not implemented");
     }
 
-    place(pieces: Piece[], supply: Supply, locationID: number) {
+    async place(pieces: Piece[], supply: Supply, locationID: number) {
         throw new Error("RootGame.place not implemented");
     }
 
-    craft(faction: PlayerFactionType, card: Card, craftingPieces: Piece[]) {
+    async craft(faction: PlayerFactionType, card: Card, craftingPieces: Piece[]) {
         throw new Error("RootGame.craft not implemented");
     }
 
-    dealHits(hitFaction: FactionType, hittingFaction: FactionType, locationID: number, hits: number) {
+    async dealHits(hitFaction: FactionType, hittingFaction: FactionType, locationID: number, hits: number) {
         throw new Error("RootGame.dealHits not implemented");
     }
 

@@ -22,4 +22,5 @@ export interface RootGameState {
     discardPile: Card[];
     spentCraftingPieceIDs: number[];
     pendingChoice: PendingChoice | null;
+    pastChoices: PendingChoice[];
 }
