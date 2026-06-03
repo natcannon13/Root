@@ -4,6 +4,6 @@ import type { Event } from "../game/Event";
 
 export interface RulesModule {
   staticRulesChanges: RulesChange[];
-  setup: (game: RootGame) => void;
+  setup: (game: RootGame, playerID: number) => Promise<void>;
   globalEvents: (game: RootGame) => Event[];
 }

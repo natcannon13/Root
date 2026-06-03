@@ -1,7 +1,7 @@
 import type { PlayerFactionType } from '../Enums';
 
 export interface Battle {
-    attacker: PlayerFactionType;
-    defender: PlayerFactionType;
+    attackerID: number;
+    defenderID: number;
     clearingID: number;
 }

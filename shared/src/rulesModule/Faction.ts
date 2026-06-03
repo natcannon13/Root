@@ -5,6 +5,7 @@ import type { FactionType } from "../Enums";
 
 export interface Faction extends RulesModule {
   name: FactionType;
+  id: number;
   pieces: Piece[];
   game: RootGame;
   hasCraftedBox: boolean;

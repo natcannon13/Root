@@ -1,9 +1,13 @@
-import type { BoardType, DeckType, PlayerFactionType } from "../Enums";
+import type { BoardType, DeckType, HirelingFactionType, LandmarkType, PlayerFactionType } from "../Enums";
 
 interface SetupOptions {
     type: string;
     map: BoardType;
     deck: DeckType;
+    usingHirelings: boolean;
+    landmarksToUse: number;
+    availableHirelings: HirelingFactionType[];
+    availableLandmarks: LandmarkType[];
 }
 
 export interface StandardSetupOptions extends SetupOptions {
@@ -13,8 +17,5 @@ export interface StandardSetupOptions extends SetupOptions {
 
 export interface AdvancedSetupOptions extends SetupOptions {
     type: "advanced";
-    board: BoardType;
     draftableFactions: PlayerFactionType[];
-    usingHirelings: boolean;
-    landmarksToUse: number;
 }

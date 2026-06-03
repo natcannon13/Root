@@ -1,8 +1,7 @@
 import type { Piece } from '../pieces/Piece';
-import type { PlayerFactionType } from '../Enums';
 
 export interface Move {
-    mover: PlayerFactionType;
+    moverID: number;
     pieces: Piece[];
     startingLocationID: number;
     endingLocationID: number;

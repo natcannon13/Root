@@ -31,40 +31,43 @@ const ValidPlayerFactionTypes = [
     "knaves-of-the-deepwood",
     "custom",
 ] as const;
-const ValidHirelingFactionTypes = [
+const ValidPromotedHirelingFactionTypes = [
     "forest-patrol",
-    "feline-physicians",
     "last-dynasty",
-    "bluebird-nobles",
     "spring-uprising",
-    "rabbit-scouts",
     "the-exile",
-    "the-brigand",
     "riverfolk-flotilla",
-    "otter-divers",
     "warm-sun-prophets",
-    "lizard-envoys",
     "sunward-expedition",
-    "mole-artisans",
     "corvid-spies",
-    "raven-sentries",
     "flame-bearers",
-    "rat-smugglers",
     "vault-keepers",
-    "badger-bodyguards",
     "river-roamers",
-    "frog-tinkers",
     "sunny-advocates",
-    "bat-messengers",
     "highway-bandits",
-    "bandit-gangs",
     "popular-band",
-    "street-band",
     "furious-protector",
-    "stoic-protector",
     "prosperous-farmers",
+    "custom-promoted",
+] as const;
+const ValidDemotedHirelingFactionTypes = [
+    "feline-physicians",
+    "bluebird-nobles",
+    "rabbit-scouts",
+    "the-brigand",
+    "otter-divers",
+    "lizard-envoys",
+    "mole-artisans",
+    "raven-sentries",
+    "rat-smugglers",
+    "badger-bodyguards",
+    "frog-tinkers",
+    "bat-messengers",
+    "bandit-gangs",
+    "street-band",
+    "stoic-protector",
     "struggling-farmers",
-    "custom",
+    "custom-demoted"
 ] as const;
 const ValidBoardTypes = [
     "autumn",
@@ -106,7 +109,9 @@ export type PhaseType = (typeof ValidPhaseTypes)[number];
 export type ConnectionType = (typeof ValidConnectionTypes)[number];
 export type ItemType = (typeof ValidItemTypes)[number];
 export type PlayerFactionType = (typeof ValidPlayerFactionTypes)[number];
-export type HirelingFactionType = (typeof ValidHirelingFactionTypes)[number];
+export type PromotedHirelingFactionType = (typeof ValidPromotedHirelingFactionTypes)[number];
+export type DemotedHirelingFactionType = (typeof ValidDemotedHirelingFactionTypes)[number];
+export type HirelingFactionType = PromotedHirelingFactionType | DemotedHirelingFactionType;
 export type FactionType = PlayerFactionType | HirelingFactionType;
 export type BoardType = (typeof ValidBoardTypes)[number];
 export type DeckType = (typeof ValidDeckTypes)[number];
@@ -128,8 +133,14 @@ export function isItemType(value: string): value is ItemType {
 export function isPlayerFactionType(value: string): value is PlayerFactionType {
     return ValidPlayerFactionTypes.includes(value as PlayerFactionType);
 }
+export function isPromotedHirelingFactionType(value: string): value is PromotedHirelingFactionType {
+    return ValidPromotedHirelingFactionTypes.includes(value as PromotedHirelingFactionType);
+}
+export function isDemotedHirelingFactionType(value: string): value is DemotedHirelingFactionType {
+    return ValidDemotedHirelingFactionTypes.includes(value as DemotedHirelingFactionType);
+}
 export function isHirelingFactionType(value: string): value is HirelingFactionType {
-    return ValidHirelingFactionTypes.includes(value as HirelingFactionType);
+    return isPromotedHirelingFactionType(value) || isDemotedHirelingFactionType(value);
 }
 export function isFactionType(value: string): value is FactionType {
     return isPlayerFactionType(value) || isHirelingFactionType(value);
@@ -146,3 +157,5 @@ export function isBattlePhaseType(value: string): value is BattlePhaseType {
 export function isLandmarkType(value: string): value is LandmarkType {
     return ValidLandmarkTypes.includes(value as LandmarkType);
 }
+
+export const standardSetupOrder: PlayerFactionType[] = [...ValidPlayerFactionTypes];

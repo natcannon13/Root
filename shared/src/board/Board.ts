@@ -18,7 +18,7 @@ export class Board implements RulesModule {
   items: Item[];
   staticRulesChanges: RulesChange[] = [];
 
-  setup(): void {
+  async setup(): Promise<void> {
     // optional: rules module setup hook
   }
 

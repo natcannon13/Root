@@ -3,7 +3,7 @@ import { RootGame, RootGameStateStore } from "../../src/game/RootGame";
 import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
 import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
-import { HirelingFactionType, LandmarkType, PlayerFactionType } from "../../src/Enums";
+import { DemotedHirelingFactionType, HirelingFactionType, isDemotedHirelingFactionType, isPromotedHirelingFactionType, LandmarkType, PlayerFactionType, PromotedHirelingFactionType, standardSetupOrder } from "../../src/Enums";
 import type { RootBoardState } from "../../src/state/RootBoardState";
 import type { RootFactionState } from "../../src/state/RootFactionState";
 import type { Card } from "../../src/cards/Card";
@@ -15,7 +15,7 @@ import { TimeStep } from "../../src/state/TimeStep";
 import { PlayOptions } from "../../src/game/PlayOptions";
 import { PromiseControl } from "../../src/game/RootGame";
 import * as Factory from "../../src/Factory";
-import { Hireling } from "../../src/rulesModule/Hireling";
+import { DemotedHireling, Hireling, PromotedHireling } from "../../src/rulesModule/Hireling";
 import { Landmark } from "../../src/rulesModule/Landmark";
 let game: RootGame;
 let stateStore: RootGameStateStore;
@@ -31,6 +31,10 @@ const basePlayOptions = {
             "woodland-alliance": 3,
         },
         deck: "base",
+        usingHirelings: false,
+        landmarksToUse: 2,
+        availableHirelings: [],
+        availableLandmarks: ["tower", "ferry", "elder-treetop"],
     },
     playerIDs: [1, 2, 3],
 } satisfies PlayOptions;
@@ -57,11 +61,8 @@ function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameSt
     return {
         version: "1.2.3",
         options: basePlayOptions,
-        playerFactionMapping: {
-            "marquise-de-cat": 1,
-            "eyrie-dynasties": 2,
-            "woodland-alliance": 3,
-        },
+        playerFactionMapping: {},
+        playerTurnOrder: [],
         boardState: { version: "b1", name: "autumn", clearings: [], forests: [] },
         factionState: {},
         hirelingState: {},
@@ -134,7 +135,6 @@ describe("RootGame.getState", () => {
         game.hirelings = [];
         game.landmarks = [mock<Landmark>({ name: "ferry" })];
         game.version = "vtest";
-        game.playOptions = { setup: { type: "standard", map: "autumn", chosenFactions: {}, deck: "base" }, playerIDs: [1,2,3] };
         const card1 = mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null });
         const card2 = mock<Card>({ id: 2, name: "c2", suit: "rabbit", craftingCost: null, isAmbush: false, isDominance: false, item: null });
         game.deck = [card1];
@@ -151,7 +151,7 @@ describe("RootGame.getState", () => {
         expect(state.boardState).toBe(boardState);
         expect(state.factionState["marquise-de-cat"]?.name).toBe("marquise-de-cat");
         expect(state.factionState["eyrie-dynasties"]?.name).toBe("eyrie-dynasties");
-        expect(state.landmarks).toEqual([game.landmarks[0]]);
+        expect(state.landmarks).toEqual(game.landmarks.map((l) => l.name));
         expect(state.deckSize).toBe(game.deck.length);
         expect(state.discardPile).toEqual(game.discardPile);
         expect(state.spentCraftingPieceIDs).toEqual([game.spentCraftingPieces[0].id]);
@@ -370,25 +370,174 @@ describe("RootGame.playTurn", () => {
 // --- setup ----------------------------------------------------------------
 
 describe("RootGame.setup", () => {
-    test("sets up chosen map", () => { });
-    test("sets up chosen deck", () => { });
-    test("randomizes seating order", () => { });
-    test("removes dominance cards from the deck in 2-player games", () => { });
+    test("sets up chosen map", () => {
+        // Spy on generateBoardFromType to check that it's called with the correct map type
+        const board = mock<Board>();
+        const generateBoardSpy = vi.spyOn(Factory, "generateBoardFromType").mockReturnValue(board);
+        game.setup();
+        expect(generateBoardSpy).toHaveBeenCalledWith("autumn");
+        expect(game.board).toBe(board);
+    });
+    test("sets up chosen deck", () => {
+        const deck = [mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null })];
+        const generateDeckSpy = vi.spyOn(Factory, "generateDeckFromType").mockReturnValue(deck);
+        game.setup();
+        expect(generateDeckSpy).toHaveBeenCalledWith("base");
+        expect(game.deck).toBe(deck);
+     });
+    test("randomizes seating order", () => {
+        const seatingOrders: number[][] = [];
+        for (let i = 0; i < 100; i++) {
+            mockGame();
+            game.setup();
+            seatingOrders.push(game.turnOrder);
+        }
+        // Check that the seating orders are not all the same (i.e., they are randomized)
+        let allSame = true;
+        for (let i = 1; i < seatingOrders.length; i++) {
+            if (seatingOrders[i].join(",") !== seatingOrders[0].join(",")) {
+                allSame = false;
+                break;
+            }
+        }
+        expect(allSame).toBe(false);
+    });
+    test("removes dominance cards from the deck in 2-player games", () => {
+        const generateDeckSpy = vi.spyOn(Factory, "generateDeckFromType").mockReturnValue([
+            mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: true, item: null }),
+            mock<Card>({ id: 2, name: "c2", suit: "rabbit", craftingCost: null, isAmbush: false, isDominance: false, item: null })
+        ]);
+        game.setup();
+        expect(generateDeckSpy).toHaveBeenCalledWith("base");
+        expect(game.deck).not.toContainEqual(expect.objectContaining({ isDominance: true }));
+    });
 
-    test("generates the correct number of landmarks", () => { });
-    test("players place landmarks in reverse turn order", () => { });
-    test("landmarks are skipped if the number is zero", () => { });
+    test("randomly generates the correct number of landmarks", () => {
+        const availableLandmarks = basePlayOptions.setup.availableLandmarks;
+        const generateLandmarkSpy = vi.spyOn(Factory, "generateLandmarkFromType").mockImplementation((type) => mock<Landmark>({ name: type }));
 
-    test("generates the correct number of promoted/demoted hirelings for the player count", () => { });
-    test("players set up hirelings in reverse turn order", () => { });
-    test("hirelings are skipped if the option is not enabled", () => { });
+        let lastLandmarksUsed: string[] = [];
+        for (let i = 0; i < 10; i++) {
+            mockGame();
+            game.setup();
+            const landmarksUsed = game.landmarks.map((l) => l.name);
+            expect(landmarksUsed.length).toBe(basePlayOptions.setup.landmarksToUse);
+            for (const landmark of landmarksUsed) {
+                expect(availableLandmarks).toContain(landmark);
+            }
+            expect(landmarksUsed).not.toEqual(lastLandmarksUsed); // Check that the landmarks are not the same as the last run (i.e., they are randomized)
+            lastLandmarksUsed = landmarksUsed;
+        }
+    });
+    test("players place landmarks in reverse turn order", () => {
+        const turnOrderSpy = vi.spyOn(game, "turnOrder", "get").mockReturnValue([1,2,3]);
+        let playerIDs: number[] = [];
+        const generateLandmarkSpy = vi.spyOn(Factory, "generateLandmarkFromType").mockImplementation((type) => mock<Landmark>({ name: type, setup: async (g,id) => {playerIDs.push(id)} }));
+        game.setup();
+        expect(playerIDs).toEqual([3,2]);
+    });
+    test("landmarks are skipped if the number is zero", () => {
+        game.playOptions.setup.landmarksToUse = 0;
+        const generateLandmarkSpy = vi.spyOn(Factory, "generateLandmarkFromType");
+        game.setup();
+        expect(generateLandmarkSpy).not.toHaveBeenCalled();
+    });
+
+    test("generates the correct number of promoted/demoted hirelings for the player count", () => {
+        const generateHirelingSpy = vi.spyOn(Factory, "generateHirelingFromType");
+        const totalHirelings = 3;
+        const promotedHirelingCountsByPlayerCount: { [key: number]: number } = {
+            3: 2,
+            4: 1,
+            5: 0,
+        };
+        for (let playerCount = 3; playerCount <= 5; playerCount++) {
+            mockGame({ ...basePlayOptions, playerIDs: Array.from({ length: playerCount }, (_, i) => i + 1) });
+            game.setup();
+            // get an array of the types used to call generateHirelingFromType
+            const hirelingTypesUsed = generateHirelingSpy.mock.calls.map((call) => call[0]);
+            const promotedHirelingsUsed = hirelingTypesUsed.filter((type) => isPromotedHirelingFactionType(type));
+            const demotedHirelingsUsed = hirelingTypesUsed.filter((type) => isDemotedHirelingFactionType(type));
+
+            const promotedHirelingCount = promotedHirelingsUsed.length;
+            const demotedHirelingCount = demotedHirelingsUsed.length;
+
+            expect(promotedHirelingCount).toBe(promotedHirelingCountsByPlayerCount[playerCount]);
+            expect(demotedHirelingCount).toBe(totalHirelings - promotedHirelingCount);
+        }
+    });
+    test("players set up hirelings in reverse turn order", () => {
+        const turnOrderSpy = vi.spyOn(game, "turnOrder", "get").mockReturnValue([1,2,3]);
+        let playerIDs: number[] = [];
+        const generateHirelingSpy = vi.spyOn(Factory, "generateHirelingFromType").mockImplementation((type) => mock<PromotedHireling>({ name: type as PromotedHirelingFactionType, setup: async (g,id) => {playerIDs.push(id)} }));
+        game.setup();
+        expect(playerIDs).toEqual([3,2]);
+    });
+    test("hirelings are skipped if the option is not enabled", () => {
+        game.playOptions.setup.usingHirelings = false;
+        const generateHirelingSpy = vi.spyOn(Factory, "generateHirelingFromType");
+        game.setup();
+        expect(generateHirelingSpy).not.toHaveBeenCalled();
+    });
 
     describe("standard setup", () => {
-        test("sets up chosen factions", () => { });
-        test("assigns the correct player to each faction", () => { });
-        test("throws an error if an invalid player id is provided", () => { });
-        test("each player draws three cards", () => { });
-        test("throws an error if the setup options are incomplete", () => { });
+        test("sets up chosen factions", () => {
+            let setUps: { type: PlayerFactionType; id: number }[] = [];
+            const generateFactionSpy = vi.spyOn(Factory, "generateFactionFromType").mockImplementation(
+                (type) => mock<PlayerFaction>({ 
+                    name: type, 
+                    setup: async (g,id) => {setUps.push({type, id});} 
+                })
+            );
+            game.setup();
+            const expectedSetUps: { type: PlayerFactionType; id: number }[] = [
+                { type: "marquise-de-cat", id: 1 },
+                { type: "eyrie-dynasties", id: 2 },
+                { type: "woodland-alliance", id: 3 },
+            ];
+            expect(setUps).toEqual(expectedSetUps);
+        });
+        test("assigns the correct player to each faction", () => {
+                const generateFactionSpy = vi.spyOn(Factory, "generateFactionFromType").mockImplementation((type) => {
+                    let id: number;
+                    switch (type) {
+                        case "marquise-de-cat": id = 7; break;
+                        case "eyrie-dynasties": id = 6; break;
+                        case "woodland-alliance": id = 5; break;
+                        default: id = 0;
+                    }
+                    return mock<PlayerFaction>({ name: type, id });
+                });
+            game.setup();
+            expect(game.playerFactionMapping).toEqual({
+                7: 1,
+                6: 2,
+                5: 3,
+             });
+        });
+        test("throws an error if an invalid player id is provided", () => {
+            game.playOptions.playerIDs = [1, 2, 99];
+            expect(() => game.setup()).toThrow();
+        });
+        test("each player draws three cards", () => {
+            // Add a deck to draw from and spy on drawCard to check that it's called the correct number of times for each player
+            const deck = Array.from({ length: 30 }, (_, i) => mock<Card>({ id: i + 1, name: `c${i + 1}`, suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null }));
+            const generateDeckSpy = vi.spyOn(Factory, "generateDeckFromType").mockReturnValue(deck);
+            const drawCardSpy = vi.spyOn(game, "drawCard")
+            game.setup();
+            expect(drawCardSpy).toHaveBeenCalledTimes(9);
+            let cardsDrawnByPlayer: { [playerID: number]: number } = {};
+            for (let i = 0; i < 9; i++) {
+                const call = drawCardSpy.mock.calls[i];
+                const playerID = call[0];
+                cardsDrawnByPlayer[playerID] = (cardsDrawnByPlayer[playerID] || 0) + 1;
+            }
+            expect(cardsDrawnByPlayer).toEqual({
+                1: 3,
+                2: 3,
+                3: 3,
+             });
+        });
     });
     describe("advanced setup", () => {
         test("order of events is correct", () => { }); // Landmarks -> Hirelings -> Draw Cards -> Factions -> Discard Cards
@@ -414,6 +563,8 @@ describe("RootGame.setup", () => {
         test("throws an error if the setup options are incomplete", () => { });
     });
 });
+
+// --- placeLandmark ----------------------------------------------------------------
 
 // --- rollDie -----------------------------------------------------------------
 
