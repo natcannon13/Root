@@ -10,7 +10,8 @@ import type { PendingChoice } from '../game/PendingChoice';
 
 export interface RootGameState {
     version: string;
-    options: PlayOptions, 
+    options: PlayOptions;
+    playerFactionMapping: Partial<Record<PlayerFactionType, number>>; // Maps player faction to player ID
     boardState: RootBoardState;
     factionState: Partial<Record<PlayerFactionType, RootFactionState>>;
     hirelingState: Partial<Record<HirelingFactionType, RootHirelingState>>;

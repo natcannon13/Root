@@ -25,15 +25,21 @@ const basePlayOptions = {
     setup: {
         type: "standard",
         map: "autumn",
-        chosenFactions: new Map([
-            ["marquise-de-cat", 1],
-            ["eyrie-dynasties", 2],
-            ["woodland-alliance", 3],
-        ]),
+        chosenFactions: {
+            "marquise-de-cat": 1,
+            "eyrie-dynasties": 2,
+            "woodland-alliance": 3,
+        },
         deck: "base",
     },
     playerIDs: [1, 2, 3],
 } satisfies PlayOptions;
+
+const baseFactionState = {
+    "marquise-de-cat": { version: "f1", name: "marquise-de-cat", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 },
+    "eyrie-dynasties": { version: "f2", name: "eyrie-dynasties", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 },
+    "woodland-alliance": { version: "f3", name: "woodland-alliance", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 },
+} satisfies Partial<Record<PlayerFactionType, RootFactionState>>;
 
 beforeEach(() => {
     mockGame();
@@ -47,12 +53,37 @@ function mockGame(options: PlayOptions = basePlayOptions) {
     game = new RootGame(stateStore, basePlayOptions);
 }
 
+function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameState {
+    return {
+        version: "1.2.3",
+        options: basePlayOptions,
+        playerFactionMapping: {
+            "marquise-de-cat": 1,
+            "eyrie-dynasties": 2,
+            "woodland-alliance": 3,
+        },
+        boardState: { version: "b1", name: "autumn", clearings: [], forests: [] },
+        factionState: {},
+        hirelingState: {},
+        landmarks: [],
+        timeState: new TimeStep(),
+        battleState: null,
+        deck: [],
+        deckSize: 0,
+        discardPile: [],
+        spentCraftingPieceIDs: [],
+        pendingChoice: null,
+        pastChoices: [],
+        ...overrides,
+    };
+}
+
 function mockFactions(factionTypes: PlayerFactionType[]) {
     let factions: { [key in PlayerFactionType]?: PlayerFaction } = {};
     for (const factionType of factionTypes) {
         factions[factionType] = mock<PlayerFaction>({ name: factionType });
     }
-    vi.spyOn(game as any, "initializeFactions").mockReturnValue(Object.values(factions));
+    game.factions = Object.values(factions) as PlayerFaction[];
     return factions;
 }
 
@@ -74,7 +105,7 @@ describe("RootGame constructor", () => {
     });
     // TODO: figure out what this listener is supposed to do and test that it does it.
     test("calls stateFromOptions with the provided play options and calls initializeState with the resulting state", () => {
-            const stateFromOptionsSpy = vi.spyOn(RootGame, "stateFromOptions").mockReturnValue({} as RootGameState);
+            const stateFromOptionsSpy = vi.spyOn(RootGame, "stateFromOptions").mockReturnValue(createRootGameState());
             const initializeStateSpy = vi.spyOn(game, "initializeState").mockReturnValue(undefined);
             mockGame();
             expect(stateFromOptionsSpy).toHaveBeenCalledWith(basePlayOptions);
@@ -103,7 +134,7 @@ describe("RootGame.getState", () => {
         game.hirelings = [];
         game.landmarks = [mock<Landmark>({ name: "ferry" })];
         game.version = "vtest";
-        game.playOptions = { setup: { type: "standard", map: "autumn", chosenFactions: new Map(), deck: "base" }, playerIDs: [1,2,3] } as PlayOptions;
+        game.playOptions = { setup: { type: "standard", map: "autumn", chosenFactions: {}, deck: "base" }, playerIDs: [1,2,3] };
         const card1 = mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null });
         const card2 = mock<Card>({ id: 2, name: "c2", suit: "rabbit", craftingCost: null, isAmbush: false, isDominance: false, item: null });
         game.deck = [card1];
@@ -154,26 +185,13 @@ describe("RootGame.initializeState", () => {
         const generateHirelingSpy = vi.spyOn(Factory, "generateHirelingFromType").mockReturnValue(hirelingByType);
         const generateLandmarkSpy = vi.spyOn(Factory, "generateLandmarkFromType").mockReturnValue(landmarkByType);
 
-        const state = {
-            version: "1.2.3",
-            options: basePlayOptions,
-            boardState: { version: "b1", name: "autumn", clearings: [], forests: [] },
-            factionState: {
-                "marquise-de-cat": { version: "f1", name: "marquise-de-cat", agentID: null, hand: null, handSize: 0, craftedImprovements: [], score: 0 },
-            },
+        const state = createRootGameState({
+            factionState: baseFactionState,
             hirelingState: {
                 "corvid-spies": { version: "h3", name: "corvid-spies", controlCounter: 0, controllingFaction: "woodland-alliance" },
             },
-            landmarks: ["ferry"],
-            timeState: new TimeStep("marquise-de-cat", "birdsong", "main"),
-            battleState: new BattleState({ attacker: "marquise-de-cat", defender: "eyrie-dynasties", clearingID: 1 }),
-            deck: [mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null })],
-            deckSize: 1,
-            discardPile: [mock<Card>({ id: 2, name: "c2", suit: "rabbit", craftingCost: null, isAmbush: false, isDominance: false, item: null })],
-            spentCraftingPieceIDs: [7, 8],
-            pendingChoice: { id: "9", type: "pick", playerID: 1, resolved: false },
-            pastChoices: [{ id: "10", type: "pick", playerID: 1, resolved: true, value: {} }],
-        } satisfies RootGameState;
+            landmarks: ["ferry"]
+        });
 
         game.initializeState(state);
 
@@ -188,13 +206,7 @@ describe("RootGame.initializeState", () => {
         expect(game.landmarks).toEqual([landmarkByType]);
     });
     test("initializes all other game properties correctly matching the provided state", () => {
-        const state = {
-            version: "1.2.3",
-            options: basePlayOptions,
-            boardState: { version: "b1", name: "autumn", clearings: [], forests: [] },
-            factionState: {},
-            hirelingState: {},
-            landmarks: [],
+        const state = createRootGameState({
             timeState: new TimeStep("eyrie-dynasties", "daylight", "end"),
             battleState: mock<BattleState>(),
             deck: [mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null }), mock<Card>({ id: 2, name: "c2", suit: "rabbit", craftingCost: null, isAmbush: false, isDominance: false, item: null })],
@@ -203,7 +215,7 @@ describe("RootGame.initializeState", () => {
             spentCraftingPieceIDs: [4, 5],
             pendingChoice: { id: "6", type: "pick", playerID: 1, resolved: false },
             pastChoices: [{ id: "10", type: "pick", playerID: 1, resolved: true, value: {} }],
-        } satisfies RootGameState;
+        });
 
         game.initializeState(state);
 
@@ -226,6 +238,7 @@ describe("RootGame.updateState", () => {
 });
 
 // --- awaitPlayerChoice ----------------------------------------------------------------
+
 describe("RootGame.awaitPlayerChoice", () => {
     test("returns right away with the appropriate value if a matching choice exists in past choices", async () => {
         const past: PendingChoice = { id: "c1", type: "pick", playerID: 1, resolved: true, value: { picked: 5 } };
@@ -318,12 +331,40 @@ describe("RootGame.awaitPlayerChoice", () => {
 // --- playTurn ----------------------------------------------------------------
 
 describe("RootGame.playTurn", () => {
-    test("calls setup if timestep currentTurn is none", () => { });
-    test("calls takePhase 3 times for the current player and updates timestep correctly in between", () => { });
-    test("calls takePhase with the correct phase for each of the three phases in a turn", () => { });
-    test("triggers the appropriate start-of-phase events for each phase of the turn", () => { });
-    test("correctly advances the current player and time step at the end of the turn", () => { });
-    test("if given a mid-turn time step, skips to the correct phase", () => { });
+    test("calls setup if timestep currentTurn is none", () => {
+        const setupSpy = vi.spyOn(game, "setup");
+        game.currentTimeStep = new TimeStep("none", "birdsong", "main");
+        game.playTurn();
+        expect(setupSpy).toHaveBeenCalled();
+    });
+
+    test("calls takePhase 3 times for the current player and updates timestep correctly in between", () => {
+            
+            const factions = mockFactions(["marquise-de-cat", "eyrie-dynasties", "woodland-alliance"]);
+            game.currentTimeStep = new TimeStep("marquise-de-cat", "birdsong", "start");
+            const marquise = factions["marquise-de-cat"]!;
+            
+
+            const takePhaseSpy = vi.spyOn(marquise, "takePhase");
+            game.playTurn();
+            expect(takePhaseSpy).toHaveBeenCalledTimes(3);
+            expect(takePhaseSpy.mock.calls[0][0]).toEqual(new TimeStep("marquise-de-cat", "birdsong", "main"));
+            expect(takePhaseSpy.mock.calls[1][0]).toEqual(new TimeStep("marquise-de-cat", "daylight", "main"));
+            expect(takePhaseSpy.mock.calls[2][0]).toEqual(new TimeStep("marquise-de-cat", "evening", "main"));
+            expect(game.currentTimeStep).toEqual(new TimeStep("eyrie-dynasties", "birdsong", "start"));
+    });
+
+    test("if given a mid-turn time step, skips to the correct phase", () => {
+        const factions = mockFactions(["marquise-de-cat", "eyrie-dynasties", "woodland-alliance"]);
+        game.currentTimeStep = new TimeStep("eyrie-dynasties", "daylight", "main");
+        const eyrie = factions["eyrie-dynasties"]!;
+        const takePhaseSpy = vi.spyOn(eyrie, "takePhase");
+        game.playTurn();
+        expect(takePhaseSpy).toHaveBeenCalledTimes(2);
+        expect(takePhaseSpy.mock.calls[0][0]).toEqual(new TimeStep("eyrie-dynasties", "daylight", "main"));
+        expect(takePhaseSpy.mock.calls[1][0]).toEqual(new TimeStep("eyrie-dynasties", "evening", "start"));
+        expect(game.currentTimeStep).toEqual(new TimeStep("woodland-alliance", "birdsong", "start"));
+    });
 });
 
 // --- setup ----------------------------------------------------------------

@@ -8,7 +8,7 @@ interface SetupOptions {
 
 export interface StandardSetupOptions extends SetupOptions {
     type: "standard";
-    chosenFactions: Map<PlayerFactionType, number>;
+    chosenFactions: Partial<Record<PlayerFactionType, number>>;
 }
 
 export interface AdvancedSetupOptions extends SetupOptions {
