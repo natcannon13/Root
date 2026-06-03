@@ -2,20 +2,13 @@ import { describe, test, expect, beforeEach, vi } from "vitest";
 import { RootGame, RootGameStateStore } from "../../src/game/RootGame";
 import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
-import type { Move } from "../../src/gameActions/Move";
-import type { Battle } from "../../src/gameActions/Battle";
-import type { Pawn } from "../../src/pieces/Pawn";
-import type { Token } from "../../src/pieces/Token";
-import type { Building } from "../../src/pieces/Building";
-import type { Card } from "../../src/cards/Card";
 import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
 import { PlayerFactionType } from "../../src/Enums";
-import { RootGameAgent } from "../../src/agents/RootGameAgent";
 import { RootGameState } from "../../src/state/RootGameState";
-import { StateStore } from "../../src/stateStore/StateStore";
-import { RootGameUpdate } from "../../src/game/RootGameUpdate";
+import { BattleState } from "../../src/state/BattleState";
+import { TimeStep } from "../../src/state/TimeStep";
 import { PlayOptions } from "../../src/game/PlayOptions";
-import { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
+import * as Factory from "../../src/Factory";
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
@@ -138,17 +131,120 @@ describe("RootGame.getState", () => {
 // --- initializeState ----------------------------------------------------------------
 
 describe("RootGame.initializeState", () => {
-    test("initializes all RulesModules", () => { });
-    test("calls initialization helper methods for board, factions, hirelings, and landmarks", () => { });
-    test("initializes all other relevant game properties correctly", () => { });
-    test("throws an error if given an invalid state object", () => { });
+    test("calls generate-from-type Factory functions for each game component matching the provided types and assigns them to the game instance", () => {
+        const board = mock<Board>();
+        const factionByType = {
+            "marquise-de-cat": mock<PlayerFaction>({ name: "marquise-de-cat" }),
+            "eyrie-dynasties": mock<PlayerFaction>({ name: "eyrie-dynasties" }),
+            "woodland-alliance": mock<PlayerFaction>({ name: "woodland-alliance" }),
+        };
+        const hirelingByType = {
+            "riverfolk-company": { name: "riverfolk-company" },
+            "lizard-cult": { name: "lizard-cult" },
+            "corvid-spies": { name: "corvid-spies" },
+        };
+        const landmarkByType = {
+            "keep": { name: "keep" },
+        };
+
+        const generateBoardSpy = vi.spyOn(Factory, "generateBoardFromType").mockReturnValue(board);
+        const generateFactionSpy = vi.spyOn(Factory, "generateFactionFromType").mockImplementation((factionType) => factionByType[factionType]);
+        const generateHirelingSpy = vi.spyOn(Factory, "generateHirelingFromType").mockImplementation((hirelingType) => hirelingByType[hirelingType]);
+        const generateLandmarkSpy = vi.spyOn(Factory, "generateLandmarkFromType").mockImplementation((landmarkType) => landmarkByType[landmarkType]);
+
+        const state = {
+            version: "1.2.3",
+            options: basePlayOptions,
+            boardState: { version: "b1", name: "autumn", clearings: [], forests: [] },
+            factionState: {
+                "marquise-de-cat": { version: "f1", name: "marquise-de-cat", agentID: null, hand: null, handSize: 0, craftedImprovements: [], score: 0 },
+                "eyrie-dynasties": { version: "f2", name: "eyrie-dynasties", agentID: null, hand: null, handSize: 0, craftedImprovements: [], score: 0 },
+                "woodland-alliance": { version: "f3", name: "woodland-alliance", agentID: null, hand: null, handSize: 0, craftedImprovements: [], score: 0 },
+            },
+            hirelingState: {
+                "riverfolk-company": { version: "h1", name: "riverfolk-company", controlCounter: 0, controllingFaction: "marquise-de-cat" },
+                "lizard-cult": { version: "h2", name: "lizard-cult", controlCounter: 0, controllingFaction: "eyrie-dynasties" },
+                "corvid-spies": { version: "h3", name: "corvid-spies", controlCounter: 0, controllingFaction: "woodland-alliance" },
+            },
+            landmarks: ["keep"],
+            timeState: new TimeStep("marquise-de-cat", "birdsong", "main", "eyrie-dynasties"),
+            battleState: new BattleState({} as any),
+            deck: [{ id: 1 } as any],
+            deckSize: 1,
+            discardPile: [{ id: 2 } as any],
+            spentCraftingPieceIDs: [7, 8],
+            pendingChoice: { id: 9 } as any,
+        } satisfies RootGameState;
+
+        game.initializeState(state);
+
+        expect(generateBoardSpy).toHaveBeenCalledWith(state.boardState.name);
+        expect(generateFactionSpy).toHaveBeenCalledTimes(3);
+        expect(generateFactionSpy).toHaveBeenCalledWith("marquise-de-cat");
+        expect(generateFactionSpy).toHaveBeenCalledWith("eyrie-dynasties");
+        expect(generateFactionSpy).toHaveBeenCalledWith("woodland-alliance");
+        expect(generateHirelingSpy).toHaveBeenCalledTimes(3);
+        expect(generateHirelingSpy).toHaveBeenCalledWith("riverfolk-company");
+        expect(generateHirelingSpy).toHaveBeenCalledWith("lizard-cult");
+        expect(generateHirelingSpy).toHaveBeenCalledWith("corvid-spies");
+        expect(generateLandmarkSpy).toHaveBeenCalledTimes(1);
+        expect(generateLandmarkSpy).toHaveBeenCalledWith("keep");
+
+        expect(game.board).toBe(board);
+        expect(game.factions).toEqual(Object.values(factionByType));
+        expect(game.hirelings).toEqual(Object.values(hirelingByType));
+        expect(game.landmarks).toEqual(Object.values(landmarkByType));
+    });
+    test("initializes all other game properties correctly matching the provided state", () => {
+        const state = {
+            version: "1.2.3",
+            options: basePlayOptions,
+            boardState: { version: "b1", name: "autumn", clearings: [], forests: [] },
+            factionState: {
+                "marquise-de-cat": { version: "f1", name: "marquise-de-cat", agentID: 11, hand: null, handSize: 0, craftedImprovements: [], score: 5 },
+                "eyrie-dynasties": { version: "f2", name: "eyrie-dynasties", agentID: 12, hand: null, handSize: 0, craftedImprovements: [], score: 7 },
+                "woodland-alliance": { version: "f3", name: "woodland-alliance", agentID: 13, hand: null, handSize: 0, craftedImprovements: [], score: 2 },
+            },
+            hirelingState: {
+                "riverfolk-company": { version: "h1", name: "riverfolk-company", controlCounter: 1, controllingFaction: "marquise-de-cat" },
+                "lizard-cult": { version: "h2", name: "lizard-cult", controlCounter: 2, controllingFaction: "eyrie-dynasties" },
+                "corvid-spies": { version: "h3", name: "corvid-spies", controlCounter: 3, controllingFaction: "woodland-alliance" },
+            },
+            landmarks: [],
+            timeState: new TimeStep("eyrie-dynasties", "daylight", "end", "marquise-de-cat"),
+            battleState: new BattleState({} as any, "attacker" as any),
+            deck: [{ id: 1 } as any, { id: 2 } as any],
+            deckSize: 2,
+            discardPile: [{ id: 3 } as any],
+            spentCraftingPieceIDs: [4, 5],
+            pendingChoice: { id: 6 } as any,
+        } satisfies RootGameState;
+
+        vi.spyOn(Factory, "generateBoardFromType").mockReturnValue(mock<Board>());
+        vi.spyOn(Factory, "generateFactionFromType").mockImplementation((factionType) => mock<PlayerFaction>({ name: factionType }));
+        vi.spyOn(Factory, "generateHirelingFromType").mockImplementation((factionType) => ({ name: factionType } as any));
+        vi.spyOn(Factory, "generateLandmarkFromType").mockImplementation((landmarkType) => ({ name: landmarkType } as any));
+
+        game.initializeState(state);
+
+        expect(game.version).toBe(state.version);
+        expect(game.playOptions).toBe(state.options);
+        expect(game.currentTimeStep).toBe(state.timeState);
+        expect(game.battleState).toBe(state.battleState);
+        expect(game.deck).toBe(state.deck);
+        expect(game.discardPile).toBe(state.discardPile);
+        expect(game.spentCraftingPieces).toEqual(state.spentCraftingPieceIDs.map((id) => ({ id } as any)));
+        expect(game.pendingChoice).toBe(state.pendingChoice);
+    });
 });
 
 // --- updateState ----------------------------------------------------------------
 
 describe("RootGame.updateState", () => {
     // TODO: Add more specific tests for each type of update once the update types are defined and implemented.
-    test("throws an error if given an invalid update object", () => { });
+    test("throws an error if given an invalid update object", () => {
+        expect(() => game.updateState({} as any)).toThrow();
+    });
 });
 
 // --- awaitPlayerChoice ----------------------------------------------------------------
