@@ -9,11 +9,11 @@ import type { Card } from "../cards/Card";
 export interface PlayerFaction extends Faction {
   score: number;
   hand: Card[];
+  revealedCards: Card[];
   takePhase: (timeStep: TimeStep) => void;
   getEvents: (timeStep: TimeStep) => Event[];
   getCraftingPieces: () => Piece[];
   getState: (publicView: boolean) => RootFactionState;
   updateState: (s: RootFactionState) => void;
   name: PlayerFactionType;
-  reach: number;
 }

@@ -20,6 +20,7 @@ const ValidPlayerFactionTypes = [
     "eyrie-dynasties",
     "woodland-alliance",
     "vagabond",
+    "vagabond-2",
     "riverfolk-company",
     "lizard-cult",
     "underground-duchy",
@@ -29,7 +30,6 @@ const ValidPlayerFactionTypes = [
     "lilypad-diaspora",
     "twilight-council",
     "knaves-of-the-deepwood",
-    "custom",
 ] as const;
 const ValidPromotedHirelingFactionTypes = [
     "forest-patrol",
@@ -48,7 +48,6 @@ const ValidPromotedHirelingFactionTypes = [
     "popular-band",
     "furious-protector",
     "prosperous-farmers",
-    "custom-promoted",
 ] as const;
 const ValidDemotedHirelingFactionTypes = [
     "feline-physicians",
@@ -67,7 +66,6 @@ const ValidDemotedHirelingFactionTypes = [
     "street-band",
     "stoic-protector",
     "struggling-farmers",
-    "custom-demoted"
 ] as const;
 const ValidBoardTypes = [
     "autumn",
@@ -76,13 +74,11 @@ const ValidBoardTypes = [
     "mountain",
     "gorge",
     "marsh",
-    "custom",
 ] as const;
 const ValidDeckTypes = [
     "base",
     "exiles-and-partisans",
     "squires-and-disciples",
-    "custom",
 ] as const;
 const ValidBattlePhaseTypes = [
     `ambush`,
@@ -101,7 +97,6 @@ const ValidLandmarkTypes = [
     "foxburrow",
     "mousehold",
     "rabbittown",
-    "custom",
 ] as const;
 
 export type Suit = (typeof ValidSuits)[number];
@@ -159,3 +154,19 @@ export function isLandmarkType(value: string): value is LandmarkType {
 }
 
 export const standardSetupOrder: PlayerFactionType[] = [...ValidPlayerFactionTypes];
+export const reachValues: Record<PlayerFactionType, number> = { 
+    "marquise-de-cat": 10,
+    "lord-of-the-hundreds": 9,
+    "keepers-in-iron": 8,
+    "underground-duchy": 8,
+    "lilypad-diaspora": 7,
+    "eyrie-dynasties": 7,
+    "vagabond": 5,
+    "vagabond-2": 2,
+    "riverfolk-company": 5,
+    "knaves-of-the-deepwood": 5,
+    "twilight-council": 4,
+    "woodland-alliance": 3,
+    "corvid-conspiracy": 3,
+    "lizard-cult": 2,
+}

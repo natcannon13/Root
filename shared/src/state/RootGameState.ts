@@ -11,7 +11,7 @@ import type { PendingChoice } from '../game/PendingChoice';
 export interface RootGameState {
     version: string;
     options: PlayOptions;
-    playerFactionMapping: Partial<Record<number, number>>; // Maps <factionID, playerID>
+    playerFactionMapping: Partial<Record<PlayerFactionType, number>>;
     playerTurnOrder: number[]; // Array of player IDs in turn order
     boardState: RootBoardState;
     factionState: Partial<Record<PlayerFactionType, RootFactionState>>;

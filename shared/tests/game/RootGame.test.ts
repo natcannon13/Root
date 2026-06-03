@@ -3,7 +3,7 @@ import { RootGame, RootGameStateStore } from "../../src/game/RootGame";
 import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
 import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
-import { DemotedHirelingFactionType, HirelingFactionType, isDemotedHirelingFactionType, isPromotedHirelingFactionType, LandmarkType, PlayerFactionType, PromotedHirelingFactionType, standardSetupOrder } from "../../src/Enums";
+import { isDemotedHirelingFactionType, isPromotedHirelingFactionType, PlayerFactionType, PromotedHirelingFactionType } from "../../src/Enums";
 import type { RootBoardState } from "../../src/state/RootBoardState";
 import type { RootFactionState } from "../../src/state/RootFactionState";
 import type { Card } from "../../src/cards/Card";
@@ -15,8 +15,9 @@ import { TimeStep } from "../../src/state/TimeStep";
 import { PlayOptions } from "../../src/game/PlayOptions";
 import { PromiseControl } from "../../src/game/RootGame";
 import * as Factory from "../../src/Factory";
-import { DemotedHireling, Hireling, PromotedHireling } from "../../src/rulesModule/Hireling";
+import { Hireling, PromotedHireling } from "../../src/rulesModule/Hireling";
 import { Landmark } from "../../src/rulesModule/Landmark";
+import { AdvancedSetupOptions } from "../../src/game/SetupOptions";
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
@@ -498,22 +499,8 @@ describe("RootGame.setup", () => {
             expect(setUps).toEqual(expectedSetUps);
         });
         test("assigns the correct player to each faction", () => {
-                const generateFactionSpy = vi.spyOn(Factory, "generateFactionFromType").mockImplementation((type) => {
-                    let id: number;
-                    switch (type) {
-                        case "marquise-de-cat": id = 7; break;
-                        case "eyrie-dynasties": id = 6; break;
-                        case "woodland-alliance": id = 5; break;
-                        default: id = 0;
-                    }
-                    return mock<PlayerFaction>({ name: type, id });
-                });
             game.setup();
-            expect(game.playerFactionMapping).toEqual({
-                7: 1,
-                6: 2,
-                5: 3,
-             });
+            expect(game.playerFactionMapping).toEqual(basePlayOptions.setup.chosenFactions);
         });
         test("throws an error if an invalid player id is provided", () => {
             game.playOptions.playerIDs = [1, 2, 99];
@@ -529,7 +516,8 @@ describe("RootGame.setup", () => {
             let cardsDrawnByPlayer: { [playerID: number]: number } = {};
             for (let i = 0; i < 9; i++) {
                 const call = drawCardSpy.mock.calls[i];
-                const playerID = call[0];
+                const playerFaction = call[0];
+                const playerID = game.playerFactionMapping[playerFaction]!;
                 cardsDrawnByPlayer[playerID] = (cardsDrawnByPlayer[playerID] || 0) + 1;
             }
             expect(cardsDrawnByPlayer).toEqual({
@@ -540,14 +528,75 @@ describe("RootGame.setup", () => {
         });
     });
     describe("advanced setup", () => {
-        test("order of events is correct", () => { }); // Landmarks -> Hirelings -> Draw Cards -> Factions -> Discard Cards
+        const draftableFactions: PlayerFactionType[] = ['marquise-de-cat', 'eyrie-dynasties', 'woodland-alliance', 'vagabond','riverfolk-company', 'lizard-cult'];
+        beforeEach(() => {
+            // Replace standard setup with advanced setup in play options
+            const advancedSetupOptions = { 
+                ...basePlayOptions, 
+                setup: { 
+                    ...basePlayOptions.setup, 
+                    type: "advanced", 
+                    draftableFactions: draftableFactions,
+                } satisfies AdvancedSetupOptions 
+            };
+            game.playOptions = advancedSetupOptions;
+        });
+        test("order of events is correct", () => {
+            // Landmarks -> Hirelings -> Draw Cards -> Factions -> Discard Cards
+            // We can check the order of events by spying on the relevant methods and checking the order in which they were called
+            const generateLandmarkSpy = vi.spyOn(Factory, "generateLandmarkFromType");
+            const generateHirelingSpy = vi.spyOn(Factory, "generateHirelingFromType");
+            const drawCardSpy = vi.spyOn(game, "drawCard");
+            const generateFactionSpy = vi.spyOn(Factory, "generateFactionFromType").mockReturnValue(mock<PlayerFaction>({ name: "marquise-de-cat" }));
+            const returnCardToDeckSpy = vi.spyOn(game, "returnCardToDeck");
+            expect(generateLandmarkSpy).toHaveBeenCalledBefore(generateHirelingSpy);
+            expect(generateHirelingSpy).toHaveBeenCalledBefore(drawCardSpy);
+            expect(drawCardSpy).toHaveBeenCalledBefore(generateFactionSpy);
+            expect(generateFactionSpy).toHaveBeenCalledBefore(returnCardToDeckSpy);
+        }); 
 
+        test("each player draws five cards", () => {
+            // Add a deck to draw from and spy on drawCard to check that it's called the correct number of times for each player
+            const deck = Array.from({ length: 50 }, (_, i) => mock<Card>({ id: i + 1, name: `c${i + 1}`, suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null }));
+            const generateDeckSpy = vi.spyOn(Factory, "generateDeckFromType").mockReturnValue(deck);
+            const drawCardSpy = vi.spyOn(game, "drawCard")
+            game.setup();
+            expect(drawCardSpy).toHaveBeenCalledTimes(15);
+            let cardsDrawnByPlayer: { [playerID: number]: number } = {};
+            for (let i = 0; i < 15; i++) {
+                const call = drawCardSpy.mock.calls[i];
+                const playerFaction = call[0];
+                const playerID = game.playerFactionMapping[playerFaction]!;
+                cardsDrawnByPlayer[playerID] = (cardsDrawnByPlayer[playerID] || 0) + 1;
+            }
+            expect(cardsDrawnByPlayer).toEqual({
+                1: 5,
+                2: 5,
+                3: 5,
+            });
+        });
+        test("each player returns two cards to the deck", () => {
+            const deck = Array.from({ length: 50 }, (_, i) => mock<Card>({ id: i + 1, name: `c${i + 1}`, suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null }));
+            const generateDeckSpy = vi.spyOn(Factory, "generateDeckFromType").mockReturnValue(deck);
+            const returnCardToDeckSpy = vi.spyOn(game, "returnCardToDeck");
+            game.setup();
+            expect(returnCardToDeckSpy).toHaveBeenCalledTimes(6);
+            let cardsReturnedByPlayer: { [playerID: number]: number } = {};
+            for (let i = 0; i < 6; i++) {
+                const call = returnCardToDeckSpy.mock.calls[i];
+                const playerFaction = call[0];
+                const playerID = game.playerFactionMapping[playerFaction]!;
+                cardsReturnedByPlayer[playerID] = (cardsReturnedByPlayer[playerID] || 0) + 1;
+            }
+            expect(cardsReturnedByPlayer).toEqual({
+                1: 2,
+                2: 2,
+                3: 2,
+            });
+        });
 
-
-        test("each player draws five cards", () => { });
-        test("each player returns two cards to the deck", () => { });
-
-        test("(# of players + 1) factions are selected for the draft", () => { });
+        test("(# of players + 1) factions are selected for the draft", () => {
+        });
         test("factions cannot be added to the draft if their corresponding hireling is in the game", () => { });
         test("the first faction in the draft is militant (7+ reach)", () => { });
         test("no insurgents are selected for the draft in 2-player games", () => { });

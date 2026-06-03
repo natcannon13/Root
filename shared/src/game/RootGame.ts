@@ -45,7 +45,7 @@ export class RootGame {
     version = "0.0.0";
     board: Board | null = null;
     playOptions: PlayOptions;
-    playerFactionMapping: Partial<Record<number, number>> = {}; // Maps <factionID, playerID>
+    playerFactionMapping: Partial<Record<PlayerFactionType, number>> = {}; 
     turnOrder: number[] = [];
     factions: Faction[] = [];
     hirelings: Hireling[] = [];
@@ -117,8 +117,12 @@ export class RootGame {
         throw new Error("RootGame.setup not implemented");
     }
 
-    async drawCard(factionID: number): Promise<Card> {
+    async drawCard(faction: PlayerFactionType) {
         throw new Error("RootGame.drawCard not implemented");
+    }
+
+    async returnCardToDeck(faction: PlayerFactionType, cardID: number) {
+        throw new Error("RootGame.returnCardToDeck not implemented");
     }
 
     rollDie(): number {
@@ -138,7 +142,7 @@ export class RootGame {
     }
 
     async isCraftLegal(
-        factionID: number,
+        faction: PlayerFactionType,
         card: Card,
         craftingPieces: Piece[],
     ): Promise<boolean> {
@@ -157,11 +161,11 @@ export class RootGame {
         throw new Error("RootGame.place not implemented");
     }
 
-    async craft(factionID: number, card: Card, craftingPieces: Piece[]) {
+    async craft(faction: PlayerFactionType, card: Card, craftingPieces: Piece[]) {
         throw new Error("RootGame.craft not implemented");
     }
 
-    async dealHits(hitFactionID: number, hittingFactionID: number, locationID: number, hits: number) {
+    async dealHits(hitFaction: FactionType, hittingFaction: FactionType, locationID: number, hits: number) {
         throw new Error("RootGame.dealHits not implemented");
     }
 
