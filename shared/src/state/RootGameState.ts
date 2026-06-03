@@ -12,8 +12,8 @@ export interface RootGameState {
     version: string;
     options: PlayOptions, 
     boardState: RootBoardState;
-    factionState: Record<PlayerFactionType, RootFactionState>;
-    hirelingState: Record<HirelingFactionType, RootHirelingState>;
+    factionState: Partial<Record<PlayerFactionType, RootFactionState>>;
+    hirelingState: Partial<Record<HirelingFactionType, RootHirelingState>>;
     landmarks: LandmarkType[]; 
     timeState: TimeStep;
     battleState: BattleState | null;
