@@ -24,6 +24,22 @@ import type { RootGameUpdate } from "./RootGameUpdate";
 
 export type RootGameStateStore = StateStore<RootGameState, RootGameUpdate>;
 
+export class PromiseControl {
+    promise: Promise<void>;
+    resolve: () => void
+    reject: (reason?: any) => void;
+
+    constructor() {
+        this.resolve = () => {};
+        this.reject = () => {}; // these are to make Typescript happy.
+        this.promise = new Promise<void>((res, rej) => {
+            this.resolve = res;
+            this.reject = rej;
+        });
+    }
+
+}
+
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
     version = "0.0.0";
@@ -42,7 +58,7 @@ export class RootGame {
     spentCraftingPieces: Piece[] = [];
     pendingChoice: PendingChoice | null = null; // Seperate from gameplayPendingPromise for serializability.
     pastChoices: PendingChoice[] = [];
-    gameplayPendingPromise: Promise<void> | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.
+    gameplayPromiseControl: PromiseControl | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.
 
     constructor(stateStore: RootGameStateStore, options: PlayOptions) {
         throw new Error("RootGame constructor not implemented");

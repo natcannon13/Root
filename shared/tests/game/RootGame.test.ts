@@ -4,10 +4,16 @@ import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
 import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
 import { HirelingFactionType, LandmarkType, PlayerFactionType } from "../../src/Enums";
+import type { RootBoardState } from "../../src/state/RootBoardState";
+import type { RootFactionState } from "../../src/state/RootFactionState";
+import type { Card } from "../../src/cards/Card";
+import type { Piece } from "../../src/pieces/Piece";
+import type { PendingChoice } from "../../src/game/PendingChoice";
 import { RootGameState } from "../../src/state/RootGameState";
 import { BattleState } from "../../src/state/BattleState";
 import { TimeStep } from "../../src/state/TimeStep";
 import { PlayOptions } from "../../src/game/PlayOptions";
+import { PromiseControl } from "../../src/game/RootGame";
 import * as Factory from "../../src/Factory";
 import { Hireling } from "../../src/rulesModule/Hireling";
 import { Landmark } from "../../src/rulesModule/Landmark";
@@ -81,27 +87,30 @@ describe("RootGame constructor", () => {
 describe("RootGame.getState", () => {
     test("returns a state object that reflects the current game state", () => {
         const board = mock<Board>();
-        const boardState = { version: "b1", name: "autumn", clearings: [], forests: [] };
-        board.getState.mockReturnValue(boardState as any);
+        const boardState: RootBoardState = { version: "b1", name: "autumn", clearings: [], forests: [] };
+        board.getState.mockReturnValue(boardState);
 
         const pf1 = mock<PlayerFaction>({ name: "marquise-de-cat" });
         const pf2 = mock<PlayerFaction>({ name: "eyrie-dynasties" });
-        const pf1State = { version: "f1", name: "marquise-de-cat", agentID: null, hand: null, handSize: 0, craftedImprovements: [], score: 0 };
-        const pf2State = { version: "f2", name: "eyrie-dynasties", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 };
-        pf1.getState.mockReturnValue(pf1State as any);
-        pf2.getState.mockReturnValue(pf2State as any);
+        const pf1State: RootFactionState = { version: "f1", name: "marquise-de-cat", agentID: null, hand: null, handSize: 0, craftedImprovements: [], score: 0 };
+        const pf2State: RootFactionState = { version: "f2", name: "eyrie-dynasties", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 };
+        pf1.getState.mockReturnValue(pf1State);
+        pf2.getState.mockReturnValue(pf2State);
 
         // Inject mocks into game instance
         game.board = board;
         game.factions = [pf1, pf2];
         game.hirelings = [];
-        game.landmarks = ["keep"] as any;
+        game.landmarks = [mock<Landmark>({ name: "ferry" })];
         game.version = "vtest";
-        game.playOptions = { setup: { type: "standard", map: "autumn", chosenFactions: new Map(), deck: "base" }, playerIDs: [1,2,3] } as any;
-        game.deck = [{ id: 1 } as any];
-        game.discardPile = [{ id: 2 } as any];
-        game.spentCraftingPieces = [{ id: 7 } as any];
-        game.pendingChoice = null;
+        game.playOptions = { setup: { type: "standard", map: "autumn", chosenFactions: new Map(), deck: "base" }, playerIDs: [1,2,3] } as PlayOptions;
+        const card1 = mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null });
+        const card2 = mock<Card>({ id: 2, name: "c2", suit: "rabbit", craftingCost: null, isAmbush: false, isDominance: false, item: null });
+        game.deck = [card1];
+        game.discardPile = [card2];
+        const piece = mock<Piece>({ id: 7, name: "p7", owningFaction: null });
+        game.spentCraftingPieces = [piece];
+        game.pendingChoice = null as PendingChoice | null;
 
         const state = game.getState?.();
 
@@ -157,13 +166,13 @@ describe("RootGame.initializeState", () => {
             },
             landmarks: ["ferry"],
             timeState: new TimeStep("marquise-de-cat", "birdsong", "main"),
-            battleState: new BattleState({} as any),
-            deck: [{ id: 1 } as any],
+            battleState: new BattleState({ attacker: "marquise-de-cat", defender: "eyrie-dynasties", clearingID: 1 }),
+            deck: [mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null })],
             deckSize: 1,
-            discardPile: [{ id: 2 } as any],
+            discardPile: [mock<Card>({ id: 2, name: "c2", suit: "rabbit", craftingCost: null, isAmbush: false, isDominance: false, item: null })],
             spentCraftingPieceIDs: [7, 8],
-            pendingChoice: { id: 9 } as any,
-            pastChoices: [{ id: 10 } as any],
+            pendingChoice: { id: "9", type: "pick", playerID: 1, resolved: false },
+            pastChoices: [{ id: "10", type: "pick", playerID: 1, resolved: true, value: {} }],
         } satisfies RootGameState;
 
         game.initializeState(state);
@@ -188,12 +197,12 @@ describe("RootGame.initializeState", () => {
             landmarks: [],
             timeState: new TimeStep("eyrie-dynasties", "daylight", "end"),
             battleState: mock<BattleState>(),
-            deck: [{ id: 1 } as any, { id: 2 } as any],
+            deck: [mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null }), mock<Card>({ id: 2, name: "c2", suit: "rabbit", craftingCost: null, isAmbush: false, isDominance: false, item: null })],
             deckSize: 2,
-            discardPile: [{ id: 3 } as any],
+            discardPile: [mock<Card>({ id: 3, name: "c3", suit: "mouse", craftingCost: null, isAmbush: false, isDominance: false, item: null })],
             spentCraftingPieceIDs: [4, 5],
-            pendingChoice: { id: 6 } as any,
-            pastChoices: [{ id: 10 } as any],
+            pendingChoice: { id: "6", type: "pick", playerID: 1, resolved: false },
+            pastChoices: [{ id: "10", type: "pick", playerID: 1, resolved: true, value: {} }],
         } satisfies RootGameState;
 
         game.initializeState(state);
@@ -218,16 +227,91 @@ describe("RootGame.updateState", () => {
 
 // --- awaitPlayerChoice ----------------------------------------------------------------
 describe("RootGame.awaitPlayerChoice", () => {
-    test("returns right away with the appropriate value if a matching choice exists in past choices", () => { });
-    test("throws an error if a different choice with the same id exists in past choices", () => { });
-    test("waits for the choice to be resolved if it's not in past choices", () => {
-        // In order to resolve a choice, pendingChoice.resolved must be set to true, pendingChoice.value must be set 
-        // to the appropriate value, and gameplayPendingPromise must be resolved.
+    test("returns right away with the appropriate value if a matching choice exists in past choices", async () => {
+        const past: PendingChoice = { id: "c1", type: "pick", playerID: 1, resolved: true, value: { picked: 5 } };
+        game.pastChoices = [past];
+
+        const result = await game.awaitPlayerChoice({ id: "c1", type: "pick", playerID: 1, resolved: false });
+        expect(result).toEqual(past.value);
     });
-    test("throws an error if the pending promise is rejected", () => { });
-    test("throws an error if the pending choice has changed after resolution", () => { });
-    test("returns the value of the choice after resolution", () => { });
-    test("adds choice to past choices and sets pending choice to null after resolution", () => { });
+
+    test("throws an error if a different choice with the same id exists in past choices", async () => {
+        const past: PendingChoice = { id: "c1", type: "other", playerID: 1, resolved: true, value: { picked: 5 } };
+        game.pastChoices = [past];
+
+        await expect(game.awaitPlayerChoice({ id: "c1", type: "pick", playerID: 1, resolved: false })).rejects.toThrow();
+    });
+
+    test("waits for the choice to be resolved if it's not in past choices", async () => {
+        game.pendingChoice = { id: "p1", type: "pick", playerID: 2, resolved: false };
+        game.gameplayPromiseControl = new PromiseControl();
+
+        const p = game.awaitPlayerChoice({ id: "p1", type: "pick", playerID: 2, resolved: false });
+        let isPending = true;
+        p.then(() => isPending = false);
+        
+        // Check that the promise is still pending
+        await undefined;
+        expect(isPending).toBe(true);
+
+
+        // Resolve the pending choice and then the gameplay promise
+        game.pendingChoice = { id: "p1", type: "pick", playerID: 2, resolved: true, value: { ok: true } };
+        game.gameplayPromiseControl.resolve();
+
+        // Check that the promise has resolved
+        await undefined;
+        expect(isPending).toBe(false);
+    });
+
+    test("throws an error if the pending promise is rejected", async () => {
+        game.pendingChoice = { id: "p2", type: "pick", playerID: 1, resolved: false };
+        game.gameplayPromiseControl = new PromiseControl();
+
+        const p = game.awaitPlayerChoice({ id: "p2", type: "pick", playerID: 1, resolved: false });
+        game.gameplayPromiseControl.reject(new Error("gameplay failed"));
+
+        await expect(p).rejects.toThrow("gameplay failed");
+    });
+
+    test("throws an error if the pending choice has changed after resolution", async () => {
+        game.pendingChoice = { id: "p3", type: "pick", playerID: 1, resolved: false };
+        game.gameplayPromiseControl = new PromiseControl();
+
+        const p = game.awaitPlayerChoice({ id: "p3", type: "pick", playerID: 1, resolved: false });
+
+        // Change pendingChoice to a different id 
+        game.pendingChoice = { id: "other", type: "pick", playerID: 1, resolved: false };
+        game.gameplayPromiseControl.resolve();
+
+        await expect(p).rejects.toThrow();
+    });
+
+    test("returns the value of the choice after resolution", async () => {
+        game.pendingChoice = { id: "p4", type: "pick", playerID: 3, resolved: false };
+        game.gameplayPromiseControl = new PromiseControl();
+
+        const p = game.awaitPlayerChoice({ id: "p4", type: "pick", playerID: 3, resolved: false });
+        game.pendingChoice = { id: "p4", type: "pick", playerID: 3, resolved: true, value: { answer: 99 } };
+        game.gameplayPromiseControl.resolve();
+
+        await expect(p).resolves.toEqual({ answer: 99 });
+    });
+
+    test("adds choice to past choices and sets pending choice to null after resolution", async () => {
+        game.pendingChoice = { id: "p5", type: "pick", playerID: 4, resolved: false };
+        game.gameplayPromiseControl = new PromiseControl();
+
+        const p = game.awaitPlayerChoice({ id: "p5", type: "pick", playerID: 4, resolved: false });
+        const resolved: PendingChoice = { id: "p5", type: "pick", playerID: 4, resolved: true, value: { v: 1 } };
+        game.pendingChoice = resolved;
+        game.gameplayPromiseControl.resolve();
+
+        await p;
+        expect(game.pastChoices.find((c) => c.id === "p5")).toEqual(resolved);
+        expect(game.pendingChoice).toBeNull();
+        expect(game.gameplayPromiseControl).toBeNull();
+    });
 });
 
 
