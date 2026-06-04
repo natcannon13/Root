@@ -3,10 +3,10 @@ import type { Piece } from "../pieces/Piece";
 import type { Token } from "../pieces/Token";
 
 
-
+export type LocationID = number;
 
 export abstract class Location {
-    public id: number = 0;
+    public id: LocationID = 0;
     private tokens: Token[] = [];
     private pawns: Pawn[] = [];
 

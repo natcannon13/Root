@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import { RootGame, RootGameStateStore } from "../../src/game/RootGame";
+import { PlayerID, RootGame, RootGameStateStore } from "../../src/game/RootGame";
 import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
 import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
@@ -28,8 +28,8 @@ let factions: { [key in PlayerFactionType]?: ReturnType<typeof mock<PlayerFactio
 let hirelings: Partial<Record<HirelingFactionType, ReturnType<typeof mock<Hireling>>>>;
 let landmarks: ReturnType<typeof mock<Landmark>>[];
 
-let playerFactionMapping: Partial<Record<PlayerFactionType, number>>;
-let turnOrder: number[]; // Array of player IDs in turn order
+let playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>>;
+let turnOrder: PlayerID[]; // Array of player IDs in turn order
 
 let deck: ReturnType<typeof mock<Card>>[];
 let discardPile: ReturnType<typeof mock<Card>>[];
@@ -76,9 +76,9 @@ function getAdvancedPlayOptions(): PlayOptions & { setup: AdvancedSetupOptions }
 
 
 const baseFactionState = {
-    "marquise-de-cat": { version: "f1", name: "marquise-de-cat", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 },
-    "eyrie-dynasties": { version: "f2", name: "eyrie-dynasties", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 },
-    "woodland-alliance": { version: "f3", name: "woodland-alliance", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 },
+    "marquise-de-cat": { version: "f1", name: "marquise-de-cat", hand: [], handSize: 0, craftedImprovements: [], score: 0 },
+    "eyrie-dynasties": { version: "f2", name: "eyrie-dynasties", hand: [], handSize: 0, craftedImprovements: [], score: 0 },
+    "woodland-alliance": { version: "f3", name: "woodland-alliance", hand: [], handSize: 0, craftedImprovements: [], score: 0 },
 } satisfies Partial<Record<PlayerFactionType, RootFactionState>>;
 
 beforeEach(() => {
@@ -98,7 +98,7 @@ function mockBoard() {
     vi.spyOn(game, "board", "get").mockReturnValue(board);
 }
 
-function mockFactions(factionTurnOrder: {faction: PlayerFactionType, playerID: number}[] = []) {
+function mockFactions(factionTurnOrder: {faction: PlayerFactionType, playerID: PlayerID}[] = []) {
     factions = {};
     playerFactionMapping = {};
     turnOrder = [];
@@ -314,7 +314,7 @@ describe("RootGame.initializeState", () => {
 
         const state = createRootGameState({
             factionState: {
-                "marquise-de-cat": { version: "f1", name: "marquise-de-cat", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 },
+                "marquise-de-cat": { version: "f1", name: "marquise-de-cat", hand: [], handSize: 0, craftedImprovements: [], score: 0 },
             },
             hirelingState: {
                 "corvid-spies": { version: "h3", name: "corvid-spies", controlCounter: 0, controllingFaction: "woodland-alliance" },
@@ -593,7 +593,7 @@ describe("RootGame.setup", () => {
     });
     test("players place landmarks in reverse turn order", () => {
         const turnOrderSpy = vi.spyOn(game, "turnOrder", "get").mockReturnValue([1,2,3]);
-        let playerIDs: number[] = [];
+        let playerIDs: PlayerID[] = [];
         const generateLandmarkSpy = vi.spyOn(Factory, "generateLandmarkFromType").mockImplementation((type) => mock<Landmark>({ name: type, setup: async (g,id) => {playerIDs.push(id)} }));
         game.setup();
         expect(playerIDs).toEqual([3,2]);
@@ -627,7 +627,7 @@ describe("RootGame.setup", () => {
     });
     test("players set up hirelings in reverse turn order", () => {
         const turnOrderSpy = vi.spyOn(game, "turnOrder", "get").mockReturnValue([1,2,3]);
-        let playerIDs: number[] = [];
+        let playerIDs: PlayerID[] = [];
         const generateHirelingSpy = vi.spyOn(Factory, "generateHirelingFromType").mockImplementation((type) => mock<PromotedHireling>({ name: type as PromotedHirelingFactionType, setup: async (g,id) => {playerIDs.push(id)} }));
         game.setup();
         expect(playerIDs).toEqual([3,2]);
@@ -651,7 +651,7 @@ describe("RootGame.setup", () => {
                 })
             );
             game.setup();
-            const expectedSetUps: { type: PlayerFactionType; id: number }[] = [
+            const expectedSetUps: { type: PlayerFactionType; id: PlayerID }[] = [
                 { type: "marquise-de-cat", id: 1 },
                 { type: "eyrie-dynasties", id: 2 },
                 { type: "woodland-alliance", id: 3 },
@@ -679,7 +679,7 @@ describe("RootGame.setup", () => {
             const drawCardSpy = vi.spyOn(game, "drawCard")
             game.setup();
             expect(drawCardSpy).toHaveBeenCalledTimes(9);
-            let cardsDrawnByPlayer: { [playerID: number]: number } = {};
+            let cardsDrawnByPlayer: { [playerID: PlayerID]: number } = {};
             for (let i = 0; i < 9; i++) {
                 const call = drawCardSpy.mock.calls[i];
                 const playerFaction = call[0];
@@ -718,7 +718,7 @@ describe("RootGame.setup", () => {
             const drawCardSpy = vi.spyOn(game, "drawCard")
             game.setup();
             expect(drawCardSpy).toHaveBeenCalledTimes(15);
-            let cardsDrawnByPlayer: { [playerID: number]: number } = {};
+            let cardsDrawnByPlayer: { [playerID: PlayerID]: number } = {};
             for (let i = 0; i < 15; i++) {
                 const call = drawCardSpy.mock.calls[i];
                 const playerFaction = call[0];
@@ -735,7 +735,7 @@ describe("RootGame.setup", () => {
             const returnCardToDeckSpy = vi.spyOn(game, "returnCardToDeck");
             game.setup();
             expect(returnCardToDeckSpy).toHaveBeenCalledTimes(6);
-            let cardsReturnedByPlayer: { [playerID: number]: number } = {};
+            let cardsReturnedByPlayer: { [playerID: PlayerID]: number } = {};
             for (let i = 0; i < 6; i++) {
                 const call = returnCardToDeckSpy.mock.calls[i];
                 const playerFaction = call[0];

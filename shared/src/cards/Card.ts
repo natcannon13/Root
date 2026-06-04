@@ -1,8 +1,10 @@
 import type { Suit, ItemType } from '../Enums';
 
+export type CardID = number;
+
 export interface Card {
     name: string;
-    id: number;
+    id: CardID;
     suit: Suit;
     craftingCost: Suit[] | null;
     isAmbush: boolean;

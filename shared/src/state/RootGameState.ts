@@ -7,12 +7,14 @@ import type { Card } from '../cards/Card';
 import type { PlayOptions } from '../game/PlayOptions';
 import type { BattleState } from './BattleState';
 import type { Choice } from '../game/PendingChoice';
+import type { PieceID } from '../pieces/Piece';
+import type { PlayerID } from '../game/RootGame';
 
 export interface RootGameState {
     version: string;
     options: PlayOptions;
-    playerFactionMapping: Partial<Record<PlayerFactionType, number>>;
-    playerTurnOrder: number[]; // Array of player IDs in turn order
+    playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>>;
+    playerTurnOrder: PlayerID[]; // Array of player IDs in turn order
     boardState: RootBoardState;
     factionState: Partial<Record<PlayerFactionType, RootFactionState>>;
     hirelingState: Partial<Record<HirelingFactionType, RootHirelingState>>;
@@ -22,7 +24,7 @@ export interface RootGameState {
     deck: Card[] | null;
     deckSize: number;
     discardPile: Card[];
-    spentCraftingPieceIDs: number[];
+    spentCraftingPieceIDs: PieceID[];
     pendingChoice: Choice | null;
     pastChoices: Choice[];
 }

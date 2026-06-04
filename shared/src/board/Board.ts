@@ -3,7 +3,7 @@ import type { Clearing } from "./Clearing";
 import type { Forest } from "./Forest";
 import type { Connection } from "./Connection";
 import type { Item } from "../Item";
-import type { Location } from "./Location";
+import type { Location, LocationID } from "./Location";
 import type { Piece } from "../pieces/Piece";
 import type { RulesModule } from "../rulesModule/RulesModule";
 import type { Event } from "../game/Event";
@@ -56,7 +56,7 @@ export class Board implements RulesModule {
     throw new Error("Board.getForestsAdjacent not implemented");
   }
 
-  getLocation(id: number): Location | undefined {
+  getLocation(id: LocationID): Location | undefined {
     throw new Error("Board.getLocation not implemented");
   }
 
@@ -66,17 +66,17 @@ export class Board implements RulesModule {
 
   move(
     pieces: Piece[],
-    startingLocationID: number,
-    endingLocationID: number,
+    startingLocationID: LocationID,
+    endingLocationID: LocationID,
   ): void {
     throw new Error("Board.move not implemented");
   }
 
-  place(pieces: Piece[], locationID: number): void {
+  place(pieces: Piece[], locationID: LocationID): void {
     throw new Error("Board.place not implemented");
   }
 
-  remove(pieces: Piece[], locationID: number): void {
+  remove(pieces: Piece[], locationID: LocationID): void {
     throw new Error("Board.remove not implemented");
   }
 

@@ -1,17 +1,17 @@
 import type { Building } from "../pieces/Building";
 import type { Suit, FactionType } from "../Enums";
-import { Location } from "./Location";
+import { Location, type LocationID } from "./Location";
 import type { Piece } from "../pieces/Piece";
 import type { Pawn } from "../pieces/Pawn";
 import type { Token } from "../pieces/Token";
 
 export class Clearing extends Location {
-  id: number;
+  id: LocationID;
   printedSuit: Suit | null;
   slotCount: number;
 
   constructor({id, printedSuit, slotCount}: {
-    id: number;
+    id: LocationID;
     printedSuit: Suit | null;
     slotCount: number;
   }) {

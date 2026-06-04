@@ -1,7 +1,9 @@
 import { HistoryNode, StateHistory } from "./StateHistory";
 
+export type TransitionID = string;
+
 interface TransitionType {
-  id: string;
+  id: TransitionID;
 }
 
 export class StateStore<State, Transition extends TransitionType> {
@@ -64,7 +66,7 @@ export class StateStore<State, Transition extends TransitionType> {
     throw new Error("StateStore.redo not implemented in stub");
   }
 
-  do(id: number): void {
+  do(index: number): void {
     throw new Error("StateStore.do not implemented in stub");
   }
 }

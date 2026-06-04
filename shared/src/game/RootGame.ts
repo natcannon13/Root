@@ -1,26 +1,22 @@
 import { Board } from "../board/Board";
 import type { RootGameState } from "../state/RootGameState";
 import { TimeStep } from "../state/TimeStep";
-import type { Card } from "../cards/Card";
+import type { Card, CardID } from "../cards/Card";
 import type { Piece } from "../pieces/Piece";
-import type { BattlePhaseType, FactionType, LandmarkType, PlayerFactionType } from "../Enums";
-import type { RootGameAgent } from "../agents/RootGameAgent";
+import type { FactionType, PlayerFactionType } from "../Enums";
 import type { Move } from "../gameActions/Move";
 import type { Battle } from "../gameActions/Battle";
-import type { Faction } from "../rulesModule/Faction";
 import type { Hireling } from "../rulesModule/Hireling";
 import type { Landmark } from "../rulesModule/Landmark";
 import type { Event } from "./Event";
-import type { RootBoardState } from "../state/RootBoardState";
-import type { RootFactionState } from "../state/RootFactionState";
 import type { PlayerFaction } from "../rulesModule/PlayerFaction";
 import type { Supply } from "../pieces/Supply";
-import type { RootHirelingState } from "../state/RootHirelingState";
 import type { PlayOptions } from "./PlayOptions";
 import type { BattleState } from "../state/BattleState";
 import type { Choice, ChoiceType, ChoiceValueMap } from "./PendingChoice";
 import type { StateStore } from "../stateStore/StateStore";
 import type { RootGameUpdate } from "./RootGameUpdate";
+import type { LocationID } from "../board/Location";
 
 export type RootGameStateStore = StateStore<RootGameState, RootGameUpdate>;
 
@@ -40,13 +36,15 @@ export class PromiseControl {
 
 }
 
+export type PlayerID = number;
+
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
     version = "0.0.0";
     board: Board | null = null;
     playOptions: PlayOptions;
-    playerFactionMapping: Partial<Record<PlayerFactionType, number>> = {}; 
-    turnOrder: number[] = [];
+    playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>> = {}; 
+    turnOrder: PlayerID[] = [];
     factions: PlayerFaction[] = [];
     hirelings: Hireling[] = [];
     landmarks: Landmark[] = [];
@@ -61,6 +59,7 @@ export class RootGame {
     pendingChoice: Choice | null = null; // Seperate from gameplayPendingPromise for serializability.
     pastChoices: Choice[] = [];
     gameplayPromiseControl: PromiseControl | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.
+    stateStore: RootGameStateStore;
 
     constructor(stateStore: RootGameStateStore, options: PlayOptions) {
         throw new Error("RootGame constructor not implemented");
@@ -102,7 +101,7 @@ export class RootGame {
         throw new Error("RootGame.drawCard not implemented");
     }
 
-    async returnCardToDeck(faction: PlayerFactionType, cardID: number) {
+    async returnCardToDeck(faction: PlayerFactionType, cardID: CardID) {
         throw new Error("RootGame.returnCardToDeck not implemented");
     }
 
@@ -118,7 +117,7 @@ export class RootGame {
         throw new Error("RootGame.isBattleLegal not implemented");
     }
 
-    async isPlaceLegal(pieces: Piece[], locationID: number): Promise<boolean> {
+    async isPlaceLegal(pieces: Piece[], locationID: LocationID): Promise<boolean> {
         throw new Error("RootGame.isPlaceLegal not implemented");
     }
 
@@ -138,7 +137,7 @@ export class RootGame {
         throw new Error("RootGame.battle not implemented");
     }
 
-    async place(pieces: Piece[], supply: Supply, locationID: number) {
+    async place(pieces: Piece[], supply: Supply, locationID: LocationID) {
         throw new Error("RootGame.place not implemented");
     }
 
@@ -146,7 +145,7 @@ export class RootGame {
         throw new Error("RootGame.craft not implemented");
     }
 
-    async dealHits(hitFaction: FactionType, hittingFaction: FactionType, locationID: number, hits: number) {
+    async dealHits(hitFaction: FactionType, hittingFaction: FactionType, locationID: LocationID, hits: number) {
         throw new Error("RootGame.dealHits not implemented");
     }
 

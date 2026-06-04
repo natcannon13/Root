@@ -1,8 +1,8 @@
 import type { ItemType } from './Enums';
-import type { Piece } from './pieces/Piece';
+import type { Piece, PieceID } from './pieces/Piece';
 
 export class Item implements Piece {
-    id: number;
+    id: PieceID;
     name: ItemType;
     owningFaction = null;
     exhausted: boolean = false;

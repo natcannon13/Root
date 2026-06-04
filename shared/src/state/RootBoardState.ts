@@ -1,19 +1,17 @@
+import type { LocationID } from '../board/Location';
 import type { BoardType, Suit } from '../Enums';
-import type { Building } from '../pieces/Building';
-import type { Pawn } from '../pieces/Pawn';
 import type { Piece } from '../pieces/Piece';
-import type { Token } from '../pieces/Token';
 
 export interface RootBoardState {
     version: string;
     name: BoardType;
     clearings: {
-        id: number;
+        id: LocationID;
         suit: Suit;
         pieces: Piece[];
     }[];
     forests: {
-        id: number;
+        id: LocationID;
         pieces: Piece[];
     }[];
 }

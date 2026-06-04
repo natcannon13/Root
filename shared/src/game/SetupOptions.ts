@@ -1,4 +1,5 @@
 import type { BoardType, DeckType, HirelingFactionType, LandmarkType, PlayerFactionType } from "../Enums";
+import type { PlayerID } from "./RootGame";
 
 interface SetupOptions {
     type: string;
@@ -12,7 +13,7 @@ interface SetupOptions {
 
 export interface StandardSetupOptions extends SetupOptions {
     type: "standard";
-    chosenFactions: Partial<Record<PlayerFactionType, number>>;
+    chosenFactions: Partial<Record<PlayerFactionType, PlayerID>>;
 }
 
 export interface AdvancedSetupOptions extends SetupOptions {

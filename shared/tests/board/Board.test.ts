@@ -8,6 +8,7 @@ import type { Pawn } from "../../src/pieces/Pawn";
 import type { Token } from "../../src/pieces/Token";
 import type { Building } from "../../src/pieces/Building";
 import { Ruin } from "../../src/pieces/Ruin";
+import { Piece, PieceID } from "../../src/pieces/Piece";
 
 describe("Board - setup", () => {
   test("board initializes with correct name, clearings, forests, and connections", () => {
@@ -43,7 +44,7 @@ describe("Board - setup", () => {
         acc[name] = (acc[name] || 0) + 1;
         return acc;
       },
-      {} as Record<string, number>,
+      {} as Record<string, PieceID>,
     );
     // Starting items: 2 each of boot, bag, tea, sword, and coins, and 1 each of hammer and crossbow.
     expect(itemCounts).toEqual({

@@ -1,3 +1,5 @@
+import type { PlayerID } from "./RootGame";
+
 export type ChoiceType = string;
 
 export type ChoiceValueMap = Record<ChoiceType, any>;
@@ -7,7 +9,7 @@ type ChoiceBase<
 > = {
   id: string; // Composed of turn number + sequence number for matching when initializing a mid-turn state
   type: T;
-  playerID: number;
+  playerID: PlayerID;
 }
 
 export type Choice<T extends ChoiceType = ChoiceType> = 

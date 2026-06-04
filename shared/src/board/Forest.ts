@@ -1,9 +1,9 @@
-import { Location } from './Location';
+import { Location, type LocationID } from './Location';
 
 export class Forest extends Location {
-    id: number;
+    id: LocationID;
 
-    constructor(id: number) {
+    constructor(id: LocationID) {
         super();
         this.id = id;
     }

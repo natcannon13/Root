@@ -1,4 +1,4 @@
-import type { Piece } from "./Piece";
+import type { Piece, PieceID } from "./Piece";
 
 export class Supply {
     private pieces: Piece[] = [];
@@ -26,11 +26,11 @@ export class Supply {
         }
     }
 
-    getPieceById(id: number): Piece | undefined {
+    getPieceById(id: PieceID): Piece | undefined {
         return this.pieces.find((piece) => piece.id === id);
     }
 
-    removePieceById(id: number) {
+    removePieceById(id: PieceID) {
         const index = this.pieces.findIndex((piece) => piece.id === id);
         if (index !== -1) {
             this.pieces.splice(index, 1);

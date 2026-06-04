@@ -5,8 +5,6 @@ import type { RootHirelingState } from "../state/RootHirelingState";
 export type Hireling = PromotedHireling | DemotedHireling;
 
 interface HirelingBase extends Faction {
-  hirelingID: number;
-  associatedFaction: PlayerFactionType | null;
   controlCounter: number;
   controllingFaction: PlayerFactionType | null;
   getState: () => RootHirelingState;
