@@ -47,7 +47,7 @@ export class RootGame {
     playOptions: PlayOptions;
     playerFactionMapping: Partial<Record<PlayerFactionType, number>> = {}; 
     turnOrder: number[] = [];
-    factions: Faction[] = [];
+    factions: PlayerFaction[] = [];
     hirelings: Hireling[] = [];
     landmarks: Landmark[] = [];
     currentTimeStep: TimeStep = new TimeStep();
@@ -86,25 +86,6 @@ export class RootGame {
         throw new Error("RootGame.awaitPlayerChoice not implemented");
     }
 
-    private initializeBoard(initialState: RootBoardState): Board {
-        throw new Error("initializeBoard not implemented");
-    }
-
-    private initializeFactions(
-        initialState: RootFactionState[],
-    ): PlayerFaction[] {
-        throw new Error("initializeFactions not implemented");
-    }
-
-    private initializeHirelings(
-        initialState: RootHirelingState[],
-    ): Hireling[] {
-        throw new Error("initializeHirelings not implemented");
-    }
-
-    private initializeLandmarks(initialState: LandmarkType[]): Landmark[] {
-        throw new Error("initializeLandmarks not implemented");
-    }
     async play() {
         throw new Error("RootGame.play not implemented");
     }

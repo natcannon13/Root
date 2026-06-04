@@ -21,6 +21,10 @@ import { AdvancedSetupOptions } from "../../src/game/SetupOptions";
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
+let board: Board;
+let boardSetterMock: ReturnType<typeof vi.spyOn>;
+let factions: { [key in PlayerFactionType]?: PlayerFaction };
+let factionSetterMock: ReturnType<typeof vi.spyOn>;
 
 const basePlayOptions = {
     setup: {
@@ -55,7 +59,25 @@ function mockGame(options: PlayOptions = basePlayOptions) {
     const subscribe = vi.fn().mockReturnValue(unsubscribe);
     stateStore = mock<RootGameStateStore>({ subscribe });
     stateStoreSubscribeMock = subscribe;
-    game = new RootGame(stateStore, basePlayOptions);
+    game = new RootGame(stateStore, options);
+    mockBoard();
+    mockFactions([]);
+    boardSetterMock = vi.spyOn(game, "board", "set");
+    factionSetterMock = vi.spyOn(game, "factions", "set");
+}
+
+function mockBoard() {
+    board = mock<Board>();
+    vi.spyOn(game, "board", "get").mockReturnValue(board);
+}
+
+function mockFactions(factionTypes: PlayerFactionType[]) {
+    factions = {};
+    for (const factionType of factionTypes) {
+        factions[factionType] = mock<PlayerFaction>({ name: factionType });
+    }
+    let factionList = Object.values(factions);
+    vi.spyOn(game, "factions", "get").mockReturnValue(factionList);
 }
 
 function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameState {
@@ -80,21 +102,6 @@ function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameSt
     };
 }
 
-function mockFactions(factionTypes: PlayerFactionType[]) {
-    let factions: { [key in PlayerFactionType]?: PlayerFaction } = {};
-    for (const factionType of factionTypes) {
-        factions[factionType] = mock<PlayerFaction>({ name: factionType });
-    }
-    game.factions = Object.values(factions) as PlayerFaction[];
-    return factions;
-}
-
-
-function mockBoard() {
-    let board = mock<Board>();
-    vi.spyOn(game as any, "initializeBoard").mockReturnValue(board);
-    return board;
-}
 
 // --- constructor ----------------------------------------------------------------
 
@@ -341,7 +348,6 @@ describe("RootGame.playTurn", () => {
 
     test("calls takePhase 3 times for the current player and updates timestep correctly in between", () => {
             
-            const factions = mockFactions(["marquise-de-cat", "eyrie-dynasties", "woodland-alliance"]);
             game.currentTimeStep = new TimeStep("marquise-de-cat", "birdsong", "start");
             const marquise = factions["marquise-de-cat"]!;
             
@@ -356,7 +362,6 @@ describe("RootGame.playTurn", () => {
     });
 
     test("if given a mid-turn time step, skips to the correct phase", () => {
-        const factions = mockFactions(["marquise-de-cat", "eyrie-dynasties", "woodland-alliance"]);
         game.currentTimeStep = new TimeStep("eyrie-dynasties", "daylight", "main");
         const eyrie = factions["eyrie-dynasties"]!;
         const takePhaseSpy = vi.spyOn(eyrie, "takePhase");
