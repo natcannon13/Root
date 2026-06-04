@@ -255,6 +255,7 @@ describe("RootGame.getState", () => {
 // --- initializeState ----------------------------------------------------------------
 
 describe("RootGame.initializeState", () => {
+    // TODO: redo these tests with real data after everything has been implemented
     test("calls generate-from-type Factory functions for each game component matching the provided types and assigns them to the game instance", () => {
         const board = mock<Board>();
 
@@ -267,8 +268,15 @@ describe("RootGame.initializeState", () => {
         const generateHirelingSpy = vi.spyOn(Factory, "generateHirelingFromType").mockReturnValue(hirelingByType);
         const generateLandmarkSpy = vi.spyOn(Factory, "generateLandmarkFromType").mockReturnValue(landmarkByType);
 
+        const boardSetterSpy = vi.spyOn(game, "board", "set");
+        const factionsSetterSpy = vi.spyOn(game, "factions", "set");
+        const hirelingsSetterSpy = vi.spyOn(game, "hirelings", "set");
+        const landmarksSetterSpy = vi.spyOn(game, "landmarks", "set");
+
         const state = createRootGameState({
-            factionState: baseFactionState,
+            factionState: {
+                "marquise-de-cat": { version: "f1", name: "marquise-de-cat", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 },
+            },
             hirelingState: {
                 "corvid-spies": { version: "h3", name: "corvid-spies", controlCounter: 0, controllingFaction: "woodland-alliance" },
             },
@@ -282,12 +290,12 @@ describe("RootGame.initializeState", () => {
         expect(generateHirelingSpy).toHaveBeenCalledWith("corvid-spies");
         expect(generateLandmarkSpy).toHaveBeenCalledWith("ferry");
 
-        expect(game.board).toBe(board);
-        expect(game.factions).toEqual([factionByType]);
-        expect(game.hirelings).toEqual([hirelingByType]);
-        expect(game.landmarks).toEqual([landmarkByType]);
+        expect(boardSetterSpy).toHaveBeenCalledWith(board);
+        expect(factionsSetterSpy).toHaveBeenCalledWith([factionByType]);
+        expect(hirelingsSetterSpy).toHaveBeenCalledWith([hirelingByType]);
+        expect(landmarksSetterSpy).toHaveBeenCalledWith([landmarkByType]);
     });
-    test("initializes all other game properties correctly matching the provided state", () => {
+    test("after initialization, getState returns an identical state object to the one provided", () => {
         const state = createRootGameState({
             timeState: new TimeStep("eyrie-dynasties", "daylight", "end"),
             battleState: mock<BattleState>(),
@@ -301,15 +309,8 @@ describe("RootGame.initializeState", () => {
 
         game.initializeState(state);
 
-        expect(game.version).toBe(state.version);
-        expect(game.playOptions).toBe(state.options);
-        expect(game.currentTimeStep).toBe(state.timeState);
-        expect(game.battleState).toBe(state.battleState);
-        expect(game.deck).toBe(state.deck);
-        expect(game.discardPile).toBe(state.discardPile);
-        expect(game.spentCraftingPieces).toEqual(state.spentCraftingPieceIDs.map((id) => ({ id })));
-        expect(game.pendingChoice).toBe(state.pendingChoice);
-        expect(game.pastChoices).toEqual(state.pastChoices);
+        const returnedState = game.getState();
+        expect(returnedState).toEqual(state);
     });
 });
 
