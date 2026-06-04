@@ -3,28 +3,40 @@ import { RootGame, RootGameStateStore } from "../../src/game/RootGame";
 import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
 import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
-import { isDemotedHirelingFactionType, isPromotedHirelingFactionType, PlayerFactionType, PromotedHirelingFactionType } from "../../src/Enums";
+import { HirelingFactionType, isDemotedHirelingFactionType, isPromotedHirelingFactionType, LandmarkType, PlayerFactionType, PromotedHirelingFactionType } from "../../src/Enums";
 import type { RootBoardState } from "../../src/state/RootBoardState";
 import type { RootFactionState } from "../../src/state/RootFactionState";
 import type { Card } from "../../src/cards/Card";
 import type { Piece } from "../../src/pieces/Piece";
-import type { PendingChoice } from "../../src/game/PendingChoice";
+import type { Choice } from "../../src/game/PendingChoice";
 import { RootGameState } from "../../src/state/RootGameState";
 import { BattleState } from "../../src/state/BattleState";
 import { TimeStep } from "../../src/state/TimeStep";
 import { PlayOptions } from "../../src/game/PlayOptions";
 import { PromiseControl } from "../../src/game/RootGame";
 import * as Factory from "../../src/Factory";
-import { Hireling, PromotedHireling } from "../../src/rulesModule/Hireling";
+import { DemotedHireling, Hireling, PromotedHireling } from "../../src/rulesModule/Hireling";
 import { Landmark } from "../../src/rulesModule/Landmark";
 import { AdvancedSetupOptions } from "../../src/game/SetupOptions";
+import { RootHirelingState } from "../../src/state/RootHirelingState";
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
-let board: Board;
-let boardSetterMock: ReturnType<typeof vi.spyOn>;
-let factions: { [key in PlayerFactionType]?: PlayerFaction };
-let factionSetterMock: ReturnType<typeof vi.spyOn>;
+
+let board: ReturnType<typeof mock<Board>>;
+let factions: { [key in PlayerFactionType]?: ReturnType<typeof mock<PlayerFaction>> };
+let hirelings: Partial<Record<HirelingFactionType, ReturnType<typeof mock<Hireling>>>>;
+let landmarks: ReturnType<typeof mock<Landmark>>[];
+
+let playerFactionMapping: Partial<Record<PlayerFactionType, number>>;
+let turnOrder: number[]; // Array of player IDs in turn order
+
+let deck: ReturnType<typeof mock<Card>>[];
+let discardPile: ReturnType<typeof mock<Card>>[];
+
+let spentCraftingPieces: ReturnType<typeof mock<Piece>>[];
+
+let pastChoices: ReturnType<typeof mock<Choice>>[];
 
 const basePlayOptions = {
     setup: {
@@ -36,9 +48,9 @@ const basePlayOptions = {
             "woodland-alliance": 3,
         },
         deck: "base",
-        usingHirelings: false,
+        usingHirelings: true,
         landmarksToUse: 2,
-        availableHirelings: [],
+        availableHirelings: ["struggling-farmers","prosperous-farmers","corvid-spies","raven-sentries","flame-bearers","rat-smugglers","feline-physicians","forest-patrol"],
         availableLandmarks: ["tower", "ferry", "elder-treetop"],
     },
     playerIDs: [1, 2, 3],
@@ -60,10 +72,6 @@ function mockGame(options: PlayOptions = basePlayOptions) {
     stateStore = mock<RootGameStateStore>({ subscribe });
     stateStoreSubscribeMock = subscribe;
     game = new RootGame(stateStore, options);
-    mockBoard();
-    mockFactions([]);
-    boardSetterMock = vi.spyOn(game, "board", "set");
-    factionSetterMock = vi.spyOn(game, "factions", "set");
 }
 
 function mockBoard() {
@@ -71,13 +79,57 @@ function mockBoard() {
     vi.spyOn(game, "board", "get").mockReturnValue(board);
 }
 
-function mockFactions(factionTypes: PlayerFactionType[]) {
+function mockFactions(factionTurnOrder: {faction: PlayerFactionType, playerID: number}[] = []) {
     factions = {};
-    for (const factionType of factionTypes) {
-        factions[factionType] = mock<PlayerFaction>({ name: factionType });
+    playerFactionMapping = {};
+    turnOrder = [];
+    for (const {faction, playerID} of factionTurnOrder) {
+        factions[faction] = mock<PlayerFaction>({ name: faction });
+        playerFactionMapping[faction] = playerID;
+        turnOrder.push(playerID);
     }
     let factionList = Object.values(factions);
     vi.spyOn(game, "factions", "get").mockReturnValue(factionList);
+    vi.spyOn(game, "playerFactionMapping", "get").mockReturnValue(playerFactionMapping);
+    vi.spyOn(game, "turnOrder", "get").mockReturnValue(turnOrder);
+}
+
+function mockHirelings(hirelingTypes: HirelingFactionType[] = []) {
+    hirelings = {};
+    for (const hirelingType of hirelingTypes) {
+        if (isDemotedHirelingFactionType(hirelingType)) {
+            hirelings[hirelingType] = mock<DemotedHireling>({name: hirelingType})
+        } else {
+            hirelings[hirelingType] = mock<PromotedHireling>({name: hirelingType})
+        }
+    }
+    let hirelingList = Object.values(hirelings);
+    vi.spyOn(game,"hirelings","get").mockReturnValue(hirelingList);
+}
+
+function mockLandmarks(landmarkTypes: LandmarkType[] = []) {
+    landmarks = landmarkTypes.map((landmarkType) => mock<Landmark>({ name: landmarkType }));
+    vi.spyOn(game,"landmarks","get").mockReturnValue(landmarks);
+}
+
+function mockDeck(cards: Partial<Card>[] = []) {
+    deck = cards.map((card) => mock<Card>(card));
+    vi.spyOn(game, "deck", "get").mockReturnValue(deck);
+}
+
+function mockDiscardPile(cards: Partial<Card>[] = []) {
+    discardPile = cards.map((card) => mock<Card>(card));
+    vi.spyOn(game, "discardPile", "get").mockReturnValue(discardPile);
+}
+
+function mockSpentCraftingPieces(pieces: Partial<Piece>[] = []) {
+    spentCraftingPieces = pieces.map((piece) => mock<Piece>(piece));
+    vi.spyOn(game, "spentCraftingPieces", "get").mockReturnValue(spentCraftingPieces);
+}
+
+function mockPastChoices(choices: Partial<Choice>[] = []) {
+    pastChoices = choices.map((choice) => mock<Choice>(choice));
+    vi.spyOn(game, "pastChoices", "get").mockReturnValue(pastChoices);
 }
 
 function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameState {
@@ -126,43 +178,65 @@ describe("RootGame constructor", () => {
 
 describe("RootGame.getState", () => {
     test("returns a state object that reflects the current game state", () => {
-        const board = mock<Board>();
-        const boardState: RootBoardState = { version: "b1", name: "autumn", clearings: [], forests: [] };
+        mockBoard();
+        mockFactions([{faction: "marquise-de-cat", playerID: 11}, {faction: "eyrie-dynasties", playerID: 2}]);
+        mockHirelings(["corvid-spies", "flame-bearers", "highway-bandits"]);
+        mockLandmarks(["ferry"]);
+        mockDeck([{ id: 1}]);
+        mockDiscardPile([{ id: 2}]);
+        mockSpentCraftingPieces([{ id: 4}]);
+        mockPastChoices([{ id: "c1"}]);
+
+
+        const boardState = mock<RootBoardState>();
         board.getState.mockReturnValue(boardState);
 
-        const pf1 = mock<PlayerFaction>({ name: "marquise-de-cat" });
-        const pf2 = mock<PlayerFaction>({ name: "eyrie-dynasties" });
-        const pf1State: RootFactionState = { version: "f1", name: "marquise-de-cat", agentID: null, hand: null, handSize: 0, craftedImprovements: [], score: 0 };
-        const pf2State: RootFactionState = { version: "f2", name: "eyrie-dynasties", agentID: null, hand: [], handSize: 0, craftedImprovements: [], score: 0 };
-        pf1.getState.mockReturnValue(pf1State);
-        pf2.getState.mockReturnValue(pf2State);
 
-        // Inject mocks into game instance
-        game.board = board;
-        game.factions = [pf1, pf2];
-        game.hirelings = [];
-        game.landmarks = [mock<Landmark>({ name: "ferry" })];
+        const pf1State = mock<RootFactionState>();
+        const pf2State = mock<RootFactionState>();
+        factions["marquise-de-cat"]!.getState.mockReturnValue(pf1State);
+        factions["eyrie-dynasties"]!.getState.mockReturnValue(pf2State);
+
+        const h1State = mock<RootHirelingState>();
+        const h2State = mock<RootHirelingState>();
+        const h3State = mock<RootHirelingState>();
+        hirelings["corvid-spies"]!.getState.mockReturnValue(h1State);
+        hirelings["flame-bearers"]!.getState.mockReturnValue(h2State);
+        hirelings["highway-bandits"]!.getState.mockReturnValue(h3State);
+
+        
         game.version = "vtest";
-        const card1 = mock<Card>({ id: 1, name: "c1", suit: "fox", craftingCost: null, isAmbush: false, isDominance: false, item: null });
-        const card2 = mock<Card>({ id: 2, name: "c2", suit: "rabbit", craftingCost: null, isAmbush: false, isDominance: false, item: null });
-        game.deck = [card1];
-        game.discardPile = [card2];
-        const piece = mock<Piece>({ id: 7, name: "p7", owningFaction: null });
-        game.spentCraftingPieces = [piece];
-        game.pendingChoice = null as PendingChoice | null;
+        game.playOptions = mock<PlayOptions>();
+        game.currentTimeStep = mock<TimeStep>();
+        game.battleState = mock<BattleState>();
+        game.pendingChoice = mock<Choice>();
+
+        // Mock structuredClone so that it returns the same object for simplicity, since we're not actually testing immutability here.
+        const structuredCloneSpy = vi.spyOn(globalThis, "structuredClone").mockImplementation((obj) => obj);
 
         const state = game.getState?.();
+
 
         expect(state).not.toBeNull();
         expect(state.version).toBe("vtest");
         expect(state.options).toBe(game.playOptions);
+        expect(state.playerFactionMapping).toEqual(playerFactionMapping);
+        expect(state.playerTurnOrder).toEqual(turnOrder);
         expect(state.boardState).toBe(boardState);
-        expect(state.factionState["marquise-de-cat"]?.name).toBe("marquise-de-cat");
-        expect(state.factionState["eyrie-dynasties"]?.name).toBe("eyrie-dynasties");
-        expect(state.landmarks).toEqual(game.landmarks.map((l) => l.name));
-        expect(state.deckSize).toBe(game.deck.length);
-        expect(state.discardPile).toEqual(game.discardPile);
-        expect(state.spentCraftingPieceIDs).toEqual([game.spentCraftingPieces[0].id]);
+        expect(state.factionState["marquise-de-cat"]).toBe(pf1State);
+        expect(state.factionState["eyrie-dynasties"]).toBe(pf2State);
+        expect(state.hirelingState["corvid-spies"]).toBe(h1State);
+        expect(state.hirelingState["flame-bearers"]).toBe(h2State);
+        expect(state.hirelingState["highway-bandits"]).toBe(h3State);
+        expect(state.landmarks).toEqual(["ferry"]);
+        expect(state.timeState).toBe(game.currentTimeStep);
+        expect(state.battleState).toBe(game.battleState);
+        expect(state.deck).toStrictEqual(deck);
+        expect(state.deckSize).toBe(1);
+        expect(state.discardPile).toStrictEqual(discardPile);
+        expect(state.spentCraftingPieceIDs).toEqual([4]);
+        expect(state.pendingChoice).toBe(game.pendingChoice);
+        expect(state.pastChoices).toStrictEqual(pastChoices);
     });
 
     test("when given a faction perspective, calls getState on the board with that perspective, and on each faction with the correct publicView flag", () => {
@@ -249,7 +323,7 @@ describe("RootGame.updateState", () => {
 
 describe("RootGame.awaitPlayerChoice", () => {
     test("returns right away with the appropriate value if a matching choice exists in past choices", async () => {
-        const past: PendingChoice = { id: "c1", type: "pick", playerID: 1, resolved: true, value: { picked: 5 } };
+        const past: Choice = { id: "c1", type: "pick", playerID: 1, resolved: true, value: { picked: 5 } };
         game.pastChoices = [past];
 
         const result = await game.awaitPlayerChoice({ id: "c1", type: "pick", playerID: 1, resolved: false });
@@ -257,7 +331,7 @@ describe("RootGame.awaitPlayerChoice", () => {
     });
 
     test("throws an error if a different choice with the same id exists in past choices", async () => {
-        const past: PendingChoice = { id: "c1", type: "other", playerID: 1, resolved: true, value: { picked: 5 } };
+        const past: Choice = { id: "c1", type: "other", playerID: 1, resolved: true, value: { picked: 5 } };
         game.pastChoices = [past];
 
         await expect(game.awaitPlayerChoice({ id: "c1", type: "pick", playerID: 1, resolved: false })).rejects.toThrow();
@@ -324,7 +398,7 @@ describe("RootGame.awaitPlayerChoice", () => {
         game.gameplayPromiseControl = new PromiseControl();
 
         const p = game.awaitPlayerChoice({ id: "p5", type: "pick", playerID: 4, resolved: false });
-        const resolved: PendingChoice = { id: "p5", type: "pick", playerID: 4, resolved: true, value: { v: 1 } };
+        const resolved: Choice = { id: "p5", type: "pick", playerID: 4, resolved: true, value: { v: 1 } };
         game.pendingChoice = resolved;
         game.gameplayPromiseControl.resolve();
 

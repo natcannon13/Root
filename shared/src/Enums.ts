@@ -67,6 +67,25 @@ const ValidDemotedHirelingFactionTypes = [
     "stoic-protector",
     "struggling-farmers",
 ] as const;
+const ValidExclusionTypes = [
+    "feline",
+    "bird",
+    "woodland",
+    "vagabond",
+    "otter",
+    "lizard",
+    "mole",
+    "corvid",
+    "rat",
+    "badger",
+    "frog",
+    "bat",
+    "bandit",
+    "band",
+    "protector",
+    "farmer",
+    "none",
+] as const;
 const ValidBoardTypes = [
     "autumn",
     "winter",
@@ -107,6 +126,7 @@ export type PlayerFactionType = (typeof ValidPlayerFactionTypes)[number];
 export type PromotedHirelingFactionType = (typeof ValidPromotedHirelingFactionTypes)[number];
 export type DemotedHirelingFactionType = (typeof ValidDemotedHirelingFactionTypes)[number];
 export type HirelingFactionType = PromotedHirelingFactionType | DemotedHirelingFactionType;
+export type ExclusionType = (typeof ValidExclusionTypes)[number];
 export type FactionType = PlayerFactionType | HirelingFactionType;
 export type BoardType = (typeof ValidBoardTypes)[number];
 export type DeckType = (typeof ValidDeckTypes)[number];
@@ -140,6 +160,9 @@ export function isHirelingFactionType(value: string): value is HirelingFactionTy
 export function isFactionType(value: string): value is FactionType {
     return isPlayerFactionType(value) || isHirelingFactionType(value);
 }
+export function isExclusionType(value: string): value is ExclusionType {
+    return ValidExclusionTypes.includes(value as ExclusionType);
+}
 export function isBoardType(value: string): value is BoardType {
     return ValidBoardTypes.includes(value as BoardType);
 }
@@ -170,3 +193,59 @@ export const reachValues: Record<PlayerFactionType, number> = {
     "corvid-conspiracy": 3,
     "lizard-cult": 2,
 }
+
+export const factionExclusionClassesMap: Record<FactionType,ExclusionType> = {
+    "marquise-de-cat": "feline",
+    "eyrie-dynasties": "bird",
+    "woodland-alliance": "woodland",
+    "vagabond": "vagabond",
+    "vagabond-2": "none",
+    "riverfolk-company": "otter",
+    "lizard-cult": "lizard",
+    "underground-duchy": "mole",
+    "corvid-conspiracy": "corvid",
+    "lord-of-the-hundreds": "rat",
+    "keepers-in-iron": "badger",
+    "lilypad-diaspora": "frog",
+    "twilight-council": "bat",
+    "knaves-of-the-deepwood": "vagabond",
+    "forest-patrol": "feline",
+    "last-dynasty": "bird",
+    "spring-uprising": "woodland",
+    "the-exile": "vagabond",
+    "riverfolk-flotilla": "otter",
+    "warm-sun-prophets": "lizard",
+    "sunward-expedition": "mole",
+    "corvid-spies": "corvid",
+    "flame-bearers": "rat",
+    "vault-keepers": "badger",
+    "river-roamers": "frog",
+    "sunny-advocates": "bat",
+    "highway-bandits": "bandit",
+    "popular-band": "band",
+    "furious-protector": "protector",
+    "prosperous-farmers": "farmer",
+    "feline-physicians": "feline",
+    "bluebird-nobles": "bird",
+    "rabbit-scouts": "woodland",
+    "the-brigand": "vagabond",
+    "otter-divers": "otter",
+    "lizard-envoys": "lizard",
+    "mole-artisans": "mole",
+    "raven-sentries": "corvid",
+    "rat-smugglers": "rat",
+    "badger-bodyguards": "badger",
+    "frog-tinkers": "frog",
+    "bat-messengers": "bat",
+    "bandit-gangs": "bandit",
+    "street-band": "band",
+    "stoic-protector": "protector",
+    "struggling-farmers": "farmer",
+}
+// Defines faction exclusion classes. Factions/Hirelings with the same exclusion class cannot be played together.
+
+export const factionDependencies: Partial<Record<FactionType, FactionType>> = { 
+    "vagabond-2": "vagabond",
+}
+// Defines which factions require another in the game to be played.
+// When a dependee faction is selected for the draft while its dependent faction is not in the draft, the dependent faction will be added instead.
