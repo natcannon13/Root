@@ -132,6 +132,25 @@ function mockPastChoices(choices: Partial<Choice>[] = []) {
     vi.spyOn(game, "pastChoices", "get").mockReturnValue(pastChoices);
 }
 
+function mockPromiseControl() {
+    let resolve: (() => void) | null = null;
+    let reject: ((reason?: any) => void) | null = null;
+    const gameplayPromiseControlMock = mock<PromiseControl>();
+
+    vi.spyOn(game, "gameplayPromiseControl", "get").mockReturnValue(gameplayPromiseControlMock);
+    const spyOnGameplayPromiseControlSetter = vi.spyOn(game, "gameplayPromiseControl", "set").mockImplementation((control) => {
+        resolve = control?.resolve ?? null;
+        reject = control?.reject ?? null;
+    });
+    function getResolver() {
+        return resolve;
+    }
+    function getRejecter() {
+        return reject;
+    }
+    return { getResolver, getRejecter, mock: gameplayPromiseControlMock, setter: spyOnGameplayPromiseControlSetter };
+}
+
 function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameState {
     return {
         version: "1.2.3",
@@ -325,7 +344,7 @@ describe("RootGame.updateState", () => {
 describe("RootGame.awaitPlayerChoice", () => {
     test("returns right away with the appropriate value if a matching choice exists in past choices", async () => {
         const past: Choice = { id: "c1", type: "pick", playerID: 1, resolved: true, value: { picked: 5 } };
-        game.pastChoices = [past];
+        mockPastChoices([past]);
 
         const result = await game.awaitPlayerChoice({ id: "c1", type: "pick", playerID: 1, resolved: false });
         expect(result).toEqual(past.value);
@@ -333,18 +352,22 @@ describe("RootGame.awaitPlayerChoice", () => {
 
     test("throws an error if a different choice with the same id exists in past choices", async () => {
         const past: Choice = { id: "c1", type: "other", playerID: 1, resolved: true, value: { picked: 5 } };
-        game.pastChoices = [past];
+        mockPastChoices([past]);
 
         await expect(game.awaitPlayerChoice({ id: "c1", type: "pick", playerID: 1, resolved: false })).rejects.toThrow();
     });
 
     test("waits for the choice to be resolved if it's not in past choices", async () => {
-        game.pendingChoice = { id: "p1", type: "pick", playerID: 2, resolved: false };
-        game.gameplayPromiseControl = new PromiseControl();
+
+        const { getResolver } = mockPromiseControl();
+
 
         const p = game.awaitPlayerChoice({ id: "p1", type: "pick", playerID: 2, resolved: false });
         let isPending = true;
         p.then(() => isPending = false);
+
+        const resolve = getResolver();
+        expect(resolve).not.toBeNull();
         
         // Check that the promise is still pending
         await undefined;
@@ -353,60 +376,69 @@ describe("RootGame.awaitPlayerChoice", () => {
 
         // Resolve the pending choice and then the gameplay promise
         game.pendingChoice = { id: "p1", type: "pick", playerID: 2, resolved: true, value: { ok: true } };
-        game.gameplayPromiseControl.resolve();
+        resolve?.();
 
         // Check that the promise has resolved
-        await undefined;
+        await p; // The real test: will block forever if the promise hasn't resolved
         expect(isPending).toBe(false);
     });
 
+    test("sets pending choice to the provided choice and sets gameplayPromiseControl to a new PromiseControl", () => {
+        const choice: Choice = { id: "p1", type: "pick", playerID: 2, resolved: false };
+        const { getResolver, setter } = mockPromiseControl();
+        game.awaitPlayerChoice(choice);
+        expect(game.pendingChoice).toEqual(choice);
+        expect(setter).toHaveBeenCalledWith(expect.objectContaining({ resolve: expect.any(Function), reject: expect.any(Function) }));
+        getResolver()?.(); // Clean up by resolving the promise
+    });
+
     test("throws an error if the pending promise is rejected", async () => {
-        game.pendingChoice = { id: "p2", type: "pick", playerID: 1, resolved: false };
-        game.gameplayPromiseControl = new PromiseControl();
+        const { getRejecter } = mockPromiseControl();
 
         const p = game.awaitPlayerChoice({ id: "p2", type: "pick", playerID: 1, resolved: false });
-        game.gameplayPromiseControl.reject(new Error("gameplay failed"));
+
+        const reject = getRejecter();
+        expect(reject).not.toBeNull();
+
+        reject?.(new Error("gameplay failed"));
 
         await expect(p).rejects.toThrow("gameplay failed");
     });
 
     test("throws an error if the pending choice has changed after resolution", async () => {
-        game.pendingChoice = { id: "p3", type: "pick", playerID: 1, resolved: false };
-        game.gameplayPromiseControl = new PromiseControl();
-
+        const { getResolver } = mockPromiseControl();
         const p = game.awaitPlayerChoice({ id: "p3", type: "pick", playerID: 1, resolved: false });
 
         // Change pendingChoice to a different id 
         game.pendingChoice = { id: "other", type: "pick", playerID: 1, resolved: false };
-        game.gameplayPromiseControl.resolve();
+        getResolver?.();
 
         await expect(p).rejects.toThrow();
     });
 
     test("returns the value of the choice after resolution", async () => {
-        game.pendingChoice = { id: "p4", type: "pick", playerID: 3, resolved: false };
-        game.gameplayPromiseControl = new PromiseControl();
+        const { getResolver } = mockPromiseControl();
 
         const p = game.awaitPlayerChoice({ id: "p4", type: "pick", playerID: 3, resolved: false });
         game.pendingChoice = { id: "p4", type: "pick", playerID: 3, resolved: true, value: { answer: 99 } };
-        game.gameplayPromiseControl.resolve();
+        
+        getResolver?.();
 
         await expect(p).resolves.toEqual({ answer: 99 });
     });
 
     test("adds choice to past choices and sets pending choice to null after resolution", async () => {
-        game.pendingChoice = { id: "p5", type: "pick", playerID: 4, resolved: false };
-        game.gameplayPromiseControl = new PromiseControl();
+        const { getResolver, setter } = mockPromiseControl();
 
         const p = game.awaitPlayerChoice({ id: "p5", type: "pick", playerID: 4, resolved: false });
         const resolved: Choice = { id: "p5", type: "pick", playerID: 4, resolved: true, value: { v: 1 } };
         game.pendingChoice = resolved;
-        game.gameplayPromiseControl.resolve();
+        getResolver?.();
 
         await p;
         expect(game.pastChoices.find((c) => c.id === "p5")).toEqual(resolved);
         expect(game.pendingChoice).toBeNull();
-        expect(game.gameplayPromiseControl).toBeNull();
+        expect(setter).toHaveBeenCalledWith(null); // Check that gameplayPromiseControl was set to null
     });
 });
 
