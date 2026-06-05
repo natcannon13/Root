@@ -1,4 +1,3 @@
-import type { Piece } from './Piece';
+import type { Piece } from "./Piece";
 
-export interface Building extends Piece {
-}
+export interface Building extends Piece {}

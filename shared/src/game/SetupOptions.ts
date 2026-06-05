@@ -1,4 +1,10 @@
-import type { BoardType, DeckType, HirelingFactionType, LandmarkType, PlayerFactionType } from "../Enums";
+import type {
+    BoardType,
+    DeckType,
+    HirelingFactionType,
+    LandmarkType,
+    PlayerFactionType,
+} from "../Enums";
 import type { PlayerID } from "./RootGame";
 
 interface SetupOptions {

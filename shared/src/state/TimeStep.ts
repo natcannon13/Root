@@ -1,4 +1,4 @@
-import type { PlayerFactionType, PhaseType } from "../Enums";
+import type { PhaseType, PlayerFactionType } from "../Enums";
 
 export class TimeStep {
     currentTurn: PlayerFactionType | "none";
@@ -14,5 +14,4 @@ export class TimeStep {
         this.phase = phase;
         this.phaseSegment = phaseSegment;
     }
-
 }

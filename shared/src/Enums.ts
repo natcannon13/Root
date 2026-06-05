@@ -1,20 +1,7 @@
 const ValidSuits = ["fox", "rabbit", "mouse", "bird", "frog"] as const;
 const ValidPhaseTypes = ["birdsong", "daylight", "evening", "none"] as const;
-const ValidConnectionTypes = [
-    "path",
-    "river",
-    "forest-adjacency",
-    "corner",
-] as const;
-const ValidItemTypes = [
-    "boot",
-    "bag",
-    "tea",
-    "hammer",
-    "crossbow",
-    "sword",
-    "coins",
-] as const;
+const ValidConnectionTypes = ["path", "river", "forest-adjacency", "corner"] as const;
+const ValidItemTypes = ["boot", "bag", "tea", "hammer", "crossbow", "sword", "coins"] as const;
 const ValidPlayerFactionTypes = [
     "marquise-de-cat",
     "eyrie-dynasties",
@@ -86,26 +73,9 @@ const ValidExclusionTypes = [
     "farmer",
     "none",
 ] as const;
-const ValidBoardTypes = [
-    "autumn",
-    "winter",
-    "lake",
-    "mountain",
-    "gorge",
-    "marsh",
-] as const;
-const ValidDeckTypes = [
-    "base",
-    "exiles-and-partisans",
-    "squires-and-disciples",
-] as const;
-const ValidBattlePhaseTypes = [
-    `ambush`,
-    `before-roll`,
-    `roll`,
-    `after-roll`,
-    `hits`,
-] as const;
+const ValidBoardTypes = ["autumn", "winter", "lake", "mountain", "gorge", "marsh"] as const;
+const ValidDeckTypes = ["base", "exiles-and-partisans", "squires-and-disciples"] as const;
+const ValidBattlePhaseTypes = [`ambush`, `before-roll`, `roll`, `after-roll`, `hits`] as const;
 const ValidLandmarkTypes = [
     "ferry",
     "tower",
@@ -177,14 +147,14 @@ export function isLandmarkType(value: string): value is LandmarkType {
 }
 
 export const standardSetupOrder: PlayerFactionType[] = [...ValidPlayerFactionTypes];
-export const reachValues: Record<PlayerFactionType, number> = { 
+export const reachValues: Record<PlayerFactionType, number> = {
     "marquise-de-cat": 10,
     "lord-of-the-hundreds": 9,
     "keepers-in-iron": 8,
     "underground-duchy": 8,
     "lilypad-diaspora": 7,
     "eyrie-dynasties": 7,
-    "vagabond": 5,
+    vagabond: 5,
     "vagabond-2": 2,
     "riverfolk-company": 5,
     "knaves-of-the-deepwood": 5,
@@ -192,13 +162,13 @@ export const reachValues: Record<PlayerFactionType, number> = {
     "woodland-alliance": 3,
     "corvid-conspiracy": 3,
     "lizard-cult": 2,
-}
+};
 
-export const factionExclusionClassesMap: Record<FactionType,ExclusionType> = {
+export const factionExclusionClassesMap: Record<FactionType, ExclusionType> = {
     "marquise-de-cat": "feline",
     "eyrie-dynasties": "bird",
     "woodland-alliance": "woodland",
-    "vagabond": "vagabond",
+    vagabond: "vagabond",
     "vagabond-2": "none",
     "riverfolk-company": "otter",
     "lizard-cult": "lizard",
@@ -241,11 +211,11 @@ export const factionExclusionClassesMap: Record<FactionType,ExclusionType> = {
     "street-band": "band",
     "stoic-protector": "protector",
     "struggling-farmers": "farmer",
-}
+};
 // Defines faction exclusion classes. Factions/Hirelings with the same exclusion class cannot be played together.
 
-export const factionDependencies: Partial<Record<FactionType, FactionType>> = { 
+export const factionDependencies: Partial<Record<FactionType, FactionType>> = {
     "vagabond-2": "vagabond",
-}
+};
 // Defines which factions require another in the game to be played.
 // When a dependee faction is selected for the draft while its dependent faction is not in the draft, the dependent faction will be added instead.

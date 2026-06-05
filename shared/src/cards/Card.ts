@@ -1,4 +1,4 @@
-import type { Suit, ItemType } from '../Enums';
+import type { ItemType, Suit } from "../Enums";
 
 export type CardID = number;
 

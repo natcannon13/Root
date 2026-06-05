@@ -5,7 +5,7 @@ import type { RulesModule } from "./RulesModule";
 export type LandmarkID = number;
 
 export interface Landmark extends RulesModule {
-  id: LandmarkID;
-  name: LandmarkType;
-  piece: Piece;
+    id: LandmarkID;
+    name: LandmarkType;
+    piece: Piece;
 }

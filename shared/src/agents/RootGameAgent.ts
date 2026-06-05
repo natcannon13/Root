@@ -1,7 +1,7 @@
-import type { PlayerFactionType } from '../Enums';
-import type { Move } from '../gameActions/Move';
-import type { Battle } from '../gameActions/Battle';
-import type { PlayerID } from '../game/RootGame';
+import type { PlayerFactionType } from "../Enums";
+import type { PlayerID } from "../game/RootGame";
+import type { Battle } from "../gameActions/Battle";
+import type { Move } from "../gameActions/Move";
 
 export interface RootGameAgent {
     id: PlayerID;

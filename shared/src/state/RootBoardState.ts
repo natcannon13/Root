@@ -1,6 +1,6 @@
-import type { LocationID } from '../board/Location';
-import type { BoardType, Suit } from '../Enums';
-import type { Piece } from '../pieces/Piece';
+import type { LocationID } from "../board/Location";
+import type { BoardType, Suit } from "../Enums";
+import type { Piece } from "../pieces/Piece";
 
 export interface RootBoardState {
     version: string;

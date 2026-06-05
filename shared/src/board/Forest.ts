@@ -1,4 +1,4 @@
-import { Location, type LocationID } from './Location';
+import { Location, type LocationID } from "./Location";
 
 export class Forest extends Location {
     id: LocationID;

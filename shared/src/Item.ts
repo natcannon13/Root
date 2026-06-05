@@ -1,5 +1,5 @@
-import type { ItemType } from './Enums';
-import type { Piece, PieceID } from './pieces/Piece';
+import type { ItemType } from "./Enums";
+import type { Piece, PieceID } from "./pieces/Piece";
 
 export class Item implements Piece {
     id: PieceID;

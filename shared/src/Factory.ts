@@ -1,11 +1,17 @@
 import type { Board } from "./board/Board";
 import type { Card } from "./cards/Card";
-import type { BoardType, DeckType, HirelingFactionType, LandmarkType, PlayerFactionType } from "./Enums";
+import type {
+    BoardType,
+    DeckType,
+    HirelingFactionType,
+    LandmarkType,
+    PlayerFactionType,
+} from "./Enums";
 import type { Hireling } from "./rulesModule/Hireling";
 import type { Landmark } from "./rulesModule/Landmark";
 import type { PlayerFaction } from "./rulesModule/PlayerFaction";
 
-export function generateFactionFromType(factionType: PlayerFactionType): PlayerFaction { 
+export function generateFactionFromType(factionType: PlayerFactionType): PlayerFaction {
     throw new Error(`generateFactionFromType not implemented`);
 }
 

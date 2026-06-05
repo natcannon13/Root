@@ -1,5 +1,5 @@
-import type { ConnectionType } from '../Enums';
-import type { LocationID } from './Location';
+import type { ConnectionType } from "../Enums";
+import type { LocationID } from "./Location";
 
 export type ConnectionID = number;
 

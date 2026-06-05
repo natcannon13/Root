@@ -2,7 +2,6 @@ import type { Pawn } from "../pieces/Pawn";
 import type { Piece } from "../pieces/Piece";
 import type { Token } from "../pieces/Token";
 
-
 export type LocationID = number;
 
 export abstract class Location {
@@ -12,7 +11,11 @@ export abstract class Location {
 
     addPieces(pieces: Piece[]): void {}
     removePieces(pieces: Piece[]): void {}
-    hasPieces(pieces: Piece[]): boolean { return false; }
-    getPieces(predicate?: (p: Piece) => boolean): Piece[] { return []; }
+    hasPieces(pieces: Piece[]): boolean {
+        return false;
+    }
+    getPieces(predicate?: (p: Piece) => boolean): Piece[] {
+        return [];
+    }
     replace(targetPiece: Piece, newPiece: Piece): void {}
 }

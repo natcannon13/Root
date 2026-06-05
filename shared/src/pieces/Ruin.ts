@@ -1,10 +1,10 @@
-import type { Building } from './Building';
-import type { Item } from '../Item';
-import type { Piece, PieceID } from './Piece';
+import type { Item } from "../Item";
+import type { Building } from "./Building";
+import type { PieceID } from "./Piece";
 
 export class Ruin implements Building {
     id: PieceID;
-    name = 'ruin' as const;
+    name = "ruin" as const;
     owningFaction: null = null;
     items: Item[] = [];
     remainingItemCount: number;

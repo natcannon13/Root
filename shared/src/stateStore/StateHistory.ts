@@ -52,7 +52,9 @@ export class StateHistory<State, Transition> {
     goTo(index: number): State {
         // Navigates to a specific point in history, making that branch the canonical branch. Returns the state at that point in history.
         if (index < 0 || index >= this.history.length) {
-            throw new Error(`Index ${index} out of bounds for history of length ${this.history.length}`);
+            throw new Error(
+                `Index ${index} out of bounds for history of length ${this.history.length}`,
+            );
         }
         this.currentIndex = index;
         this.reTrunk(index);
@@ -62,14 +64,14 @@ export class StateHistory<State, Transition> {
         if (this.currentIndex <= 0) {
             throw new Error("No more history to undo");
         }
-        this.currentIndex=this.history[this.currentIndex].prevIdx;
+        this.currentIndex = this.history[this.currentIndex].prevIdx;
         return this.history[this.currentIndex].state;
     }
     redo(): State {
         // Redoing goes forward along the current canonical branch. If the user has undone some steps and then makes a new change, that creates a new branch and the redo history is preserved but no longer on the canonical branch, so redo will not go down that path unless the user explicitly goes to that point in history (which makes it the canonical branch).
         if (this.currentIndex === -1) {
             throw new Error("No history to redo");
-        }        
+        }
         const nextIdx = this.history[this.currentIndex].nextIdx;
         if (nextIdx === -1) {
             throw new Error("No more history to redo");

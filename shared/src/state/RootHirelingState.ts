@@ -1,8 +1,8 @@
-import type { PlayerFactionType, HirelingFactionType } from "../Enums";
+import type { HirelingFactionType, PlayerFactionType } from "../Enums";
 
 export interface RootHirelingState {
-  version: string;
-  name: HirelingFactionType;
-  controlCounter: number;
-  controllingFaction: PlayerFactionType;
+    version: string;
+    name: HirelingFactionType;
+    controlCounter: number;
+    controllingFaction: PlayerFactionType;
 }

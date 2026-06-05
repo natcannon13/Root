@@ -1,29 +1,29 @@
 import { Board } from "../board/Board";
-import type { RootGameState } from "../state/RootGameState";
-import { TimeStep } from "../state/TimeStep";
+import type { LocationID } from "../board/Location";
 import type { Card, CardID } from "../cards/Card";
-import type { Piece } from "../pieces/Piece";
+import { CardPile } from "../cards/CardPile";
 import type { FactionType, PlayerFactionType } from "../Enums";
-import type { Move } from "../gameActions/Move";
 import type { Battle } from "../gameActions/Battle";
+import type { Move } from "../gameActions/Move";
+import type { Piece } from "../pieces/Piece";
+import type { Supply } from "../pieces/Supply";
 import type { Hireling } from "../rulesModule/Hireling";
 import type { Landmark } from "../rulesModule/Landmark";
-import type { Event } from "./Event";
 import type { PlayerFaction } from "../rulesModule/PlayerFaction";
-import type { Supply } from "../pieces/Supply";
-import type { PlayOptions } from "./PlayOptions";
 import type { BattleState } from "../state/BattleState";
-import type { Choice, ChoiceType, ChoiceValueMap } from "./PendingChoice";
+import type { RootGameState } from "../state/RootGameState";
+import { TimeStep } from "../state/TimeStep";
 import type { StateStore } from "../stateStore/StateStore";
+import type { Event } from "./Event";
+import type { Choice, ChoiceType, ChoiceValueMap } from "./PendingChoice";
+import type { PlayOptions } from "./PlayOptions";
 import type { RootGameUpdate } from "./RootGameUpdate";
-import type { LocationID } from "../board/Location";
-import { CardPile } from "../cards/CardPile";
 
 export type RootGameStateStore = StateStore<RootGameState, RootGameUpdate>;
 
 export class PromiseControl {
     promise: Promise<void>;
-    resolve: () => void
+    resolve: () => void;
     reject: (reason?: any) => void;
 
     constructor() {
@@ -34,19 +34,25 @@ export class PromiseControl {
             this.reject = rej;
         });
     }
-
 }
 
 export type PlayerID = number;
 
-export type CardLocationType = 'deck' | 'discard' | 'dominance' | 'hand' | 'crafted' | 'revealed' | 'pile';
+export type CardLocationType =
+    | "deck"
+    | "discard"
+    | "dominance"
+    | "hand"
+    | "crafted"
+    | "revealed"
+    | "pile";
 
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
     version = "0.0.0";
     board: Board | null = null;
     playOptions: PlayOptions;
-    playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>> = {}; 
+    playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>> = {};
     turnOrder: PlayerID[] = [];
     factions: PlayerFaction[] = [];
     hirelings: Hireling[] = [];
@@ -148,7 +154,12 @@ export class RootGame {
         throw new Error("RootGame.craft not implemented");
     }
 
-    async dealHits(hitFaction: FactionType, hittingFaction: FactionType, locationID: LocationID, hits: number) {
+    async dealHits(
+        hitFaction: FactionType,
+        hittingFaction: FactionType,
+        locationID: LocationID,
+        hits: number,
+    ) {
         throw new Error("RootGame.dealHits not implemented");
     }
 
