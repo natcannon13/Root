@@ -19,8 +19,7 @@ const ValidGameUpdateTypes = [
     "hirelingStateUpdate",
     "hirelingControlChange",
     "timestepChange",
-    "battlePhaseUpdate",
-    "hitsChange",
+    "battleChange",
     "crafting",
     "choicePended",
     "choiceResolved",
@@ -28,6 +27,8 @@ const ValidGameUpdateTypes = [
 ] as const;
 
 export type GameUpdateType = (typeof ValidGameUpdateTypes)[number];
+
+type PlayerCardLocationType = Extract<CardLocationType, "hand" | "crafted" | "revealed" | "pile">;
 
 type GameUpdateValueMap = {
     propertySet: {
@@ -45,19 +46,23 @@ type GameUpdateValueMap = {
         };
     }[keyof RootFactionState];
     returnToSupply: { pieceID: PieceID; faction: FactionType };
+    moveCard: { cardID: CardID } & {
+        [K in CardLocationType]: (K extends PlayerCardLocationType
+            ? { from: K; fromPlayerID: PlayerID; fromFaction: PlayerFactionType }
+            : { from: K }) &
+            (K extends "pile" ? { fromPileID: string } : {});
+    }[CardLocationType] &
+        {
+            [K in CardLocationType]: (K extends PlayerCardLocationType
+                ? { to: K; toPlayerID: PlayerID; toFaction: PlayerFactionType }
+                : { to: K }) &
+                (K extends "pile" ? { toPileID: string } : {});
+        }[CardLocationType];
 
-    moveCard: {
-        cardID: CardID;
-        from: CardLocationType;
-        to: CardLocationType;
-        fromPlayerID?: PlayerID;
-        toPlayerID?: PlayerID;
-    };
     hirelingStateUpdate: { hirelingID: PieceID; newState: any };
     hirelingControlChange: { hirelingID: PieceID; newControllingFaction: PlayerFactionType | null };
     timestepChange: { newTimeStep: TimeStep };
-    battlePhaseUpdate: { newPhase: any };
-    hitsChange: { attackerHits: number; defenderHits: number };
+    battleChange: { newPhase: any };
     crafting: { playerID: PlayerID; cardID: CardID; craftingPiecesUsed: PieceID[] };
     choicePended: { choice: any };
     choiceResolved: { choiceID: string; resolution: any };

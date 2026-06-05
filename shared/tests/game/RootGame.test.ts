@@ -32,7 +32,7 @@ let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
 
 let board: ReturnType<typeof mock<Board>>;
-let factions: { [key in PlayerFactionType]?: ReturnType<typeof mock<PlayerFaction>> };
+let factions: Partial<Record<PlayerFactionType, ReturnType<typeof mock<PlayerFaction>>>>;
 let hirelings: Partial<Record<HirelingFactionType, ReturnType<typeof mock<Hireling>>>>;
 let landmarks: ReturnType<typeof mock<Landmark>>[];
 
@@ -123,6 +123,10 @@ function mockGame(options: PlayOptions = mock<PlayOptions>()) {
 function mockBoard() {
     board = mock<Board>();
     vi.spyOn(game, "board", "get").mockReturnValue(board);
+}
+
+function mockFaction<T extends PlayerFactionType>(faction: T) {
+    factions[faction] = mock<PlayerFaction>({ name: faction });
 }
 
 function mockFactions(factionTurnOrder: { faction: PlayerFactionType; playerID: PlayerID }[] = []) {
