@@ -17,6 +17,7 @@ import type { Choice, ChoiceType, ChoiceValueMap } from "./PendingChoice";
 import type { StateStore } from "../stateStore/StateStore";
 import type { RootGameUpdate } from "./RootGameUpdate";
 import type { LocationID } from "../board/Location";
+import { CardPile } from "../cards/CardPile";
 
 export type RootGameStateStore = StateStore<RootGameState, RootGameUpdate>;
 
@@ -38,6 +39,8 @@ export class PromiseControl {
 
 export type PlayerID = number;
 
+export type CardLocationType = 'deck' | 'discard' | 'dominance' | 'hand' | 'crafted' | 'revealed' | 'pile';
+
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
     version = "0.0.0";
@@ -52,9 +55,9 @@ export class RootGame {
     battleState: BattleState | null = null;
     winner: PlayerFactionType | null = null;
     gameOver = false;
-    deck: Card[] = [];
-    discardPile: Card[] = [];
-    dominancePile: Card[] = [];
+    deck: CardPile = new CardPile();
+    discardPile: CardPile = new CardPile();
+    dominancePile: CardPile = new CardPile();
     spentCraftingPieces: Piece[] = [];
     pendingChoice: Choice | null = null; // Seperate from gameplayPendingPromise for serializability.
     pastChoices: Choice[] = [];

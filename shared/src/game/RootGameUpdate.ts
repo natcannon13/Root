@@ -1,10 +1,11 @@
 import type { Location, LocationID } from "../board/Location";
 import type { CardID } from "../cards/Card";
-import type { PlayerFactionType } from "../Enums";
+import type { FactionType, PlayerFactionType } from "../Enums";
 import type { PieceID } from "../pieces/Piece";
+import type { RootFactionState } from "../state/RootFactionState";
 import type { RootGameState } from "../state/RootGameState";
 import type { TimeStep } from "../state/TimeStep";
-import type { PlayerID } from "./RootGame";
+import type { CardLocationType, PlayerID } from "./RootGame";
 
 const ValidGameUpdateTypes = [
     'propertySet', 
@@ -31,12 +32,13 @@ export type GameUpdateType = typeof ValidGameUpdateTypes[number];
 type GameUpdateValueMap = {
     'propertySet': { [K in keyof RootGameState]: { property: K; value: RootGameState[K] } }[keyof RootGameState];
     'factionSelected': { playerID: PlayerID; faction: PlayerFactionType };
-    'move': { pieceID: PieceID; from: LocationID; to: LocationID };
-    'place': { pieceID: PieceID; to: LocationID };
-    'remove': { pieceID: PieceID; from: LocationID };
-    'factionStateUpdate': { faction: PlayerFactionType; newState: any };
-    'returnToSupply': { pieceID: PieceID; from: LocationID };
-    'moveCard': { cardID: CardID; from: 'deck' | 'hand' | 'discard'; to: 'deck' | 'hand' | 'discard' };
+    'move': { pieces: PieceID[]; from: LocationID; to: LocationID };
+    'place': { pieces: PieceID[]; to: LocationID };
+    'remove': { pieces: PieceID[]; from: LocationID };
+    'factionStateUpdate': {[K in keyof RootFactionState]:{ faction: PlayerFactionType; property: K; value: RootFactionState[K] }} [keyof RootFactionState];
+    'returnToSupply': { pieceID: PieceID; faction: FactionType; };
+
+    'moveCard': { cardID: CardID; from: CardLocationType; to: CardLocationType; fromPlayerID?: PlayerID; toPlayerID?: PlayerID };
     'hirelingStateUpdate': { hirelingID: PieceID; newState: any };
     'hirelingControlChange': { hirelingID: PieceID; newControllingFaction: PlayerFactionType | null };
     'timestepChange': { newTimeStep: TimeStep };
