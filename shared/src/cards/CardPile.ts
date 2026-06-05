@@ -3,7 +3,7 @@ import type { Card, CardID } from "./Card";
 
 const VERSION = "0.0.0";
 
-export class  CardPile {
+export class CardPile {
     cards: Card[]; // TODO: make this nullable, add errors where that causes problems (an error will signify we need a state update)
 
     constructor(cards: Card[] = []) {
