@@ -1,10 +1,12 @@
 import type { LocationID } from "../board/Location";
 import type { CardID } from "../cards/Card";
-import type { FactionType, PlayerFactionType } from "../Enums";
+import type { FactionType, HirelingFactionType, PlayerFactionType } from "../Enums";
 import type { PieceID } from "../pieces/Piece";
+import type { BattleState } from "../state/BattleState";
 import type { RootFactionState } from "../state/RootFactionState";
 import type { RootGameState } from "../state/RootGameState";
-import type { TimeStep } from "../state/TimeStep";
+import type { RootHirelingState } from "../state/RootHirelingState";
+import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./PendingChoice";
 import type { CardLocationType, PlayerID } from "./RootGame";
 
 const ValidGameUpdateTypes = [
@@ -17,8 +19,6 @@ const ValidGameUpdateTypes = [
     "returnToSupply",
     "moveCard",
     "hirelingStateUpdate",
-    "hirelingControlChange",
-    "timestepChange",
     "battleChange",
     "crafting",
     "choicePended",
@@ -58,14 +58,21 @@ type GameUpdateValueMap = {
                 : { to: K }) &
                 (K extends "pile" ? { toPileID: string } : {});
         }[CardLocationType];
-
-    hirelingStateUpdate: { hirelingID: PieceID; newState: any };
-    hirelingControlChange: { hirelingID: PieceID; newControllingFaction: PlayerFactionType | null };
-    timestepChange: { newTimeStep: TimeStep };
-    battleChange: { newPhase: any };
+    hirelingStateUpdate: {
+        [K in keyof RootHirelingState]: {
+            hireling: HirelingFactionType;
+            property: K;
+            value: RootHirelingState[K];
+        };
+    }[keyof RootHirelingState];
+    battleChange: {
+        [K in keyof BattleState]: { property: K; value: BattleState[K] };
+    }[keyof BattleState];
     crafting: { playerID: PlayerID; cardID: CardID; craftingPiecesUsed: PieceID[] };
-    choicePended: { choice: any };
-    choiceResolved: { choiceID: string; resolution: any };
+    choicePended: { choice: Choice };
+    choiceResolved: {
+        [T in ChoiceType]: { choiceID: ChoiceID; type: T; resolution: ChoiceValueMap[T] };
+    }[ChoiceType];
     compound: { updates: RootGameUpdate[] };
 };
 
