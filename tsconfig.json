@@ -3,6 +3,6 @@
   "references": [
     { "path": "./client" },
     { "path": "./shared" },
-    { "path": "./server" }
+    { "path": "./server" },
   ]
 }

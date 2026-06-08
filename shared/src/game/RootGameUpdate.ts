@@ -1,3 +1,4 @@
+import type { from } from "node:stream/iter";
 import type { LocationID } from "../board/Location";
 import type { CardID } from "../cards/Card";
 import type { FactionType, HirelingFactionType, PlayerFactionType } from "../Enums";
@@ -6,8 +7,11 @@ import type { BattleState } from "../state/BattleState";
 import type { RootFactionState } from "../state/RootFactionState";
 import type { RootGameState } from "../state/RootGameState";
 import type { RootHirelingState } from "../state/RootHirelingState";
+import type { TransitionType } from "../stateStore/StateStore";
 import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./PendingChoice";
-import type { CardLocationType, PlayerID } from "./RootGame";
+import type { RNGEvent } from "./RNGEvent";
+import type { PlayerID } from "./RootGame";
+import type { CardLocationType } from "../cards/CardPileLocation";
 
 const ValidGameUpdateTypes = [
     "propertySet",
@@ -28,7 +32,7 @@ const ValidGameUpdateTypes = [
 
 export type GameUpdateType = (typeof ValidGameUpdateTypes)[number];
 
-type PlayerCardLocationType = Extract<CardLocationType, "hand" | "crafted" | "revealed" | "pile">;
+
 
 type GameUpdateValueMap = {
     propertySet: {
@@ -46,18 +50,7 @@ type GameUpdateValueMap = {
         };
     }[keyof RootFactionState];
     returnToSupply: { pieceID: PieceID; faction: FactionType };
-    moveCard: { cardID: CardID } & {
-        [K in CardLocationType]: (K extends PlayerCardLocationType
-            ? { from: K; fromPlayerID: PlayerID; fromFaction: PlayerFactionType }
-            : { from: K }) &
-            (K extends "pile" ? { fromPileID: string } : {});
-    }[CardLocationType] &
-        {
-            [K in CardLocationType]: (K extends PlayerCardLocationType
-                ? { to: K; toPlayerID: PlayerID; toFaction: PlayerFactionType }
-                : { to: K }) &
-                (K extends "pile" ? { toPileID: string } : {});
-        }[CardLocationType];
+    moveCard: { cardID: CardID; from: CardLocationType; to: CardLocationType; };
     hirelingStateUpdate: {
         [K in keyof RootHirelingState]: {
             hireling: HirelingFactionType;
@@ -73,11 +66,11 @@ type GameUpdateValueMap = {
     choiceResolved: {
         [T in ChoiceType]: { choiceID: ChoiceID; type: T; resolution: ChoiceValueMap[T] };
     }[ChoiceType];
+    rng: { event: RNGEvent };
     compound: { updates: RootGameUpdate[] };
 };
 
-export interface RootGameUpdate<T extends GameUpdateType = GameUpdateType> {
-    id: string; // Composed of turn number + sequence number for matching when initializing a mid-turn state
+export interface RootGameUpdate<T extends GameUpdateType = GameUpdateType> extends TransitionType {
     type: T;
     options: GameUpdateValueMap[T];
 }

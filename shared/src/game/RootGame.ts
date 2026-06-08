@@ -17,6 +17,7 @@ import type { StateStore } from "../stateStore/StateStore";
 import type { Event } from "./Event";
 import type { Choice, ChoiceType, ChoiceValueMap } from "./PendingChoice";
 import type { PlayOptions } from "./PlayOptions";
+import type { RNGEvent } from "./RNGEvent";
 import type { RootGameUpdate } from "./RootGameUpdate";
 
 export type RootGameStateStore = StateStore<RootGameState, RootGameUpdate>;
@@ -38,15 +39,6 @@ export class PromiseControl {
 
 export type PlayerID = number;
 
-export type CardLocationType =
-    | "deck"
-    | "discard"
-    | "dominance"
-    | "hand"
-    | "crafted"
-    | "revealed"
-    | "pile";
-
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
     version = "0.0.0";
@@ -67,6 +59,7 @@ export class RootGame {
     spentCraftingPieces: Piece[] = [];
     pendingChoice: Choice | null = null; // Seperate from gameplayPendingPromise for serializability.
     pastChoices: Choice[] = [];
+    pastRNGEvents: RNGEvent[] = [];
     gameplayPromiseControl: PromiseControl | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.
     stateStore: RootGameStateStore;
 

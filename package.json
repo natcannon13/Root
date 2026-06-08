@@ -15,6 +15,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@types/node": "^25.9.2",
     "concurrently": "^9.2.1",
     "vitest": "^4.1.6",
     "vitest-mock-extended": "^4.0.0"

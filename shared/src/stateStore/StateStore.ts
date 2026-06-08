@@ -2,8 +2,13 @@ import { HistoryNode, StateHistory } from "./StateHistory";
 
 export type TransitionID = string;
 
-interface TransitionType {
+export interface StateType {
+    version: string;
+}
+
+export interface TransitionType {
     id: TransitionID;
+    version: string;
 }
 
 export class StateStore<State, Transition extends TransitionType> {
@@ -43,13 +48,8 @@ export class StateStore<State, Transition extends TransitionType> {
         if (!this.state) {
             throw new Error("State has not been initialized!");
         }
-        // Shallow snapshot for history; serialized clone would be safer in production.
-        try {
-            const snapshot = JSON.parse(JSON.stringify(this.state)) as State;
-            this.history.add(snapshot, transition);
-        } catch (e) {
-            // ignore cloning errors in this stub
-        }
+        const snapshot = structuredClone(this.state);
+        this.history.add(snapshot, transition);
         this.stateUpdateFunction(this.state, transition);
         this.subscribers.forEach((s) => s(transition));
     }

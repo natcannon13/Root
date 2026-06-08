@@ -1,22 +1,24 @@
 {
-  "compilerOptions": {
-    "target": "es2023",
-    "lib": ["ES2023"],
-    "module": "esnext",
-    "skipLibCheck": true,
+    "compilerOptions": {
+        "target": "es2023",
+        "lib": ["ES2023"],
+        "module": "esnext",
+        "skipLibCheck": true,
 
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-	"composite": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
+        /* Bundler mode */
+        "moduleResolution": "bundler",
+        "composite": true,
+        "verbatimModuleSyntax": true,
+        "moduleDetection": "force",
 
-    /* Linting */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true,
-	"strict": true,
-  },
-  "include": ["src"],
+        /* Linting */
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "erasableSyntaxOnly": true,
+        "noFallthroughCasesInSwitch": true,
+        "strict": true,
+
+        "types" : ["node"],
+    },
+    "include": ["src"]
 }
