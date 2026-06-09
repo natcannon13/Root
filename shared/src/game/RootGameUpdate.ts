@@ -1,28 +1,30 @@
 import type { LocationID } from "../board/Location";
 import type { CardID } from "../cards/Card";
 import type { CardLocationType } from "../cards/CardPileLocation";
-import type { FactionType, HirelingFactionType, PlayerFactionType } from "../Enums";
+import type { BattlePhaseType, FactionType, HirelingFactionType, PlayerFactionType } from "../Enums";
+import type { Battle } from "../gameActions/Battle";
 import type { PieceID } from "../pieces/Piece";
-import type { BattleState } from "../state/BattleState";
-import type { RootFactionState } from "../state/RootFactionState";
 import type { RootGameState } from "../state/RootGameState";
-import type { RootHirelingState } from "../state/RootHirelingState";
 import type { TransitionType } from "../stateStore/StateStore";
 import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./PendingChoice";
 import type { RNGEvent } from "./RNGEvent";
 import type { PlayerID } from "./RootGame";
 
 const ValidGameUpdateTypes = [
-    "propertySet",
+    "stateSet",
     "factionSelected",
+    "turnOrderSet",
     "move",
     "place",
     "remove",
-    "factionStateUpdate",
     "returnToSupply",
-    "moveCard",
+    "factionStateUpdate",
     "hirelingStateUpdate",
-    "battleChange",
+    "moveCard",
+    "startBattle",
+    "battleSegmentChange",
+    "pendingHitsChange",
+    "endBattle",
     "crafting",
     "choicePended",
     "choiceResolved",
@@ -33,33 +35,29 @@ const ValidGameUpdateTypes = [
 export type GameUpdateType = (typeof ValidGameUpdateTypes)[number];
 
 type GameUpdateValueMap = {
-    propertySet: {
-        [K in keyof RootGameState]: { property: K; value: RootGameState[K] };
-    }[keyof RootGameState];
+    stateSet: { newState: RootGameState };
     factionSelected: { playerID: PlayerID; faction: PlayerFactionType };
+    turnOrderSet: { turnOrder: PlayerID[] };
     move: { pieces: PieceID[]; from: LocationID; to: LocationID };
     place: { pieces: PieceID[]; to: LocationID };
     remove: { pieces: PieceID[]; from: LocationID };
-    factionStateUpdate: {
-        [K in keyof RootFactionState]: {
-            faction: PlayerFactionType;
-            property: K;
-            value: RootFactionState[K];
-        };
-    }[keyof RootFactionState];
     returnToSupply: { pieceID: PieceID; faction: FactionType };
-    moveCard: { cardID: CardID; from: CardLocationType; to: CardLocationType };
+    factionStateUpdate: {
+        faction: PlayerFactionType;
+        updateType: string;
+        value: any;
+    };
     hirelingStateUpdate: {
-        [K in keyof RootHirelingState]: {
-            hireling: HirelingFactionType;
-            property: K;
-            value: RootHirelingState[K];
-        };
-    }[keyof RootHirelingState];
-    battleChange: {
-        [K in keyof BattleState]: { property: K; value: BattleState[K] };
-    }[keyof BattleState];
-    crafting: { playerID: PlayerID; cardID: CardID; craftingPiecesUsed: PieceID[] };
+        hireling: HirelingFactionType;
+        updateType: string;
+        value: any;
+    };
+    startBattle: { battle: Battle };
+    battleSegmentChange: { newBattleSegment: BattlePhaseType | null };
+    pendingHitsChange: { attackerHits?: number; defenderHits?: number };
+    endBattle: { };
+    moveCard: { cardID: CardID; from: CardLocationType; to: CardLocationType };
+    crafting: { playerID: PlayerID; craftingPiecesUsed: PieceID[] };
     choicePended: { choice: Choice };
     choiceResolved: {
         [T in ChoiceType]: { choiceID: ChoiceID; type: T; resolution: ChoiceValueMap[T] };

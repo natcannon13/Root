@@ -11,20 +11,19 @@ export interface TransitionType {
     version: string;
 }
 
-export type UpdateFunction<State, Transition> = (state: State, transition: Transition) => void;
-
 export class StateStore<State, Transition extends TransitionType> {
     private state?: State;
     private history: StateHistory<State, Transition> = new StateHistory();
     private subscribers: Array<(transition: Transition) => void> = [];
-    private stateUpdateFunction: UpdateFunction<State, Transition>;
 
-    constructor(stateUpdateFunction: UpdateFunction<State, Transition>, initialState?: State) {
-        this.stateUpdateFunction = stateUpdateFunction;
+    constructor( initialState?: State ) {
         this.state = initialState;
+        if (initialState) {
+            this.history.add(initialState, null);
+        }
     }
 
-    initializeState(initialState: State) {
+    initializeState(initialState: State): void {
         throw new Error("StateStore.initializeState not implemented in stub");
     }
 
@@ -43,13 +42,9 @@ export class StateStore<State, Transition extends TransitionType> {
         return this.history.historyNodes;
     }
 
-    updateState(transition: Transition): void {
-        if (!this.state) {
-            throw new Error("State has not been initialized!");
-        }
-        const snapshot = structuredClone(this.state);
-        this.history.add(snapshot, transition);
-        this.stateUpdateFunction(this.state, transition);
+    updateState(transition: Transition, newState: State): void {
+        this.state = newState;
+        this.history.add(this.state, transition);
         this.subscribers.forEach((s) => s(transition));
     }
 

@@ -239,6 +239,7 @@ function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameSt
         pendingChoice: null,
         pastChoices: [],
         pastRNGEvents: [],
+        winner: null,
         ...overrides,
     };
 }

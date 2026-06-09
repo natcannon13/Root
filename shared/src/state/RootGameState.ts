@@ -13,21 +13,22 @@ import type { RootHirelingState } from "./RootHirelingState";
 import type { TimeStep } from "./TimeStep";
 
 export interface RootGameState extends StateType {
-    version: string;
-    options: PlayOptions;
-    playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>>;
-    turnOrder: PlayerID[]; // Array of player IDs in turn order
-    boardState: RootBoardState;
-    factionState: Partial<Record<PlayerFactionType, RootFactionState>>;
-    hirelingState: Partial<Record<HirelingFactionType, RootHirelingState>>;
-    landmarks: LandmarkType[];
-    currentTimeStep: TimeStep;
-    battleState: BattleState | null;
-    deck: CardPileState;
-    discardPile: CardPileState;
-    dominancePile: CardPileState;
-    spentCraftingPieceIDs: PieceID[];
-    pendingChoice: Choice | null;
-    pastChoices: Choice[];
-    pastRNGEvents: RNGEvent[];
+    readonly version: string;
+    readonly options: PlayOptions;
+    readonly playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>>;
+    readonly turnOrder: PlayerID[]; // Array of player IDs in turn order
+    readonly boardState: RootBoardState;
+    readonly factionState: Partial<Record<PlayerFactionType, RootFactionState>>;
+    readonly hirelingState: Partial<Record<HirelingFactionType, RootHirelingState>>;
+    readonly landmarks: LandmarkType[];
+    readonly currentTimeStep: TimeStep;
+    readonly battleState: BattleState | null;
+    readonly deck: CardPileState;
+    readonly discardPile: CardPileState;
+    readonly dominancePile: CardPileState;
+    readonly spentCraftingPieceIDs: PieceID[];
+    readonly pendingChoice: Choice | null;
+    readonly pastChoices: Choice[];
+    readonly pastRNGEvents: RNGEvent[];
+    readonly winner: PlayerFactionType | null;
 }

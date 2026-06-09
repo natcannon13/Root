@@ -42,26 +42,26 @@ export type PlayerID = number;
 // Minimal RootGame stub. Methods throw or are no-ops so other modules/tests can import the class.
 export class RootGame {
     version = "0.0.0";
-    board: Board | null = null;
     options: PlayOptions;
     playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>> = {};
     turnOrder: PlayerID[] = [];
+    board: Board | null = null;
     factions: PlayerFaction[] = [];
     hirelings: Hireling[] = [];
     landmarks: Landmark[] = [];
     currentTimeStep: TimeStep = new TimeStep();
     battleState: BattleState | null = null;
-    winner: PlayerFactionType | null = null;
-    gameOver = false;
     deck: CardPile = new CardPile();
     discardPile: CardPile = new CardPile();
     dominancePile: CardPile = new CardPile();
     spentCraftingPieces: Piece[] = [];
-    pendingChoice: Choice | null = null; // Seperate from gameplayPendingPromise for serializability.
+    pendingChoice: Choice | null = null; // Separate from gameplayPendingPromise for serializability.
     pastChoices: Choice[] = [];
     pastRNGEvents: RNGEvent[] = [];
     gameplayPromiseControl: PromiseControl | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.
     stateStore: RootGameStateStore;
+    winner: PlayerFactionType | null = null;
+    gameOver = false;
 
     constructor(stateStore: RootGameStateStore, options: PlayOptions) {
         throw new Error("RootGame constructor not implemented");
