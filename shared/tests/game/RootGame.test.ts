@@ -14,6 +14,7 @@ import {
 import * as Factory from "../../src/Factory";
 import type { Choice } from "../../src/game/PendingChoice";
 import { PlayOptions } from "../../src/game/PlayOptions";
+import { RNGEvent } from "../../src/game/RNGEvent";
 import { PlayerID, PromiseControl, RootGame, RootGameStateStore } from "../../src/game/RootGame";
 import { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
 import type { Piece } from "../../src/pieces/Piece";
@@ -27,7 +28,6 @@ import type { RootFactionState } from "../../src/state/RootFactionState";
 import { RootGameState } from "../../src/state/RootGameState";
 import { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
-import { RNGEvent } from "../../src/game/RNGEvent";
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
@@ -225,12 +225,12 @@ function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameSt
         version: "1.2.3",
         options: mock<PlayOptions>(),
         playerFactionMapping: {},
-        playerTurnOrder: [],
+        turnOrder: [],
         boardState: { version: "b1", name: "autumn", clearings: [], forests: [] },
         factionState: {},
         hirelingState: {},
         landmarks: [],
-        timeState: new TimeStep(),
+        currentTimeStep: new TimeStep(),
         battleState: null,
         deck: mock<CardPileState>(),
         discardPile: mock<CardPileState>(),
@@ -305,7 +305,7 @@ describe("RootGame.getState", () => {
         dominancePile.getState.mockReturnValue(dominancePileState);
 
         game.version = "vtest";
-        game.playOptions = mock<PlayOptions>();
+        game.options = mock<PlayOptions>();
         game.currentTimeStep = mock<TimeStep>();
         game.battleState = mock<BattleState>();
         game.pendingChoice = mock<Choice>();
@@ -319,9 +319,9 @@ describe("RootGame.getState", () => {
 
         expect(state).not.toBeNull();
         expect(state.version).toBe("vtest");
-        expect(state.options).toBe(game.playOptions);
+        expect(state.options).toBe(game.options);
         expect(state.playerFactionMapping).toEqual(playerFactionMapping);
-        expect(state.playerTurnOrder).toEqual(turnOrder);
+        expect(state.turnOrder).toEqual(turnOrder);
         expect(state.boardState).toBe(boardState);
         expect(state.factionState["marquise-de-cat"]).toBe(pf1State);
         expect(state.factionState["eyrie-dynasties"]).toBe(pf2State);
@@ -329,7 +329,7 @@ describe("RootGame.getState", () => {
         expect(state.hirelingState["flame-bearers"]).toBe(h2State);
         expect(state.hirelingState["highway-bandits"]).toBe(h3State);
         expect(state.landmarks).toEqual(["ferry"]);
-        expect(state.timeState).toBe(game.currentTimeStep);
+        expect(state.currentTimeStep).toBe(game.currentTimeStep);
         expect(state.battleState).toBe(game.battleState);
         expect(state.deck).toBe(deckState);
         expect(state.discardPile).toBe(discardPileState);
@@ -417,7 +417,7 @@ describe("RootGame.initializeState", () => {
     });
     test("after initialization, getState returns an identical state object to the one provided", () => {
         const state = createRootGameState({
-            timeState: new TimeStep("eyrie-dynasties", "daylight", "end"),
+            currentTimeStep: new TimeStep("eyrie-dynasties", "daylight", "end"),
             battleState: mock<BattleState>(),
             deck: mock<CardPileState>(),
             discardPile: mock<CardPileState>(),
@@ -642,7 +642,7 @@ describe("RootGame.playTurn", () => {
 describe("RootGame.setup", () => {
     beforeEach(() => {
         const basePlayOptions = getBasePlayOptions();
-        game.playOptions = basePlayOptions;
+        game.options = basePlayOptions;
     });
     test("sets up chosen map", () => {
         // Spy on generateBoardFromType to check that it's called with the correct map type
@@ -727,7 +727,7 @@ describe("RootGame.setup", () => {
     test("randomly generates the correct number of landmarks", () => {
         // TODO: check 2, 1, and 0 landmarks
         const basePlayOptions = getBasePlayOptions();
-        game.playOptions = basePlayOptions;
+        game.options = basePlayOptions;
         const availableLandmarks = basePlayOptions.setup.availableLandmarks;
         const generateLandmarkSpy = vi
             .spyOn(Factory, "generateLandmarkFromType")
@@ -778,7 +778,7 @@ describe("RootGame.setup", () => {
         for (let playerCount = 3; playerCount <= 5; playerCount++) {
             const basePlayOptions = getBasePlayOptions();
             basePlayOptions.playerIDs = Array.from({ length: playerCount }, (_, i) => i + 1);
-            game.playOptions = basePlayOptions;
+            game.options = basePlayOptions;
             generateHirelingSpy.mockClear();
             game.setup();
             // get an array of the types used to call generateHirelingFromType
@@ -814,7 +814,7 @@ describe("RootGame.setup", () => {
         expect(playerIDs).toEqual([3, 2]);
     });
     test("hirelings are skipped if the option is not enabled", () => {
-        game.playOptions.setup.usingHirelings = false;
+        game.options.setup.usingHirelings = false;
         const generateHirelingSpy = vi.spyOn(Factory, "generateHirelingFromType");
         const hirelingSetterSpy = vi.spyOn(game, "hirelings", "set");
         game.setup();
@@ -852,7 +852,7 @@ describe("RootGame.setup", () => {
             expect(game.playerFactionMapping).toEqual(basePlayOptions.setup.chosenFactions);
         });
         test("throws an error if an invalid player id is provided", () => {
-            game.playOptions.playerIDs = [1, 2, 99];
+            game.options.playerIDs = [1, 2, 99];
             expect(() => game.setup()).toThrow();
         });
         test("each player draws three cards", () => {
@@ -890,7 +890,7 @@ describe("RootGame.setup", () => {
         beforeEach(() => {
             // Replace standard setup with advanced setup in play options
             const advancedSetupOptions = getAdvancedPlayOptions();
-            game.playOptions = advancedSetupOptions;
+            game.options = advancedSetupOptions;
         });
         test("order of events is correct", () => {
             // Landmarks -> Hirelings -> Draw Cards -> Factions -> Discard Cards

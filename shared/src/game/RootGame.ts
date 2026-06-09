@@ -43,7 +43,7 @@ export type PlayerID = number;
 export class RootGame {
     version = "0.0.0";
     board: Board | null = null;
-    playOptions: PlayOptions;
+    options: PlayOptions;
     playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>> = {};
     turnOrder: PlayerID[] = [];
     factions: PlayerFaction[] = [];

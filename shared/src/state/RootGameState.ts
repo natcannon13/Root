@@ -16,12 +16,12 @@ export interface RootGameState extends StateType {
     version: string;
     options: PlayOptions;
     playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>>;
-    playerTurnOrder: PlayerID[]; // Array of player IDs in turn order
+    turnOrder: PlayerID[]; // Array of player IDs in turn order
     boardState: RootBoardState;
     factionState: Partial<Record<PlayerFactionType, RootFactionState>>;
     hirelingState: Partial<Record<HirelingFactionType, RootHirelingState>>;
     landmarks: LandmarkType[];
-    timeState: TimeStep;
+    currentTimeStep: TimeStep;
     battleState: BattleState | null;
     deck: CardPileState;
     discardPile: CardPileState;
