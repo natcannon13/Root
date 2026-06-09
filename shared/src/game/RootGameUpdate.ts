@@ -1,6 +1,6 @@
-import type { from } from "node:stream/iter";
 import type { LocationID } from "../board/Location";
 import type { CardID } from "../cards/Card";
+import type { CardLocationType } from "../cards/CardPileLocation";
 import type { FactionType, HirelingFactionType, PlayerFactionType } from "../Enums";
 import type { PieceID } from "../pieces/Piece";
 import type { BattleState } from "../state/BattleState";
@@ -11,7 +11,6 @@ import type { TransitionType } from "../stateStore/StateStore";
 import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./PendingChoice";
 import type { RNGEvent } from "./RNGEvent";
 import type { PlayerID } from "./RootGame";
-import type { CardLocationType } from "../cards/CardPileLocation";
 
 const ValidGameUpdateTypes = [
     "propertySet",
@@ -27,12 +26,11 @@ const ValidGameUpdateTypes = [
     "crafting",
     "choicePended",
     "choiceResolved",
+    "rng",
     "compound",
 ] as const;
 
 export type GameUpdateType = (typeof ValidGameUpdateTypes)[number];
-
-
 
 type GameUpdateValueMap = {
     propertySet: {
@@ -50,7 +48,7 @@ type GameUpdateValueMap = {
         };
     }[keyof RootFactionState];
     returnToSupply: { pieceID: PieceID; faction: FactionType };
-    moveCard: { cardID: CardID; from: CardLocationType; to: CardLocationType; };
+    moveCard: { cardID: CardID; from: CardLocationType; to: CardLocationType };
     hirelingStateUpdate: {
         [K in keyof RootHirelingState]: {
             hireling: HirelingFactionType;

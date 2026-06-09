@@ -11,16 +11,15 @@ export interface TransitionType {
     version: string;
 }
 
+export type UpdateFunction<State, Transition> = (state: State, transition: Transition) => void;
+
 export class StateStore<State, Transition extends TransitionType> {
     private state?: State;
     private history: StateHistory<State, Transition> = new StateHistory();
     private subscribers: Array<(transition: Transition) => void> = [];
-    private stateUpdateFunction: (state: State, transition: Transition) => void;
+    private stateUpdateFunction: UpdateFunction<State, Transition>;
 
-    constructor(
-        stateUpdateFunction: (state: State, transition: Transition) => void,
-        initialState?: State,
-    ) {
+    constructor(stateUpdateFunction: UpdateFunction<State, Transition>, initialState?: State) {
         this.stateUpdateFunction = stateUpdateFunction;
         this.state = initialState;
     }
