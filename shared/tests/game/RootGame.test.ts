@@ -14,7 +14,6 @@ import {
 import * as Factory from "../../src/Factory";
 import type { Choice } from "../../src/game/PendingChoice";
 import { PlayOptions } from "../../src/game/PlayOptions";
-import { RNGEvent } from "../../src/game/RNGEvent";
 import { PlayerID, PromiseControl, RootGame, RootGameStateStore } from "../../src/game/RootGame";
 import { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
 import type { Piece } from "../../src/pieces/Piece";
@@ -47,7 +46,6 @@ let dominancePile: ReturnType<typeof mock<CardPile>>;
 let spentCraftingPieces: ReturnType<typeof mock<Piece>>[];
 
 let pastChoices: ReturnType<typeof mock<Choice>>[];
-let pastRNGEvents: ReturnType<typeof mock<RNGEvent>>[];
 
 function getBasePlayOptions(): PlayOptions & { setup: StandardSetupOptions } {
     return {
@@ -189,11 +187,6 @@ function mockPastChoices(choices: Partial<Choice>[] = []) {
     vi.spyOn(game, "pastChoices", "get").mockReturnValue(pastChoices);
 }
 
-function mockPastRNGEvents(events: Partial<RNGEvent>[] = []) {
-    pastRNGEvents = events.map((event) => mock<RNGEvent>(event));
-    vi.spyOn(game, "pastRNGEvents", "get").mockReturnValue(pastRNGEvents);
-}
-
 function mockPromiseControl() {
     let resolve: (() => void) | null = null;
     let reject: ((reason?: any) => void) | null = null;
@@ -238,7 +231,6 @@ function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameSt
         spentCraftingPieceIDs: [],
         pendingChoice: null,
         pastChoices: [],
-        pastRNGEvents: [],
         winner: null,
         ...overrides,
     };
@@ -280,7 +272,6 @@ describe("RootGame.getState", () => {
         mockDiscardPile();
         mockDominancePile();
         mockSpentCraftingPieces([{ id: 4 }]);
-        mockPastRNGEvents([{ id: "r1" }]);
         mockPastChoices([{ id: "c1" }]);
 
         const boardState = mock<RootBoardState>();
@@ -338,7 +329,6 @@ describe("RootGame.getState", () => {
         expect(state.spentCraftingPieceIDs).toEqual([4]);
         expect(state.pendingChoice).toBe(game.pendingChoice);
         expect(state.pastChoices).toStrictEqual(pastChoices);
-        expect(state.pastRNGEvents).toStrictEqual(pastRNGEvents);
     });
 
     test("when given a faction perspective, calls getState on the board with that perspective, and on each faction with the correct publicView flag", () => {
@@ -425,7 +415,6 @@ describe("RootGame.initializeState", () => {
             spentCraftingPieceIDs: [4, 5],
             pendingChoice: { id: "6", type: "pick", playerID: 1, resolved: false },
             pastChoices: [{ id: "10", type: "pick", playerID: 1, resolved: true, value: {} }],
-            pastRNGEvents: [{ id: "r1", type: "shuffle", pile: { name: "deck" }, seed: "seed1" }],
         });
 
         game.initializeState(state);

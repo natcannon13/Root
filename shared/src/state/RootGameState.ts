@@ -1,7 +1,6 @@
 import type { HirelingFactionType, LandmarkType, PlayerFactionType } from "../Enums";
 import type { Choice } from "../game/PendingChoice";
 import type { PlayOptions } from "../game/PlayOptions";
-import type { RNGEvent } from "../game/RNGEvent";
 import type { PlayerID } from "../game/RootGame";
 import type { PieceID } from "../pieces/Piece";
 import type { StateType } from "../stateStore/StateStore";
@@ -29,6 +28,5 @@ export interface RootGameState extends StateType {
     readonly spentCraftingPieceIDs: PieceID[];
     readonly pendingChoice: Choice | null;
     readonly pastChoices: Choice[];
-    readonly pastRNGEvents: RNGEvent[];
     readonly winner: PlayerFactionType | null;
 }

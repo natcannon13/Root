@@ -17,7 +17,6 @@ import type { StateStore } from "../stateStore/StateStore";
 import type { Event } from "./Event";
 import type { Choice, ChoiceType, ChoiceValueMap } from "./PendingChoice";
 import type { PlayOptions } from "./PlayOptions";
-import type { RNGEvent } from "./RNGEvent";
 import type { RootGameUpdate } from "./RootGameUpdate";
 
 export type RootGameStateStore = StateStore<RootGameState, RootGameUpdate>;
@@ -57,7 +56,6 @@ export class RootGame {
     spentCraftingPieces: Piece[] = [];
     pendingChoice: Choice | null = null; // Separate from gameplayPendingPromise for serializability.
     pastChoices: Choice[] = [];
-    pastRNGEvents: RNGEvent[] = [];
     gameplayPromiseControl: PromiseControl | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.
     stateStore: RootGameStateStore;
     winner: PlayerFactionType | null = null;

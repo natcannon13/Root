@@ -7,28 +7,26 @@ import type { PieceID } from "../pieces/Piece";
 import type { RootGameState } from "../state/RootGameState";
 import type { TransitionType } from "../stateStore/StateStore";
 import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./PendingChoice";
-import type { RNGEvent } from "./RNGEvent";
 import type { PlayerID } from "./RootGame";
 
 const ValidGameUpdateTypes = [
-    "stateSet",
-    "factionSelected",
-    "turnOrderSet",
-    "move",
-    "place",
-    "remove",
-    "returnToSupply",
-    "factionStateUpdate",
-    "hirelingStateUpdate",
-    "moveCard",
-    "startBattle",
-    "battleSegmentChange",
-    "pendingHitsChange",
-    "endBattle",
-    "crafting",
-    "choicePended",
-    "choiceResolved",
-    "rng",
+    "stateSet", // Sets the entire state. Used at the beginning of the game and when making an admin edit.
+    "factionSelected", // Creates a connection between faction and player ID. Used for the initial faction selection at the start of the game.
+    "turnOrderSet", // Sets the turn order. Used for the initial turn order setup at the start of the game.
+    "move", // Moves pieces from one location to another on the board.
+    "place", // Places pieces on the board.
+    "remove", // Removes pieces from the board.
+    "returnToSupply", // Adds pieces to a faction's supply.
+    "factionStateUpdate", // Executes an update to a faction's state. Specific update types are defined per-faction.
+    "hirelingStateUpdate", // Executes an update to a hireling's state. Specific update types are defined per-hireling.
+    "moveCard", // Moves a card from one card location to another.
+    "startBattle", // Starts a battle and sets the initial battle state.
+    "battleSegmentChange", // Changes the current battle segment.
+    "pendingHitsChange", // Updates the number of pending hits for the attacker or defender.
+    "endBattle", // Ends the current battle.
+    "crafting", // Marks crafting pieces as used for the current turn.
+    "choicePended", // Pends a new choice.
+    "choiceResolved", // Resolves a pending choice with a given resolution, and moves it to past choices.
     "compound",
 ] as const;
 
@@ -62,7 +60,6 @@ type GameUpdateValueMap = {
     choiceResolved: {
         [T in ChoiceType]: { choiceID: ChoiceID; type: T; resolution: ChoiceValueMap[T] };
     }[ChoiceType];
-    rng: { event: RNGEvent };
     compound: { updates: RootGameUpdate[] };
 };
 

@@ -1,6 +1,6 @@
 import type { PlayerID } from "./RootGame";
 
-export type ChoiceType = string;
+export type ChoiceType = string; // TODO: expand to literal union
 
 export type ChoiceID = string; // Composed of turn number + sequence number for matching when initializing a mid-turn state
 
@@ -9,7 +9,7 @@ export type ChoiceValueMap = Record<ChoiceType, any>;
 type ChoiceBase<T extends ChoiceType> = {
     id: ChoiceID;
     type: T;
-    playerID: PlayerID;
+    playerID: PlayerID | null; // null indicates rng events decided by the game
 };
 
 export type Choice<T extends ChoiceType = ChoiceType> =
