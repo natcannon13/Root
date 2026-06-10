@@ -39,7 +39,7 @@ type GameUpdateValueMap = {
     move: { pieces: PieceID[]; from: LocationID; to: LocationID };
     place: { pieces: PieceID[]; to: LocationID };
     remove: { pieces: PieceID[]; from: LocationID };
-    addToSupply: { pieceID: PieceID; faction: FactionType };
+    addToSupply: { pieces: PieceID[]; faction: FactionType };
     factionStateUpdate: {
         faction: FactionType;
         updateType: string;
@@ -50,7 +50,7 @@ type GameUpdateValueMap = {
     pendingHitsChange: { attackerHits?: number; defenderHits?: number };
     endBattle: { };
     moveCard: { cardID: CardID; from: CardLocationType; to: CardLocationType };
-    crafting: { playerID: PlayerID; craftingPiecesUsed: PieceID[] };
+    crafting: { craftingPiecesUsed: PieceID[] };
     craftingReset: { craftingPiecesReset: PieceID[] };
     choicePended: { choice: Choice };
     choiceResolved: {
@@ -58,8 +58,11 @@ type GameUpdateValueMap = {
     }[ChoiceType];
     compound: { updates: RootGameUpdate[] };
 };
-
-export interface RootGameUpdate<T extends GameUpdateType = GameUpdateType> extends TransitionType {
+interface RootGameUpdateObj<T extends GameUpdateType = GameUpdateType> extends TransitionType {
     type: T;
     options: GameUpdateValueMap[T];
 }
+
+export type RootGameUpdate = {
+    [T in GameUpdateType]: RootGameUpdateObj<T>;
+}[GameUpdateType];

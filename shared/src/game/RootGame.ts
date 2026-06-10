@@ -5,7 +5,7 @@ import { CardPile } from "../cards/CardPile";
 import type { FactionType, PlayerFactionType } from "../Enums";
 import type { Battle } from "../gameActions/Battle";
 import type { Move } from "../gameActions/Move";
-import type { Piece } from "../pieces/Piece";
+import type { Piece, PieceID } from "../pieces/Piece";
 import type { Supply } from "../pieces/Supply";
 import type { Hireling } from "../rulesModule/Hireling";
 import type { Landmark } from "../rulesModule/Landmark";
@@ -53,7 +53,7 @@ export class RootGame {
     deck: CardPile = new CardPile();
     discardPile: CardPile = new CardPile();
     dominancePile: CardPile = new CardPile();
-    spentCraftingPieces: Piece[] = [];
+    spentCraftingPieces: PieceID[] = [];
     pendingChoice: Choice | null = null; // Separate from gameplayPendingPromise for serializability.
     pastChoices: Choice[] = [];
     gameplayPromiseControl: PromiseControl | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.

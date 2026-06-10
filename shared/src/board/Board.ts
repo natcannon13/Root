@@ -1,7 +1,7 @@
 import type { BoardType, PlayerFactionType } from "../Enums";
 import type { Event } from "../game/Event";
 import type { Item } from "../Item";
-import type { Piece } from "../pieces/Piece";
+import type { Piece, PieceID } from "../pieces/Piece";
 import type { RulesChange } from "../rulesModule/RulesChange";
 import type { RulesModule } from "../rulesModule/RulesModule";
 import type { RootBoardState } from "../state/RootBoardState";
@@ -64,15 +64,15 @@ export class Board implements RulesModule {
         throw new Error("Board.getCorners not implemented");
     }
 
-    move(pieces: Piece[], startingLocationID: LocationID, endingLocationID: LocationID): void {
+    move(pieces: PieceID[], startingLocationID: LocationID, endingLocationID: LocationID): void {
         throw new Error("Board.move not implemented");
     }
 
-    place(pieces: Piece[], locationID: LocationID): void {
+    place(pieces: PieceID[], locationID: LocationID): void {
         throw new Error("Board.place not implemented");
     }
 
-    remove(pieces: Piece[], locationID: LocationID): void {
+    remove(pieces: PieceID[], locationID: LocationID): void {
         throw new Error("Board.remove not implemented");
     }
 
