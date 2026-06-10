@@ -12,7 +12,7 @@ export interface PlayerFaction extends Faction {
     hand: CardPile;
     revealedCards: CardPile;
     piles: Record<string, CardPile>;
-    takePhase: (timeStep: TimeStep) => void;
+    takePhase: (timeStep: TimeStep) => Promise<void>;
     getEvents: (timeStep: TimeStep) => Event[];
     getCraftingPieces: () => Piece[];
     getState: (publicView: boolean) => RootFactionState;

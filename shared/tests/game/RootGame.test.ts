@@ -9,6 +9,7 @@ import {
     isDemotedHirelingFactionType,
     isPromotedHirelingFactionType,
     LandmarkType,
+    PhaseType,
     PlayerFactionType,
     PromotedHirelingFactionType,
 } from "../../src/Enums";
@@ -668,11 +669,12 @@ describe("RootGame.awaitPlayerChoice", () => {
         expect(isPending).toBe(false);
     });
 
-    test("sets pending choice to the provided choice and sets gameplayPromiseControl to a new PromiseControl", () => {
+    test("calls updateState to set the pending choice and sets gameplayPromiseControl to a new PromiseControl", () => {
         const choice: Choice = { id: "p1", type: "pick", playerID: 2, resolved: false, options: {} };
         const { getResolver, setter } = mockPromiseControl();
+        const updateStateSpy = vi.spyOn(game, "updateState");
         game.awaitPlayerChoice(choice);
-        expect(game.pendingChoice).toEqual(choice);
+        expect(updateStateSpy).toHaveBeenCalledWith({ type: "choicePended", options: { choice }, id: expect.any(String), version: VERSION });
         expect(setter).toHaveBeenCalledWith(
             expect.objectContaining({
                 resolve: expect.any(Function),
@@ -723,8 +725,9 @@ describe("RootGame.awaitPlayerChoice", () => {
         await expect(p).resolves.toEqual({ answer: 99 });
     });
 
-    test("adds choice to past choices and sets pending choice to null after resolution", async () => {
+    test("calls updateState to resolve the choice and sets pending choice to null after resolution", async () => {
         const { getResolver, setter } = mockPromiseControl();
+        const updateStateSpy = vi.spyOn(game, "updateState");
 
         const p = game.awaitPlayerChoice({ id: "p5", type: "pick", playerID: 4, resolved: false, options: {} });
         const resolved: Choice = {
@@ -738,7 +741,7 @@ describe("RootGame.awaitPlayerChoice", () => {
         getResolver?.();
 
         await p;
-        expect(game.pastChoices.find((c) => c.id === "p5")).toEqual(resolved);
+        expect(updateStateSpy).toHaveBeenCalledWith({ type: "choiceResolved", options: { choice: resolved }, id: expect.any(String), version: VERSION });
         expect(game.pendingChoice).toBeNull();
         expect(setter).toHaveBeenCalledWith(null); // Check that gameplayPromiseControl was set to null
     });
@@ -747,18 +750,26 @@ describe("RootGame.awaitPlayerChoice", () => {
 // --- playTurn ----------------------------------------------------------------
 
 describe("RootGame.playTurn", () => {
+    let takePhaseSpy: ReturnType<typeof vi.spyOn>;
+    beforeEach(() => {
+        mockFactions([
+            { faction: "marquise-de-cat", playerID: 1 },
+            { faction: "eyrie-dynasties", playerID: 2 },
+            { faction: "woodland-alliance", playerID: 3 },
+        ]);
+        game.turnOrder = [1, 2, 3];
+        game.currentTimeStep = new TimeStep("marquise-de-cat", "birdsong", "start");
+        takePhaseSpy = vi.spyOn(factions["marquise-de-cat"]!, "takePhase").mockResolvedValue(undefined);
+    });
     test("calls setup if timestep currentTurn is none", () => {
-        const setupSpy = vi.spyOn(game, "setup");
+        const setupSpy = vi.spyOn(game, "setup").mockResolvedValue(undefined);
         game.currentTimeStep = new TimeStep("none", "birdsong", "main");
         game.playTurn();
         expect(setupSpy).toHaveBeenCalled();
     });
 
     test("calls takePhase 3 times for the current player and updates timestep correctly in between", () => {
-        game.currentTimeStep = new TimeStep("marquise-de-cat", "birdsong", "start");
-        const marquise = factions["marquise-de-cat"]!;
 
-        const takePhaseSpy = vi.spyOn(marquise, "takePhase");
         game.playTurn();
         expect(takePhaseSpy).toHaveBeenCalledTimes(3);
         expect(takePhaseSpy.mock.calls[0][0]).toEqual(
@@ -773,20 +784,32 @@ describe("RootGame.playTurn", () => {
         expect(game.currentTimeStep).toEqual(new TimeStep("eyrie-dynasties", "birdsong", "start"));
     });
 
+    test("calls updateState to set the turn phase with each combination of phase and phase segment", () => {
+        const updateStateSpy = vi.spyOn(game, "updateState").mockResolvedValue(undefined);
+        game.playTurn();
+        const phases: PhaseType[] = ["birdsong", "daylight", "evening"];
+        const segments = ["start", "main", "end"] as const;
+        for (const phase of phases) {
+            for (const segment of segments) {
+                expect(updateStateSpy).toHaveBeenCalledWith({
+                    type: "turnPhaseSet",
+                    options: { timeStep: new TimeStep("marquise-de-cat", phase, segment) },
+                    id: expect.any(String),
+                    version: VERSION,
+                });
+            }
+        }
+    });
+
     test("if given a mid-turn time step, skips to the correct phase", () => {
-        game.currentTimeStep = new TimeStep("eyrie-dynasties", "daylight", "main");
-        const eyrie = factions["eyrie-dynasties"]!;
-        const takePhaseSpy = vi.spyOn(eyrie, "takePhase");
+        game.currentTimeStep = new TimeStep("marquise-de-cat", "daylight", "main");
         game.playTurn();
         expect(takePhaseSpy).toHaveBeenCalledTimes(2);
         expect(takePhaseSpy.mock.calls[0][0]).toEqual(
-            new TimeStep("eyrie-dynasties", "daylight", "main"),
+            new TimeStep("marquise-de-cat", "daylight", "main"),
         );
         expect(takePhaseSpy.mock.calls[1][0]).toEqual(
-            new TimeStep("eyrie-dynasties", "evening", "start"),
-        );
-        expect(game.currentTimeStep).toEqual(
-            new TimeStep("woodland-alliance", "birdsong", "start"),
+            new TimeStep("marquise-de-cat", "evening", "start"),
         );
     });
 });
