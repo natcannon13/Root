@@ -1,9 +1,10 @@
 import type { LocationID } from "../board/Location";
 import type { CardID } from "../cards/Card";
 import type { CardLocationType } from "../cards/CardPileLocation";
-import type { BattlePhaseType, FactionType, HirelingFactionType, PlayerFactionType } from "../Enums";
+import type { BattlePhaseType, BoardType, FactionType, HirelingFactionType, LandmarkType, PlayerFactionType } from "../Enums";
 import type { Battle } from "../gameActions/Battle";
 import type { PieceID } from "../pieces/Piece";
+import type { CardPileState } from "../state/RootCardPileState";
 import type { RootGameState } from "../state/RootGameState";
 import type { TransitionType } from "../stateStore/StateStore";
 import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./PendingChoice";
@@ -13,6 +14,11 @@ const ValidGameUpdateTypes = [
     "stateSet", // Sets the entire state. Used at the beginning of the game and when making an admin edit.
     "factionSelected", // Creates a connection between faction and player ID. Used for the initial faction selection at the start of the game.
     "turnOrderSet", // Sets the turn order. Used for the initial turn order setup at the start of the game.
+    "boardSet", // Sets the board. Used at the beginning of the game.
+    "factionAdded", // Adds a faction to the game. Used at the beginning of the game.
+    "hirelingsSet", // Sets the hirelings in the game. Used at the beginning of the game.
+    "landmarksSet", // Sets the landmarks in the game. Used at the beginning of the game.
+    "deckSet", // Sets the deck. Used at the beginning of the game.
     "move", // Moves pieces from one location to another on the board.
     "place", // Places pieces on the board.
     "remove", // Removes pieces from the board.
@@ -36,6 +42,11 @@ type GameUpdateValueMap = {
     stateSet: { newState: RootGameState };
     factionSelected: { playerID: PlayerID; faction: PlayerFactionType };
     turnOrderSet: { turnOrder: PlayerID[] };
+    boardSet: { board: BoardType };
+    factionAdded: { faction: PlayerFactionType };
+    hirelingsSet: { hirelingState: HirelingFactionType[] };
+    landmarksSet: { landmarks: LandmarkType[] };
+    deckSet: { deck: CardPileState };
     move: { pieces: PieceID[]; from: LocationID; to: LocationID };
     place: { pieces: PieceID[]; to: LocationID };
     remove: { pieces: PieceID[]; from: LocationID };
