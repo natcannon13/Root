@@ -7,7 +7,7 @@ import type { TimeStep } from "../state/TimeStep";
 import type { Faction } from "./Faction";
 
 export interface PlayerFaction extends Faction {
-    //TODO: make this a generic on PlayerFactionType
+    //TODO: make this a generic on PlayerFactionType?
     score: number;
     hand: CardPile;
     revealedCards: CardPile;
@@ -16,6 +16,5 @@ export interface PlayerFaction extends Faction {
     getEvents: (timeStep: TimeStep) => Event[];
     getCraftingPieces: () => Piece[];
     getState: (publicView: boolean) => RootFactionState;
-    updateState: (s: RootFactionState) => void;
     name: PlayerFactionType;
 }

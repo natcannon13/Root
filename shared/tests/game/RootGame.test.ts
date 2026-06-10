@@ -27,6 +27,7 @@ import type { RootFactionState } from "../../src/state/RootFactionState";
 import { RootGameState } from "../../src/state/RootGameState";
 import { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
+import { RootGameUpdate } from "../../src/game/RootGameUpdate";
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
@@ -435,7 +436,32 @@ describe("RootGame.initializeState", () => {
 // --- updateState ----------------------------------------------------------------
 
 describe("RootGame.updateState", () => {
-    // TODO: Add more specific tests for each type of update once the update types are defined.
+    test("calls updateState on StateStore with the provided update", () => {
+        const update: RootGameUpdate = mock<RootGameUpdate>();
+        const updateStateSpy = vi
+            .spyOn(stateStore, "updateState")
+            .mockReturnValue(undefined);
+        game.updateState(update);
+        expect(updateStateSpy).toHaveBeenCalledWith(update);
+    });
+    test("stateSet update calls initializeState with the provided state", () => {});
+    test("factionSelected update adds the pair to playerFactionMapping", () => {});
+    test("turnOrderSet update sets turnOrder to the provided order", () => {});
+    test("move update calls move on the board", () => {});
+    test("place update calls place on the board", () => {});
+    test("remove update calls remove on the board", () => {});
+    test("addToSupply update calls addToSupply on the appropriate faction", () => {});
+    test("factionStateUpdate calls updateFactionState on the appropriate faction with the provided update type and payload", () => {});
+    test("moveCard update calls addCard and removeCard on the appropriate card piles with the provided card ID", () => {});
+    test("startBattle update sets a BattleState with the provided battle", () => {});
+    test("battleSegmentChange update updates the current battle segment in battleState", () => {});
+    test("pendingHitsChange update updates the pending hits for the attacker or defender in battleState", () => {});
+    test("endBattle update sets battleState to null", () => {});
+    test("crafting update adds the provided piece IDs to spentCraftingPieceIDs", () => {});
+    test("craftingReset update removes the provided piece IDs from spentCraftingPieceIDs", () => {});
+    test("choicePended update sets pendingChoice to the provided choice", () => {});
+    test("choiceResolved update moves the pending choice with the provided ID to past choices with the provided resolution and sets pendingChoice to null", () => {});
+    test("compound update executes multiple updates in order", () => {});
 });
 
 // --- awaitPlayerChoice ----------------------------------------------------------------

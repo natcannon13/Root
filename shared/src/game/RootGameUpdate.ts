@@ -16,18 +16,18 @@ const ValidGameUpdateTypes = [
     "move", // Moves pieces from one location to another on the board.
     "place", // Places pieces on the board.
     "remove", // Removes pieces from the board.
-    "returnToSupply", // Adds pieces to a faction's supply.
+    "addToSupply", // Adds pieces to a faction's supply.
     "factionStateUpdate", // Executes an update to a faction's state. Specific update types are defined per-faction.
-    "hirelingStateUpdate", // Executes an update to a hireling's state. Specific update types are defined per-hireling.
     "moveCard", // Moves a card from one card location to another.
     "startBattle", // Starts a battle and sets the initial battle state.
     "battleSegmentChange", // Changes the current battle segment.
     "pendingHitsChange", // Updates the number of pending hits for the attacker or defender.
     "endBattle", // Ends the current battle.
     "crafting", // Marks crafting pieces as used for the current turn.
+    "craftingReset", // Removes the given crafting piece IDs from spentCraftingPieceIDs, making them available for crafting again. Used at the end of a turn.
     "choicePended", // Pends a new choice.
     "choiceResolved", // Resolves a pending choice with a given resolution, and moves it to past choices.
-    "compound",
+    "compound", // Executes multiple updates as a single update.
 ] as const;
 
 export type GameUpdateType = (typeof ValidGameUpdateTypes)[number];
@@ -39,14 +39,9 @@ type GameUpdateValueMap = {
     move: { pieces: PieceID[]; from: LocationID; to: LocationID };
     place: { pieces: PieceID[]; to: LocationID };
     remove: { pieces: PieceID[]; from: LocationID };
-    returnToSupply: { pieceID: PieceID; faction: FactionType };
+    addToSupply: { pieceID: PieceID; faction: FactionType };
     factionStateUpdate: {
-        faction: PlayerFactionType;
-        updateType: string;
-        value: any;
-    };
-    hirelingStateUpdate: {
-        hireling: HirelingFactionType;
+        faction: FactionType;
         updateType: string;
         value: any;
     };
@@ -56,6 +51,7 @@ type GameUpdateValueMap = {
     endBattle: { };
     moveCard: { cardID: CardID; from: CardLocationType; to: CardLocationType };
     crafting: { playerID: PlayerID; craftingPiecesUsed: PieceID[] };
+    craftingReset: { craftingPiecesReset: PieceID[] };
     choicePended: { choice: Choice };
     choiceResolved: {
         [T in ChoiceType]: { choiceID: ChoiceID; type: T; resolution: ChoiceValueMap[T] };
