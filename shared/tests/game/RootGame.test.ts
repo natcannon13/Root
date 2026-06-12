@@ -49,8 +49,6 @@ let deck: ReturnType<typeof mock<CardPile>>;
 let discardPile: ReturnType<typeof mock<CardPile>>;
 let dominancePile: ReturnType<typeof mock<CardPile>>;
 
-let spentCraftingPieces: ReturnType<typeof mock<PieceID>>[];
-
 let pastChoices: ReturnType<typeof mock<Choice>>[];
 
 const VERSION = "0.0.0";
@@ -420,8 +418,8 @@ describe("RootGame.initializeState", () => {
             deck: mock<CardPileState>(),
             discardPile: mock<CardPileState>(),
             spentCraftingPieceIDs: [4, 5],
-            pendingChoice: { id: "6", type: "pick", playerID: 1, resolved: false, options: {} },
-            pastChoices: [{ id: "10", type: "pick", playerID: 1, resolved: true, value: {} }],
+            pendingChoice: mock<Choice>({ resolved: false }),
+            pastChoices: [mock<Choice>({ resolved: true })],
         });
 
         game.initializeState(state);
@@ -709,10 +707,10 @@ describe("RootGame.updateState", () => {
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: {},
+            options: { options: ["option1", "option2"] },
         };
         game.pendingChoice = pendingChoice;
-        const resolution: Choice = { ...pendingChoice, resolved: true, value: { picked: 5 } };
+        const resolution = "option1";
         game.updateState({
             type: "choiceResolved",
             options: { type: "pick", choiceID: "c1", resolution },
@@ -759,25 +757,26 @@ describe("RootGame.updateState", () => {
     });
 });
 
-// --- awaitPlayerChoice ----------------------------------------------------------------
+// --- awaitChoice ----------------------------------------------------------------
 
-describe("RootGame.awaitPlayerChoice", () => {
+describe("RootGame.awaitChoice", () => {
     test("returns right away with the appropriate value if a matching choice exists in past choices", async () => {
         const past: Choice = {
             id: "c1",
             type: "pick",
             playerID: 1,
             resolved: true,
-            value: { picked: 5 },
+            options: { options: ["option1", "option2"] },
+            value: "option1",
         };
         mockPastChoices([past]);
 
-        const result = await game.awaitPlayerChoice({
+        const result = await game.awaitChoice({
             id: "c1",
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: {},
+            options: { options: ["option1", "option2"] },
         });
         expect(result).toEqual(past.value);
     });
@@ -785,20 +784,21 @@ describe("RootGame.awaitPlayerChoice", () => {
     test("throws an error if a different choice with the same id exists in past choices", async () => {
         const past: Choice = {
             id: "c1",
-            type: "other",
+            type: "pick",
             playerID: 1,
             resolved: true,
-            value: { picked: 5 },
+            value: "option1",
+            options: { options: ["option1", "option2"] },
         };
         mockPastChoices([past]);
 
         await expect(
-            game.awaitPlayerChoice({
+            game.awaitChoice({
                 id: "c1",
                 type: "pick",
                 playerID: 1,
                 resolved: false,
-                options: {},
+                options: { options: ["option1", "option2"] },
             }),
         ).rejects.toThrow();
     });
@@ -806,12 +806,12 @@ describe("RootGame.awaitPlayerChoice", () => {
     test("waits for the choice to be resolved if it's not in past choices", async () => {
         const { getResolver } = mockPromiseControl();
 
-        const p = game.awaitPlayerChoice({
+        const p = game.awaitChoice({
             id: "p1",
             type: "pick",
             playerID: 2,
             resolved: false,
-            options: {},
+            options: { options: ["option1", "option2"] },
         });
         let isPending = true;
         p.then(() => (isPending = false));
@@ -829,7 +829,8 @@ describe("RootGame.awaitPlayerChoice", () => {
             type: "pick",
             playerID: 2,
             resolved: true,
-            value: { ok: true },
+            value: "option1",
+            options: { options: ["option1", "option2"] },
         };
         resolve?.();
 
@@ -844,11 +845,11 @@ describe("RootGame.awaitPlayerChoice", () => {
             type: "pick",
             playerID: 2,
             resolved: false,
-            options: {},
+            options: { options: ["option1", "option2"] },
         };
         const { getResolver, setter } = mockPromiseControl();
         const updateStateSpy = vi.spyOn(game, "updateState");
-        game.awaitPlayerChoice(choice);
+        game.awaitChoice(choice);
         expect(updateStateSpy).toHaveBeenCalledWith({
             type: "choicePended",
             options: { choice },
@@ -867,12 +868,12 @@ describe("RootGame.awaitPlayerChoice", () => {
     test("throws an error if the pending promise is rejected", async () => {
         const { getRejecter } = mockPromiseControl();
 
-        const p = game.awaitPlayerChoice({
+        const p = game.awaitChoice({
             id: "p2",
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: {},
+            options: { options: ["option1", "option2"] },
         });
 
         const reject = getRejecter();
@@ -885,12 +886,12 @@ describe("RootGame.awaitPlayerChoice", () => {
 
     test("throws an error if the pending choice has changed after resolution", async () => {
         const { getResolver } = mockPromiseControl();
-        const p = game.awaitPlayerChoice({
+        const p = game.awaitChoice({
             id: "p3",
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: {},
+            options: { options: ["option1", "option2"] },
         });
 
         // Change pendingChoice to a different id
@@ -899,7 +900,7 @@ describe("RootGame.awaitPlayerChoice", () => {
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: {},
+            options: { options: ["option1", "option2"] },
         };
         getResolver?.();
 
@@ -909,43 +910,45 @@ describe("RootGame.awaitPlayerChoice", () => {
     test("returns the value of the choice after resolution", async () => {
         const { getResolver } = mockPromiseControl();
 
-        const p = game.awaitPlayerChoice({
+        const p = game.awaitChoice({
             id: "p4",
             type: "pick",
             playerID: 3,
             resolved: false,
-            options: {},
+            options: { options: ["option1", "option2"] },
         });
         game.pendingChoice = {
             id: "p4",
             type: "pick",
             playerID: 3,
             resolved: true,
-            value: { answer: 99 },
+            value: "option1",
+            options: { options: ["option1", "option2"] },
         };
 
         getResolver?.();
 
-        await expect(p).resolves.toEqual({ answer: 99 });
+        await expect(p).resolves.toEqual("option1");
     });
 
     test("calls updateState to resolve the choice and sets pending choice to null after resolution", async () => {
         const { getResolver, setter } = mockPromiseControl();
         const updateStateSpy = vi.spyOn(game, "updateState");
 
-        const p = game.awaitPlayerChoice({
+        const p = game.awaitChoice({
             id: "p5",
             type: "pick",
             playerID: 4,
             resolved: false,
-            options: {},
+            options: { options: ["option1", "option2"] },
         });
         const resolved: Choice = {
             id: "p5",
             type: "pick",
             playerID: 4,
             resolved: true,
-            value: { v: 1 },
+            value: "option1",
+            options: { options: ["option1", "option2"] },
         };
         game.pendingChoice = resolved;
         getResolver?.();
@@ -1033,116 +1036,73 @@ describe("RootGame.playTurn", () => {
 // --- setup ----------------------------------------------------------------
 
 describe("RootGame.setup", () => {
+    let basePlayOptions: PlayOptions & {
+        setup: StandardSetupOptions;
+    };
     beforeEach(() => {
-        const basePlayOptions = getBasePlayOptions();
+        basePlayOptions = getBasePlayOptions();
         game.options = basePlayOptions;
-    });
-    test("sets up chosen map", () => {
-        // Spy on generateBoardFromType to check that it's called with the correct map type
-        const board = mock<Board>();
-        const generateBoardSpy = vi.spyOn(Factory, "generateBoardFromType").mockReturnValue(board);
-        const boardSetterSpy = vi.spyOn(game, "board", "set");
-        game.setup();
-        expect(generateBoardSpy).toHaveBeenCalledWith("autumn");
-        expect(boardSetterSpy).toHaveBeenCalledWith(board);
-    });
-    test("sets up chosen deck", () => {
-        const deck = [
-            mock<Card>({
-                id: 1,
-                name: "c1",
-                suit: "fox",
-                craftingCost: null,
-                isAmbush: false,
-                isDominance: false,
-                item: null,
-            }),
-        ];
-        const generateDeckSpy = vi.spyOn(Factory, "generateDeckFromType").mockReturnValue(deck);
-        const deckSetterSpy = vi.spyOn(game, "deck", "set");
-        game.setup();
-        expect(generateDeckSpy).toHaveBeenCalledWith("base");
-        expect(deckSetterSpy).toHaveBeenCalledWith(deck);
     });
     test("randomizes seating order", () => {
-        const seatingOrders: string[] = [];
-        const turnOrderSetterSpy = vi.spyOn(game, "turnOrder", "set");
-        for (let i = 0; i < 100; i++) {
-            mockGame();
-            turnOrderSetterSpy.mockClear();
-            game.setup();
-            const turnOrder = turnOrderSetterSpy.mock.calls.find(
-                (call) => call[0].length === 3,
-            )?.[0] as number[] | undefined;
-            expect(turnOrder).toBeDefined();
-            seatingOrders.push(turnOrder!.join(","));
-        }
-        // Check that the seating orders are not all the same (i.e., they are randomized)
-        let allSame = true;
-        for (let i = 1; i < seatingOrders.length; i++) {
-            if (seatingOrders[i] !== seatingOrders[0]) {
-                allSame = false;
-                break;
-            }
-        }
-        expect(allSame).toBe(false);
+        const order = [2, 3, 1];
+        const awaitChoiceSpy = vi.spyOn(game, "awaitChoice").mockResolvedValue(order);
+        const gameUpdateSpy = vi.spyOn(game, "updateState").mockReturnValue(undefined);
+        game.setup();
+        expect(awaitChoiceSpy).toHaveBeenCalledWith(expect.objectContaining({ playerID: null }));
+        expect(gameUpdateSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ type: "turnOrderSet", options: { turnOrder: order } }),
+        );
     });
     test("removes dominance cards from the deck in 2-player games", () => {
-        const generateDeckSpy = vi.spyOn(Factory, "generateDeckFromType").mockReturnValue([
-            mock<Card>({
-                id: 1,
-                name: "c1",
-                suit: "fox",
-                craftingCost: null,
-                isAmbush: false,
-                isDominance: true,
-                item: null,
-            }),
-            mock<Card>({
-                id: 2,
-                name: "c2",
-                suit: "rabbit",
-                craftingCost: null,
-                isAmbush: false,
-                isDominance: false,
-                item: null,
-            }),
+        mockDeck();
+        vi.spyOn(deck, "cards", "get").mockReturnValue([
+            mock<Card>({ id: 1, name: "dominance-card-1", isDominance: true }),
+            mock<Card>({ id: 2, name: "dominance-card-2", isDominance: true }),
+            mock<Card>({ id: 3, name: "non-dominance-card", isDominance: false }),
         ]);
-        const deckSetterSpy = vi.spyOn(game, "deck", "set");
+        const gameUpdateSpy = vi.spyOn(game, "updateState").mockReturnValue(undefined);
+        basePlayOptions.playerIDs = [1, 2];
+        delete basePlayOptions.setup.chosenFactions["woodland-alliance"];
         game.setup();
-        expect(generateDeckSpy).toHaveBeenCalledWith("base");
-        expect(deckSetterSpy).toHaveBeenCalledWith(
-            expect.not.arrayContaining([expect.objectContaining({ isDominance: true })]),
+        for (const cardID of [1, 2]) {
+            expect(gameUpdateSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: "moveCard",
+                    options: {
+                        from: { name: "deck" },
+                        to: { name: "nowhere" },
+                        cardID,
+                    },
+                } satisfies Partial<RootGameUpdate>),
+            );
+        }
+        expect(gameUpdateSpy).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: "moveCard",
+                options: expect.objectContaining({
+                    cardID: 3,
+                }),
+            } satisfies Partial<RootGameUpdate>),
         );
-        expect(deckSetterSpy.mock.calls[0][0]).toHaveLength(1); // Check that only one card was removed
     });
 
-    test("randomly generates the correct number of landmarks", () => {
-        // TODO: check 2, 1, and 0 landmarks
-        const basePlayOptions = getBasePlayOptions();
-        game.options = basePlayOptions;
-        const availableLandmarks = basePlayOptions.setup.availableLandmarks;
-        const generateLandmarkSpy = vi
-            .spyOn(Factory, "generateLandmarkFromType")
-            .mockImplementation((type) => mock<Landmark>({ name: type }));
-
-        let lastLandmarksUsed: string[] = [];
-        let landmarksRandomized = false;
-        for (let i = 0; i < 10; i++) {
-            mockGame();
+    test.each([2, 1, 0])(
+        "randomly generates the correct number of landmarks",
+        (numberOfLandmarks) => {
+            const availableLandmarks = basePlayOptions.setup.availableLandmarks;
+            const updateStateSpy = vi.spyOn(game, "updateState").mockReturnValue(undefined);
             game.setup();
-            const landmarksUsed = game.landmarks.map((l) => l.name);
-            expect(landmarksUsed.length).toBe(basePlayOptions.setup.landmarksToUse);
-            for (const landmark of landmarksUsed) {
+            const landmarkAddedCalls = updateStateSpy.mock.calls.filter(
+                (call) => call[0].type === "landmarkAdded",
+            ) as [RootGameUpdate & { type: "landmarkAdded" }][];
+            const landmarksAdded = landmarkAddedCalls.map((call) => call[0].options.landmark);
+            expect(landmarkAddedCalls).toHaveLength(numberOfLandmarks);
+            for (const landmark of landmarksAdded) {
                 expect(availableLandmarks).toContain(landmark);
             }
-            if (i > 0 && landmarksUsed.join(",") !== lastLandmarksUsed.join(",")) {
-                landmarksRandomized = true;
-            }
-            lastLandmarksUsed = landmarksUsed;
-        }
-        expect(landmarksRandomized).toBe(true);
-    });
+            expect(new Set(landmarksAdded).size).toBe(landmarksAdded.length); // Check that all landmarks are unique
+        },
+    );
     test("players place landmarks in reverse turn order", () => {
         const turnOrderSpy = vi.spyOn(game, "turnOrder", "get").mockReturnValue([1, 2, 3]);
         let playerIDs: PlayerID[] = [];

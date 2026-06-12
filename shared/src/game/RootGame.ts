@@ -81,8 +81,8 @@ export class RootGame {
         throw new Error("RootGame.updateState not implemented");
     }
 
-    async awaitPlayerChoice<T extends ChoiceType>(choice: Choice<T>): Promise<ChoiceValueMap[T]> {
-        throw new Error("RootGame.awaitPlayerChoice not implemented");
+    async awaitChoice<T extends ChoiceType>(choice: Choice<T>): Promise<ChoiceValueMap[T]> {
+        throw new Error("RootGame.awaitChoice not implemented");
     }
 
     async play() {
