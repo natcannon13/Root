@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
+import { LocationID } from "../../src/board/Location";
 import type { Card } from "../../src/cards/Card";
 import { CardPile } from "../../src/cards/CardPile";
+import { CardPileLocation } from "../../src/cards/CardPileLocation";
 import {
     BattlePhaseType,
     HirelingFactionType,
@@ -17,8 +19,10 @@ import * as Factory from "../../src/Factory";
 import type { Choice } from "../../src/game/PendingChoice";
 import { PlayOptions } from "../../src/game/PlayOptions";
 import { PlayerID, PromiseControl, RootGame, RootGameStateStore } from "../../src/game/RootGame";
+import { RootGameUpdate } from "../../src/game/RootGameUpdate";
 import { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
-import type { Piece, PieceID } from "../../src/pieces/Piece";
+import { Battle } from "../../src/gameActions/Battle";
+import type { PieceID } from "../../src/pieces/Piece";
 import { DemotedHireling, Hireling, PromotedHireling } from "../../src/rulesModule/Hireling";
 import { Landmark } from "../../src/rulesModule/Landmark";
 import { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
@@ -29,10 +33,6 @@ import type { RootFactionState } from "../../src/state/RootFactionState";
 import { RootGameState } from "../../src/state/RootGameState";
 import { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
-import { RootGameUpdate } from "../../src/game/RootGameUpdate";
-import { LocationID } from "../../src/board/Location";
-import { CardLocationType } from "../../src/cards/CardPileLocation";
-import { Battle } from "../../src/gameActions/Battle";
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
@@ -444,9 +444,7 @@ describe("RootGame.initializeState", () => {
 describe("RootGame.updateState", () => {
     test("calls updateState on StateStore with the provided update", () => {
         const update: RootGameUpdate = mock<RootGameUpdate>();
-        const updateStateSpy = vi
-            .spyOn(stateStore, "updateState")
-            .mockReturnValue(undefined);
+        const updateStateSpy = vi.spyOn(stateStore, "updateState").mockReturnValue(undefined);
         game.updateState(update);
         expect(updateStateSpy).toHaveBeenCalledWith(update);
     });
@@ -459,13 +457,71 @@ describe("RootGame.updateState", () => {
     test("factionSelected update adds the pair to playerFactionMapping", () => {
         const faction: PlayerFactionType = "marquise-de-cat";
         const playerID: PlayerID = 1;
-        game.updateState({ type: "factionSelected", options: { faction, playerID }, id: "u2", version: VERSION });
+        game.updateState({
+            type: "factionSelected",
+            options: { faction, playerID },
+            id: "u2",
+            version: VERSION,
+        });
         expect(game.playerFactionMapping[faction]).toBe(playerID);
     });
     test("turnOrderSet update sets turnOrder to the provided order", () => {
         const turnOrder: PlayerID[] = [2, 3, 1];
-        game.updateState({ type: "turnOrderSet", options: { turnOrder }, id: "u3", version: VERSION });
+        game.updateState({
+            type: "turnOrderSet",
+            options: { turnOrder },
+            id: "u3",
+            version: VERSION,
+        });
         expect(game.turnOrder).toEqual(turnOrder);
+    });
+    test("factionAdded update generates and adds the given faction to the factions list", () => {
+        const factionName: PlayerFactionType = "marquise-de-cat";
+        const faction = mock<PlayerFaction>({ name: factionName });
+        const generateFactionFromTypeSpy = vi
+            .spyOn(Factory, "generateFactionFromType")
+            .mockReturnValue(faction);
+
+        game.updateState({
+            type: "factionAdded",
+            options: { faction: factionName },
+            id: "u3",
+            version: VERSION,
+        });
+        expect(generateFactionFromTypeSpy).toHaveBeenCalledWith(factionName);
+        expect(game.factions).toContain(faction);
+    });
+    test("hirelingAdded update adds the hireling to the game", () => {
+        const hireling: HirelingFactionType = "corvid-spies";
+        const hirelingObj = mock<Hireling>({ name: hireling });
+        const generateHirelingFromTypeSpy = vi
+            .spyOn(Factory, "generateHirelingFromType")
+            .mockReturnValue(hirelingObj);
+
+        game.updateState({
+            type: "hirelingAdded",
+            options: { hireling },
+            id: "u4",
+            version: VERSION,
+        });
+        expect(generateHirelingFromTypeSpy).toHaveBeenCalledWith(hireling);
+        expect(game.hirelings).toContain(hirelingObj);
+    });
+    test("landmarkAdded update adds the landmark to the game", () => {
+        const landmark: LandmarkType = "ferry";
+        const landmarkObj = mock<Landmark>({ name: landmark });
+        const generateLandmarkFromTypeSpy = vi
+            .spyOn(Factory, "generateLandmarkFromType")
+            .mockReturnValue(landmarkObj);
+
+        game.updateState({
+            type: "landmarkAdded",
+            options: { landmark },
+            id: "u5",
+            version: VERSION,
+        });
+        expect(generateLandmarkFromTypeSpy).toHaveBeenCalledWith(landmark);
+        expect(game.landmarks).toContain(landmarkObj);
     });
     test("move update calls move on the board", () => {
         mockBoard();
@@ -482,7 +538,12 @@ describe("RootGame.updateState", () => {
         const location = mock<LocationID>();
         const pieces: PieceID[] = [1, 2];
         const placeSpy = vi.spyOn(board, "place").mockReturnValue(undefined);
-        game.updateState({ type: "place", options: { pieces, to: location }, id: "u5", version: VERSION });
+        game.updateState({
+            type: "place",
+            options: { pieces, to: location },
+            id: "u5",
+            version: VERSION,
+        });
         expect(placeSpy).toHaveBeenCalledWith(pieces, location);
     });
     test("remove update calls remove on the board", () => {
@@ -490,15 +551,27 @@ describe("RootGame.updateState", () => {
         const location = mock<LocationID>();
         const pieces: PieceID[] = [1, 2];
         const removeSpy = vi.spyOn(board, "remove").mockReturnValue(undefined);
-        game.updateState({ type: "remove", options: { pieces, from: location }, id: "u6", version: VERSION });
+        game.updateState({
+            type: "remove",
+            options: { pieces, from: location },
+            id: "u6",
+            version: VERSION,
+        });
         expect(removeSpy).toHaveBeenCalledWith(pieces, location);
     });
     test("addToSupply update calls addToSupply on the appropriate faction", () => {
         const faction: PlayerFactionType = "marquise-de-cat";
         mockFactions([{ faction: faction, playerID: 1 }]);
         const pieces: PieceID[] = [1, 2];
-        const addToSupplySpy = vi.spyOn(factions[faction]!, "addToSupply").mockReturnValue(undefined);
-        game.updateState({ type: "addToSupply", options: { faction, pieces }, id: "u7", version: VERSION });
+        const addToSupplySpy = vi
+            .spyOn(factions[faction]!, "addToSupply")
+            .mockReturnValue(undefined);
+        game.updateState({
+            type: "addToSupply",
+            options: { faction, pieces },
+            id: "u7",
+            version: VERSION,
+        });
         expect(addToSupplySpy).toHaveBeenCalledWith(pieces);
     });
     test("factionStateUpdate calls updateFactionState on the appropriate faction with the provided update type and payload", () => {
@@ -506,20 +579,36 @@ describe("RootGame.updateState", () => {
         mockFactions([{ faction: faction, playerID: 1 }]);
         const updateType = "resourceChange";
         const value = { amount: 5 };
-        const updateFactionStateSpy = vi.spyOn(factions[faction]!, "updateState").mockReturnValue(undefined);
-        game.updateState({ type: "factionStateUpdate", options: { faction, updateType, value }, id: "u8", version: VERSION });
+        const updateFactionStateSpy = vi
+            .spyOn(factions[faction]!, "updateState")
+            .mockReturnValue(undefined);
+        game.updateState({
+            type: "factionStateUpdate",
+            options: { faction, updateType, value },
+            id: "u8",
+            version: VERSION,
+        });
         expect(updateFactionStateSpy).toHaveBeenCalledWith(updateType, value);
     });
     test("moveCard update calls addCard and removeCard on the appropriate card piles with the provided card ID", () => {
         // TODO: add different scenarios for different from/to locations
         const cardID = 42;
-        const hand = "hand" as CardLocationType;
-        const revealed = "revealed" as CardLocationType;
         const faction: PlayerFactionType = "marquise-de-cat";
+        const hand = mock<CardPileLocation>({ name: "hand", faction });
+        const revealed = mock<CardPileLocation>({ name: "revealed", faction });
         mockFactions([{ faction: faction, playerID: 1 }]);
-        const addCardSpy = vi.spyOn(factions[faction]!.hand, "removeCard").mockReturnValue(undefined);
-        const removeCardSpy = vi.spyOn(factions[faction]!.revealedCards, "addCard").mockReturnValue(undefined);
-        game.updateState({ type: "moveCard", options: { cardID, from: hand, to: revealed }, id: "u9", version: VERSION });
+        const addCardSpy = vi
+            .spyOn(factions[faction]!.hand, "removeCard")
+            .mockReturnValue(undefined);
+        const removeCardSpy = vi
+            .spyOn(factions[faction]!.revealedCards, "addCard")
+            .mockReturnValue(undefined);
+        game.updateState({
+            type: "moveCard",
+            options: { cardID, from: hand, to: revealed },
+            id: "u9",
+            version: VERSION,
+        });
         expect(addCardSpy).toHaveBeenCalledWith(cardID);
         expect(removeCardSpy).toHaveBeenCalledWith(cardID);
     });
@@ -532,19 +621,35 @@ describe("RootGame.updateState", () => {
     test("battleSegmentChange update updates the current battle segment in battleState", () => {
         const battleState = mock<BattleState>();
         vi.spyOn(game, "battleState", "get").mockReturnValue(battleState);
-        const setBattleSegmentSpy = vi.spyOn(battleState, "battleSegment", "set").mockReturnValue(undefined);
+        const setBattleSegmentSpy = vi
+            .spyOn(battleState, "battleSegment", "set")
+            .mockReturnValue(undefined);
         const segment: BattlePhaseType = "hits" as const;
-        game.updateState({ type: "battleSegmentChange", options: { newBattleSegment: segment }, id: "u11", version: VERSION });
+        game.updateState({
+            type: "battleSegmentChange",
+            options: { newBattleSegment: segment },
+            id: "u11",
+            version: VERSION,
+        });
         expect(setBattleSegmentSpy).toHaveBeenCalledWith(segment);
     });
     test("pendingHitsChange update updates the pending hits for the attacker or defender in battleState", () => {
         const battleState = mock<BattleState>();
         vi.spyOn(game, "battleState", "get").mockReturnValue(battleState);
-        const setPendingAttackerHitsSpy = vi.spyOn(battleState, "pendingAttackerHits", "set").mockReturnValue(undefined);
-        const setPendingDefenderHitsSpy = vi.spyOn(battleState, "pendingDefenderHits", "set").mockReturnValue(undefined);
+        const setPendingAttackerHitsSpy = vi
+            .spyOn(battleState, "pendingAttackerHits", "set")
+            .mockReturnValue(undefined);
+        const setPendingDefenderHitsSpy = vi
+            .spyOn(battleState, "pendingDefenderHits", "set")
+            .mockReturnValue(undefined);
         const attackerHits = 3;
         const defenderHits = 2;
-        game.updateState({ type: "pendingHitsChange", options: { attackerHits, defenderHits }, id: "u12", version: VERSION });
+        game.updateState({
+            type: "pendingHitsChange",
+            options: { attackerHits, defenderHits },
+            id: "u12",
+            version: VERSION,
+        });
         expect(setPendingAttackerHitsSpy).toHaveBeenCalledWith(attackerHits);
         expect(setPendingDefenderHitsSpy).toHaveBeenCalledWith(defenderHits);
     });
@@ -557,8 +662,13 @@ describe("RootGame.updateState", () => {
         const pieceIDs: PieceID[] = [1, 2];
         const startingPieces: PieceID[] = [3];
         game.spentCraftingPieces = startingPieces;
-        game.updateState({ type: "crafting", options: { craftingPiecesUsed: pieceIDs }, id: "u14", version: VERSION });
-        for (const pieceID of [ ...startingPieces, ...pieceIDs ]) {
+        game.updateState({
+            type: "crafting",
+            options: { craftingPiecesUsed: pieceIDs },
+            id: "u14",
+            version: VERSION,
+        });
+        for (const pieceID of [...startingPieces, ...pieceIDs]) {
             expect(game.spentCraftingPieces).toContain(pieceID);
         }
     });
@@ -567,7 +677,12 @@ describe("RootGame.updateState", () => {
         const pieceIDsToKeep: PieceID[] = [3, 4];
         const startingPieces: PieceID[] = [...pieceIDsToRemove, ...pieceIDsToKeep];
         game.spentCraftingPieces = startingPieces;
-        game.updateState({ type: "craftingReset", options: { craftingPiecesReset: pieceIDsToRemove }, id: "u15", version: VERSION });
+        game.updateState({
+            type: "craftingReset",
+            options: { craftingPiecesReset: pieceIDsToRemove },
+            id: "u15",
+            version: VERSION,
+        });
         for (const pieceID of pieceIDsToRemove) {
             expect(game.spentCraftingPieces).not.toContain(pieceID);
         }
@@ -577,23 +692,65 @@ describe("RootGame.updateState", () => {
     });
     test("choicePended update sets pendingChoice to the provided choice", () => {
         const choice: Choice = mock<Choice>();
-        const pendingChoiceSetterSpy = vi.spyOn(game, "pendingChoice", "set").mockReturnValue(undefined);
-        game.updateState({ type: "choicePended", options: { choice }, id: "u16", version: VERSION });
+        const pendingChoiceSetterSpy = vi
+            .spyOn(game, "pendingChoice", "set")
+            .mockReturnValue(undefined);
+        game.updateState({
+            type: "choicePended",
+            options: { choice },
+            id: "u16",
+            version: VERSION,
+        });
         expect(pendingChoiceSetterSpy).toHaveBeenCalledWith(choice);
     });
     test("choiceResolved update moves the pending choice with the provided ID to past choices with the provided resolution and sets pendingChoice to null", () => {
-        const pendingChoice: Choice = { id: "c1", type: "pick", playerID: 1, resolved: false, options: {} };
+        const pendingChoice: Choice = {
+            id: "c1",
+            type: "pick",
+            playerID: 1,
+            resolved: false,
+            options: {},
+        };
         game.pendingChoice = pendingChoice;
         const resolution: Choice = { ...pendingChoice, resolved: true, value: { picked: 5 } };
-        game.updateState({ type: "choiceResolved", options: { type: "pick", choiceID: "c1", resolution }, id: "u17", version: VERSION });
+        game.updateState({
+            type: "choiceResolved",
+            options: { type: "pick", choiceID: "c1", resolution },
+            id: "u17",
+            version: VERSION,
+        });
         expect(game.pendingChoice).toBeNull();
-        expect(game.pastChoices).toContainEqual({ ...pendingChoice, resolved: true, value: resolution });
+        expect(game.pastChoices).toContainEqual({
+            ...pendingChoice,
+            resolved: true,
+            value: resolution,
+        });
     });
     test("compound update executes multiple updates in order", () => {
-        const update1: RootGameUpdate = { type: "turnOrderSet", options: { turnOrder: [2, 3, 1] }, id: "u20", version: VERSION };
-        const update2: RootGameUpdate = { type: "move", options: { pieces: [1], from: mock<LocationID>(), to: mock<LocationID>() }, id: "u21", version: VERSION };
-        const update3: RootGameUpdate = { type: "addToSupply", options: { faction: "marquise-de-cat", pieces: [2, 3] }, id: "u22", version: VERSION };
-        const compoundUpdate: RootGameUpdate = { type: "compound", options: { updates: [update1, update2, update3] }, id: "u23", version: VERSION };
+        const update1: RootGameUpdate = {
+            type: "turnOrderSet",
+            options: { turnOrder: [2, 3, 1] },
+            id: "u20",
+            version: VERSION,
+        };
+        const update2: RootGameUpdate = {
+            type: "move",
+            options: { pieces: [1], from: mock<LocationID>(), to: mock<LocationID>() },
+            id: "u21",
+            version: VERSION,
+        };
+        const update3: RootGameUpdate = {
+            type: "addToSupply",
+            options: { faction: "marquise-de-cat", pieces: [2, 3] },
+            id: "u22",
+            version: VERSION,
+        };
+        const compoundUpdate: RootGameUpdate = {
+            type: "compound",
+            options: { updates: [update1, update2, update3] },
+            id: "u23",
+            version: VERSION,
+        };
         const updateStateSpy = vi.spyOn(game, "updateState");
         game.updateState(compoundUpdate);
         expect(updateStateSpy).toHaveBeenNthCalledWith(2, update1);
@@ -636,14 +793,26 @@ describe("RootGame.awaitPlayerChoice", () => {
         mockPastChoices([past]);
 
         await expect(
-            game.awaitPlayerChoice({ id: "c1", type: "pick", playerID: 1, resolved: false, options: {} }),
+            game.awaitPlayerChoice({
+                id: "c1",
+                type: "pick",
+                playerID: 1,
+                resolved: false,
+                options: {},
+            }),
         ).rejects.toThrow();
     });
 
     test("waits for the choice to be resolved if it's not in past choices", async () => {
         const { getResolver } = mockPromiseControl();
 
-        const p = game.awaitPlayerChoice({ id: "p1", type: "pick", playerID: 2, resolved: false, options: {} });
+        const p = game.awaitPlayerChoice({
+            id: "p1",
+            type: "pick",
+            playerID: 2,
+            resolved: false,
+            options: {},
+        });
         let isPending = true;
         p.then(() => (isPending = false));
 
@@ -670,11 +839,22 @@ describe("RootGame.awaitPlayerChoice", () => {
     });
 
     test("calls updateState to set the pending choice and sets gameplayPromiseControl to a new PromiseControl", () => {
-        const choice: Choice = { id: "p1", type: "pick", playerID: 2, resolved: false, options: {} };
+        const choice: Choice = {
+            id: "p1",
+            type: "pick",
+            playerID: 2,
+            resolved: false,
+            options: {},
+        };
         const { getResolver, setter } = mockPromiseControl();
         const updateStateSpy = vi.spyOn(game, "updateState");
         game.awaitPlayerChoice(choice);
-        expect(updateStateSpy).toHaveBeenCalledWith({ type: "choicePended", options: { choice }, id: expect.any(String), version: VERSION });
+        expect(updateStateSpy).toHaveBeenCalledWith({
+            type: "choicePended",
+            options: { choice },
+            id: expect.any(String),
+            version: VERSION,
+        });
         expect(setter).toHaveBeenCalledWith(
             expect.objectContaining({
                 resolve: expect.any(Function),
@@ -687,7 +867,13 @@ describe("RootGame.awaitPlayerChoice", () => {
     test("throws an error if the pending promise is rejected", async () => {
         const { getRejecter } = mockPromiseControl();
 
-        const p = game.awaitPlayerChoice({ id: "p2", type: "pick", playerID: 1, resolved: false, options: {} });
+        const p = game.awaitPlayerChoice({
+            id: "p2",
+            type: "pick",
+            playerID: 1,
+            resolved: false,
+            options: {},
+        });
 
         const reject = getRejecter();
         expect(reject).not.toBeNull();
@@ -699,10 +885,22 @@ describe("RootGame.awaitPlayerChoice", () => {
 
     test("throws an error if the pending choice has changed after resolution", async () => {
         const { getResolver } = mockPromiseControl();
-        const p = game.awaitPlayerChoice({ id: "p3", type: "pick", playerID: 1, resolved: false, options: {} });
+        const p = game.awaitPlayerChoice({
+            id: "p3",
+            type: "pick",
+            playerID: 1,
+            resolved: false,
+            options: {},
+        });
 
         // Change pendingChoice to a different id
-        game.pendingChoice = { id: "other", type: "pick", playerID: 1, resolved: false, options: {} };
+        game.pendingChoice = {
+            id: "other",
+            type: "pick",
+            playerID: 1,
+            resolved: false,
+            options: {},
+        };
         getResolver?.();
 
         await expect(p).rejects.toThrow();
@@ -711,7 +909,13 @@ describe("RootGame.awaitPlayerChoice", () => {
     test("returns the value of the choice after resolution", async () => {
         const { getResolver } = mockPromiseControl();
 
-        const p = game.awaitPlayerChoice({ id: "p4", type: "pick", playerID: 3, resolved: false, options: {} });
+        const p = game.awaitPlayerChoice({
+            id: "p4",
+            type: "pick",
+            playerID: 3,
+            resolved: false,
+            options: {},
+        });
         game.pendingChoice = {
             id: "p4",
             type: "pick",
@@ -729,7 +933,13 @@ describe("RootGame.awaitPlayerChoice", () => {
         const { getResolver, setter } = mockPromiseControl();
         const updateStateSpy = vi.spyOn(game, "updateState");
 
-        const p = game.awaitPlayerChoice({ id: "p5", type: "pick", playerID: 4, resolved: false, options: {} });
+        const p = game.awaitPlayerChoice({
+            id: "p5",
+            type: "pick",
+            playerID: 4,
+            resolved: false,
+            options: {},
+        });
         const resolved: Choice = {
             id: "p5",
             type: "pick",
@@ -741,7 +951,12 @@ describe("RootGame.awaitPlayerChoice", () => {
         getResolver?.();
 
         await p;
-        expect(updateStateSpy).toHaveBeenCalledWith({ type: "choiceResolved", options: { choice: resolved }, id: expect.any(String), version: VERSION });
+        expect(updateStateSpy).toHaveBeenCalledWith({
+            type: "choiceResolved",
+            options: { choice: resolved },
+            id: expect.any(String),
+            version: VERSION,
+        });
         expect(game.pendingChoice).toBeNull();
         expect(setter).toHaveBeenCalledWith(null); // Check that gameplayPromiseControl was set to null
     });
@@ -759,7 +974,9 @@ describe("RootGame.playTurn", () => {
         ]);
         game.turnOrder = [1, 2, 3];
         game.currentTimeStep = new TimeStep("marquise-de-cat", "birdsong", "start");
-        takePhaseSpy = vi.spyOn(factions["marquise-de-cat"]!, "takePhase").mockResolvedValue(undefined);
+        takePhaseSpy = vi
+            .spyOn(factions["marquise-de-cat"]!, "takePhase")
+            .mockResolvedValue(undefined);
     });
     test("calls setup if timestep currentTurn is none", () => {
         const setupSpy = vi.spyOn(game, "setup").mockResolvedValue(undefined);
@@ -769,7 +986,6 @@ describe("RootGame.playTurn", () => {
     });
 
     test("calls takePhase 3 times for the current player and updates timestep correctly in between", () => {
-
         game.playTurn();
         expect(takePhaseSpy).toHaveBeenCalledTimes(3);
         expect(takePhaseSpy.mock.calls[0][0]).toEqual(
