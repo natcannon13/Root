@@ -27,7 +27,7 @@ type ChoiceBase<T extends ChoiceType> = {
     readonly playerID: T extends RandomEventType ? null : PlayerID; // null indicates rng events decided by the game
 };
 
-export type Choice<T extends ChoiceType = ChoiceType> =
+export type Choice<T extends ChoiceType = ChoiceType> = T extends ChoiceType ?
     | (ChoiceBase<T> & {
           readonly resolved: true;
           readonly options: ChoiceOptionsMap[T];
@@ -36,4 +36,7 @@ export type Choice<T extends ChoiceType = ChoiceType> =
     | (ChoiceBase<T> & {
           readonly resolved: false;
           readonly options: ChoiceOptionsMap[T];
-      });
+      }) : never;
+
+export type PendingChoice<T extends ChoiceType = ChoiceType> = Extract<Choice<T>, { readonly resolved: false }>;
+export type ResolvedChoice<T extends ChoiceType = ChoiceType> = Extract<Choice<T>, { readonly resolved: true }>;

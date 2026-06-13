@@ -15,7 +15,7 @@ import type { RootGameState } from "../state/RootGameState";
 import { TimeStep } from "../state/TimeStep";
 import type { StateStore } from "../stateStore/StateStore";
 import type { Event } from "./Event";
-import type { Choice, ChoiceType, ChoiceValueMap } from "./PendingChoice";
+import type { Choice, ChoiceType, ChoiceValueMap, PendingChoice, ResolvedChoice } from "./PendingChoice";
 import type { PlayOptions } from "./PlayOptions";
 import type { RootGameUpdate } from "./RootGameUpdate";
 
@@ -55,7 +55,7 @@ export class RootGame {
     dominancePile: CardPile = new CardPile();
     spentCraftingPieces: PieceID[] = [];
     pendingChoice: Choice | null = null; // Separate from gameplayPendingPromise for serializability.
-    pastChoices: Choice[] = [];
+    pastChoices: ResolvedChoice[] = [];
     gameplayPromiseControl: PromiseControl | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.
     stateStore: RootGameStateStore;
     winner: PlayerFactionType | null = null;
@@ -81,7 +81,7 @@ export class RootGame {
         throw new Error("RootGame.updateState not implemented");
     }
 
-    async awaitChoice<T extends ChoiceType>(choice: Choice<T>): Promise<ChoiceValueMap[T]> {
+    async awaitChoice<T extends ChoiceType>(choice: PendingChoice<T>): Promise<ChoiceValueMap[T]> {
         throw new Error("RootGame.awaitChoice not implemented");
     }
 
