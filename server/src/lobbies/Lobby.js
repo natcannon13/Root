@@ -4,12 +4,13 @@ const crypto = require("crypto");
 const Seat = require("./Seat");
 
 class Lobby{
-    constructor(size = 4){
+    constructor(size = 4, setup){
         this.id = crypto.randomUUID();
 
         this.status = "waiting";
         this.seats = [];
         this.game = null;
+        this.setup = setup;
 
         this.chat = new ChatManager();
 
@@ -57,7 +58,8 @@ class Lobby{
             status: this.status,
             seats: this.seats.map(
                 seat => seat.serialize()
-            )
+            ),
+            setup: this.setup
         };
     }
 

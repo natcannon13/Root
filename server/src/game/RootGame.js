@@ -1,13 +1,14 @@
 class RootGame{
     constructor(){
         this.state = {
+            stage: "drafting",
             players: [],
             turn: 0
         }
     }
 
-    takeAction(playerID, action){
-        console.log(playerID, action);
+    takeAction(seatIndex, action){
+        console.log(seatIndex, action);
     }
 
     getState(){

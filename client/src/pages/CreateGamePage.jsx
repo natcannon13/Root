@@ -15,6 +15,7 @@ function CreateGamePage() {
 
     const data = await createLobby({
       size: playerCount,
+      setup: setupType
     });
     console.log(data);
     const links = [];

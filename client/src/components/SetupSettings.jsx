@@ -8,6 +8,19 @@ const [deck, setDeck] = useState("mr");
 const [knaveVB, setKnaveVB] = useState("knaves");
 
 function MapChoice(){
+    if(setupType === "trn"){
+        setMap("draft");
+        return (
+        <div>
+                    <label>Map:</label>
+                    <select value = {map}
+                    onChange ={(e) => setMap(e.target.value)}
+                    disabled = {true}>
+                        <option value = {"draft"}>Draft</option>
+                    </select>
+                </div>
+        );
+    }
     return (
         <div>
                     <label>Map:</label>
@@ -25,6 +38,19 @@ function MapChoice(){
 }
 
 function DeckChoice(){
+    if(setupType === "trn"){
+        setDeck("draft");
+        return (
+        <div>
+                    <label>Deck:</label>
+                    <select value = {deck}
+                    onChange ={(e) => setDeck(e.target.value)}
+                    disabled = {true}>
+                        <option value = {"draft"}>Draft</option>
+                    </select>
+                </div>
+        );
+    }
     return(
         <div>
             <label>Deck:</label>
@@ -63,7 +89,6 @@ function KnaveVagabondChoice(){
                 <DeckChoice/>
                 </div>
             )
-            break;
         }
         case "adv": {
             return (
@@ -74,7 +99,6 @@ function KnaveVagabondChoice(){
                 <KnaveVagabondChoice/>
                 </div>
             )
-            break;
         }
         case "trn": {
             return (
@@ -83,7 +107,6 @@ function KnaveVagabondChoice(){
                 <KnaveVagabondChoice/>
                 </div>
             )
-            break;
         }
     }
 

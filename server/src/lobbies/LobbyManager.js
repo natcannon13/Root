@@ -9,7 +9,8 @@ class LobbyManager{
 
     createLobby(settings = {}){
         const size = settings.size ?? 4;
-        const lobby = new Lobby(size);
+        const setup = settings.setup ?? "standard";
+        const lobby = new Lobby(size, setup);
         this.lobbies.set(lobby.id, lobby);
         for(const seat of lobby.seats){
             this.inviteTokenMap.set(seat.inviteToken, {lobby, seat});
