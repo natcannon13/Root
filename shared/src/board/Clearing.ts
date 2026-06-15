@@ -1,7 +1,7 @@
 import type { FactionType, Suit } from "../Enums";
 import type { Building } from "../pieces/Building";
 import type { Pawn } from "../pieces/Pawn";
-import type { Piece } from "../pieces/Piece";
+import type { Piece, PieceID } from "../pieces/Piece";
 import type { Token } from "../pieces/Token";
 import { Location, type LocationID } from "./Location";
 
@@ -32,14 +32,14 @@ export class Clearing extends Location {
         return 0;
     }
     addPieces(pieces: Piece[]): void {}
-    removePieces(pieces: Piece[]): void {}
-    hasPieces(pieces: Piece[]): boolean {
+    removePieces(pieceIDs: PieceID[]): void {}
+    hasPieces(pieceIDs: PieceID[]): boolean {
         return false;
     }
     getPieces(predicate?: (p: Piece) => boolean): Piece[] {
         return [];
     }
-    replace(oldPiece: Piece, newPiece: Piece): void {}
+    replace(oldPieceID: PieceID, newPiece: Piece): void {}
     getRuler(): FactionType | null {
         return null;
     }

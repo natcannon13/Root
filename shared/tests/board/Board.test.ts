@@ -6,7 +6,7 @@ import type { Connection } from "../../src/board/Connection";
 import type { Forest } from "../../src/board/Forest";
 import type { Building } from "../../src/pieces/Building";
 import type { Pawn } from "../../src/pieces/Pawn";
-import { PieceID } from "../../src/pieces/Piece";
+import type { PieceID } from "../../src/pieces/Piece";
 import { Ruin } from "../../src/pieces/Ruin";
 import type { Token } from "../../src/pieces/Token";
 
@@ -231,6 +231,23 @@ describe("Board - forest adjacency (§2.4)", () => {
     });
 });
 
+describe("Board - getConnectionTypesBetween", () => {
+    test("getConnectionTypesBetween returns the types of connections between two locations", () => {
+        const c1 = mock<Clearing>({ id: 1 });
+        const c2 = mock<Clearing>({ id: 2 });
+        const board = new Board({
+            name: "autumn",
+            clearings: [c1, c2],
+            forests: [],
+            connections: [
+                mock<Connection>({ id: 12, locationIDs: [1, 2], type: "path" }),
+                mock<Connection>({ id: 13, locationIDs: [1, 2], type: "river" }),
+            ],
+        });
+        expect(board.getConnectionTypesBetween(c1, c2)).toEqual(["path", "river"]);
+    });
+});
+
 describe("Board - corners", () => {
     test("getCorners returns the corners of the board", () => {
         const c1 = mock<Clearing>({ id: 1 });
@@ -290,8 +307,8 @@ describe("Board - move", () => {
             forests: [],
             connections: [mock<Connection>({ id: 12, locationIDs: [1, 2], type: "path" })],
         });
-        board.move([w], 1, 2);
-        expect(c1.removePieces).toHaveBeenCalledWith([w]);
+        board.move([w.id], 1, 2);
+        expect(c1.removePieces).toHaveBeenCalledWith([w.id]);
         expect(c2.addPieces).toHaveBeenCalledWith([w]);
     });
 
@@ -310,7 +327,7 @@ describe("Board - move", () => {
             forests: [],
             connections: [mock<Connection>({ id: 12, locationIDs: [1, 2], type: "path" })],
         });
-        expect(() => board.move([w], 1, 2)).toThrow();
+        expect(() => board.move([w.id], 1, 2)).toThrow();
     });
 });
 
@@ -330,7 +347,7 @@ describe("Board - place", () => {
             connections: [],
         });
         board.place([t], 1);
-        expect(c1.addPieces).toHaveBeenCalledWith([t]);
+        expect(c1.addPieces).toHaveBeenCalledWith([t.id]);
     });
 });
 
@@ -350,8 +367,8 @@ describe("Board - remove", () => {
             forests: [],
             connections: [],
         });
-        board.remove([t], 1);
-        expect(c1.removePieces).toHaveBeenCalledWith([t]);
+        board.remove([t.id], 1);
+        expect(c1.removePieces).toHaveBeenCalledWith([t.id]);
     });
 
     test("remove throws when clearing does not contain the pieces", () => {
@@ -368,7 +385,7 @@ describe("Board - remove", () => {
             forests: [],
             connections: [],
         });
-        expect(() => board.remove([t], 1)).toThrow();
+        expect(() => board.remove([t.id], 1)).toThrow();
     });
 });
 

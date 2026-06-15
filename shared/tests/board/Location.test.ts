@@ -1,9 +1,9 @@
 import { describe, expect, test } from "vitest";
 import { mock } from "vitest-mock-extended";
 import { Location } from "../../src/board/Location";
-import { Building } from "../../src/pieces/Building";
-import { Pawn } from "../../src/pieces/Pawn";
-import { Token } from "../../src/pieces/Token";
+import type { Building } from "../../src/pieces/Building";
+import type { Pawn } from "../../src/pieces/Pawn";
+import type { Token } from "../../src/pieces/Token";
 
 class TestLocation extends Location {}
 
@@ -26,7 +26,7 @@ describe("Location - pieces (§1.5, §G.20, §G.24)", () => {
         const c = new TestLocation();
         const t = mock<Token>();
         c.addPieces([t]);
-        c.removePieces([t]);
+        c.removePieces([t.id]);
         expect(c.getPieces()).not.toContain(t);
     });
 
@@ -35,7 +35,7 @@ describe("Location - pieces (§1.5, §G.20, §G.24)", () => {
         const t1 = mock<Token>();
         const t2 = mock<Token>();
         c.addPieces([t1, t2]);
-        c.removePieces([t1]);
+        c.removePieces([t1.id]);
         expect(c.getPieces()).toContain(t2);
     });
 
@@ -44,13 +44,13 @@ describe("Location - pieces (§1.5, §G.20, §G.24)", () => {
         const t1 = mock<Token>();
         const t2 = mock<Pawn>();
         c.addPieces([t1, t2]);
-        expect(c.hasPieces([t1, t2])).toBe(true);
+        expect(c.hasPieces([t1.id, t2.id])).toBe(true);
     });
 
     test("hasPieces() returns false when pieces are absent", () => {
         const c = new TestLocation();
         const t = mock<Token>();
-        expect(c.hasPieces([t])).toBe(false);
+        expect(c.hasPieces([t.id])).toBe(false);
     });
 
     test("hasPieces() returns false when only some pieces are present", () => {
@@ -58,7 +58,7 @@ describe("Location - pieces (§1.5, §G.20, §G.24)", () => {
         const t1 = mock<Token>();
         const t2 = mock<Token>();
         c.addPieces([t1]);
-        expect(c.hasPieces([t1, t2])).toBe(false);
+        expect(c.hasPieces([t1.id, t2.id])).toBe(false);
     });
 
     test("getPieces() filters by predicate", () => {
@@ -86,7 +86,7 @@ describe("Location - pieces (§1.5, §G.20, §G.24)", () => {
         const old = mock<Token>({ id: 1 });
         const fresh = mock<Building>({ id: 2 });
         c.addPieces([old]);
-        c.replace(old, fresh);
+        c.replace(old.id, fresh);
         expect(c.getPieces()).toContain(fresh);
         expect(c.getPieces()).not.toContain(old);
     });

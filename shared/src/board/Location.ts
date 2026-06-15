@@ -1,21 +1,17 @@
-import type { Pawn } from "../pieces/Pawn";
-import type { Piece } from "../pieces/Piece";
-import type { Token } from "../pieces/Token";
+import type { Piece, PieceID } from "../pieces/Piece";
 
 export type LocationID = number;
 
 export abstract class Location {
     public id: LocationID = 0;
-    private tokens: Token[] = [];
-    private pawns: Pawn[] = [];
 
     addPieces(pieces: Piece[]): void {}
-    removePieces(pieces: Piece[]): void {}
-    hasPieces(pieces: Piece[]): boolean {
+    removePieces(pieceIDs: PieceID[]): void {}
+    hasPieces(pieceIDs: PieceID[]): boolean {
         return false;
     }
     getPieces(predicate?: (p: Piece) => boolean): Piece[] {
         return [];
     }
-    replace(targetPiece: Piece, newPiece: Piece): void {}
+    replace(oldPieceID: PieceID, newPiece: Piece): void {}
 }

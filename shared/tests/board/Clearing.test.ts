@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
 import { mock } from "vitest-mock-extended";
-import { Clearing } from "../../src/board/Clearing.ts";
-import type { Building } from "../../src/pieces/Building.ts";
-import { Pawn } from "../../src/pieces/Pawn.ts";
-import { Ruin } from "../../src/pieces/Ruin.ts";
-import { Token } from "../../src/pieces/Token.ts";
+import { Clearing } from "../../src/board/Clearing";
+import type { Building } from "../../src/pieces/Building";
+import type { Pawn } from "../../src/pieces/Pawn";
+import { Ruin } from "../../src/pieces/Ruin";
+import type { Token } from "../../src/pieces/Token";
 
 describe("Clearing - suit", () => {
     test("stores the printed suit", () => {

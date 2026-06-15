@@ -107,23 +107,23 @@ export class RootGame {
         throw new Error("RootGame.returnCardToDeck not implemented");
     }
 
-    async isMoveLegal(move: Move): Promise<boolean> {
+    isMoveLegal(move: Move): boolean {
         throw new Error("RootGame.isMoveLegal not implemented");
     }
 
-    async isBattleLegal(battle: Battle): Promise<boolean> {
+    isBattleLegal(battle: Battle): boolean {
         throw new Error("RootGame.isBattleLegal not implemented");
     }
 
-    async isPlaceLegal(pieces: Piece[], locationID: LocationID): Promise<boolean> {
+    isPlaceLegal(pieces: Piece[], locationID: LocationID): boolean {
         throw new Error("RootGame.isPlaceLegal not implemented");
     }
 
-    async isCraftLegal(
+    isCraftLegal(
         faction: PlayerFactionType,
         card: Card,
         craftingPieces: Piece[],
-    ): Promise<boolean> {
+    ): boolean {
         throw new Error("RootGame.isCraftLegal not implemented");
     }
 

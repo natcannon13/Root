@@ -51,6 +51,7 @@ import type { RootFactionState } from "../../src/state/RootFactionState";
 import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
+import type { Clearing } from "../../src/board/Clearing";
 
 let game: RootGame;
 let stateStore: RootGameStateStore;
@@ -97,9 +98,7 @@ function getBasePlayOptions(): PlayOptions & { setup: StandardSetupOptions } {
     } satisfies PlayOptions;
 }
 
-function getAdvancedPlayOptions(): PlayOptions & {
-    setup: AdvancedSetupOptions;
-} {
+function getAdvancedPlayOptions(): PlayOptions & {setup: AdvancedSetupOptions;} {
     return {
         setup: {
             type: "advanced",
@@ -1661,7 +1660,15 @@ describe("RootGame.setup", () => {
 // --- isMoveLegal  ----------------------------------------------
 
 describe("RootGame.isMoveLegal ", () => {
-    test("is legal when mover rules the origin clearing", () => {});
+    const clearing1 = mock<Clearing>({ id: 1 });
+    const clearing2 = mock<Clearing>({ id: 2 });
+    beforeEach(() => {
+        mockBoard();
+        
+    });
+    test("is legal when mover rules the origin clearing", async () => {
+        
+    });
 
     test("is legal when mover rules the destination clearing", () => {});
 

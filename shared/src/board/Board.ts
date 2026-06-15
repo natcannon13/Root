@@ -1,4 +1,4 @@
-import type { BoardType, PlayerFactionType } from "../Enums";
+import type { BoardType, ConnectionType, PlayerFactionType } from "../Enums";
 import type { Event } from "../game/Event";
 import type { Item } from "../Item";
 import type { Piece, PieceID } from "../pieces/Piece";
@@ -56,6 +56,10 @@ export class Board implements RulesModule {
         throw new Error("Board.getForestsAdjacent not implemented");
     }
 
+    getConnectionTypesBetween(location1: Location, location2: Location): Set<ConnectionType> {
+        throw new Error("Board.getConnectionTypesBetween not implemented");
+    }
+
     getLocation(id: LocationID): Location | undefined {
         throw new Error("Board.getLocation not implemented");
     }
@@ -64,15 +68,15 @@ export class Board implements RulesModule {
         throw new Error("Board.getCorners not implemented");
     }
 
-    move(pieces: PieceID[], startingLocationID: LocationID, endingLocationID: LocationID): void {
+    move(pieces: Piece[], startingLocationID: LocationID, endingLocationID: LocationID): void {
         throw new Error("Board.move not implemented");
     }
 
-    place(pieces: PieceID[], locationID: LocationID): void {
+    place(pieces: Piece[], locationID: LocationID): void {
         throw new Error("Board.place not implemented");
     }
 
-    remove(pieces: PieceID[], locationID: LocationID): void {
+    remove(pieces: Piece[], locationID: LocationID): void {
         throw new Error("Board.remove not implemented");
     }
 
