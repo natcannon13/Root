@@ -12,7 +12,7 @@ import type { Battle } from "../gameActions/Battle";
 import type { PieceID } from "../pieces/Piece";
 import type { RootGameState } from "../state/RootGameState";
 import type { TransitionType } from "../stateStore/StateStore";
-import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./PendingChoice";
+import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./Choice";
 import type { PlayerID } from "./RootGame";
 
 const ValidGameUpdateTypes = [

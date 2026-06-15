@@ -1,5 +1,5 @@
 import type { HirelingFactionType, LandmarkType, PlayerFactionType } from "../Enums";
-import type { Choice } from "../game/PendingChoice";
+import type { Choice } from "../game/Choice";
 import type { PlayOptions } from "../game/PlayOptions";
 import type { PlayerID } from "../game/RootGame";
 import type { PieceID } from "../pieces/Piece";

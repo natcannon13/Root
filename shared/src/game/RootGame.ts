@@ -14,8 +14,8 @@ import type { BattleState } from "../state/BattleState";
 import type { RootGameState } from "../state/RootGameState";
 import { TimeStep } from "../state/TimeStep";
 import type { StateStore } from "../stateStore/StateStore";
+import type { Choice, ChoiceType, ChoiceValueMap, PendingChoice, ResolvedChoice } from "./Choice";
 import type { Event } from "./Event";
-import type { Choice, ChoiceType, ChoiceValueMap, PendingChoice, ResolvedChoice } from "./PendingChoice";
 import type { PlayOptions } from "./PlayOptions";
 import type { RootGameUpdate } from "./RootGameUpdate";
 
@@ -103,10 +103,6 @@ export class RootGame {
 
     async returnCardToDeck(faction: PlayerFactionType, cardID: CardID) {
         throw new Error("RootGame.returnCardToDeck not implemented");
-    }
-
-    rollDie(): number {
-        return Math.floor(Math.random() * 4);
     }
 
     async isMoveLegal(move: Move): Promise<boolean> {
