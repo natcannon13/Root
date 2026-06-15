@@ -8,12 +8,14 @@ import { CardPile } from "../../src/cards/CardPile";
 import type { CardPileLocation } from "../../src/cards/CardPileLocation";
 import {
     type BattlePhaseType,
+    type ExclusionType,
     type HirelingFactionType,
     isDemotedHirelingFactionType,
     isPromotedHirelingFactionType,
     type LandmarkType,
     type PhaseType,
     type PlayerFactionType,
+    reachValues,
     standardSetupOrder,
 } from "../../src/Enums";
 import * as Factory from "../../src/Factory";
@@ -22,6 +24,7 @@ import {
     type ChoiceType,
     type ChoiceValueMap,
     type PendingChoice,
+    PLAYER_CHOICE_DESC,
     RAND_ORDER_DESC,
     RAND_PICK_DESC,
     RAND_PICKX_DESC,
@@ -48,6 +51,7 @@ import type { RootFactionState } from "../../src/state/RootFactionState";
 import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
+import { resolve } from "dns";
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
@@ -82,14 +86,10 @@ function getBasePlayOptions(): PlayOptions & { setup: StandardSetupOptions } {
             usingHirelings: true,
             landmarksToUse: 2,
             availableHirelings: [
-                "struggling-farmers",
-                "prosperous-farmers",
-                "corvid-spies",
-                "raven-sentries",
-                "flame-bearers",
-                "rat-smugglers",
-                "feline-physicians",
-                "forest-patrol",
+                "corvid",
+                "rat",
+                "feline",
+                "farmer",
             ],
             availableLandmarks: ["tower", "ferry", "elder-treetop"],
         },
@@ -116,14 +116,10 @@ function getAdvancedPlayOptions(): PlayOptions & {
             usingHirelings: true,
             landmarksToUse: 2,
             availableHirelings: [
-                "struggling-farmers",
-                "prosperous-farmers",
-                "corvid-spies",
-                "raven-sentries",
-                "flame-bearers",
-                "rat-smugglers",
-                "feline-physicians",
-                "forest-patrol",
+                "corvid",
+                "rat",
+                "feline",
+                "farmer",
             ],
             availableLandmarks: ["tower", "ferry", "elder-treetop"],
         },
@@ -146,10 +142,6 @@ function mockGame(options: PlayOptions = mock<PlayOptions>()) {
 function mockBoard() {
     board = mock<Board>();
     vi.spyOn(game, "board", "get").mockReturnValue(board);
-}
-
-function mockFaction<T extends PlayerFactionType>(faction: T) {
-    factions[faction] = mock<PlayerFaction>({ name: faction });
 }
 
 function mockFactions(factionTurnOrder: { faction: PlayerFactionType; playerID: PlayerID }[] = []) {
@@ -334,9 +326,7 @@ describe("RootGame.getState", () => {
         game.pendingChoice = mock<Choice>();
 
         // Mock structuredClone so that it returns the same object for simplicity, since we're not actually testing immutability here.
-        const structuredCloneSpy = vi
-            .spyOn(globalThis, "structuredClone")
-            .mockImplementation((obj) => obj);
+        vi.spyOn(globalThis, "structuredClone").mockImplementation((obj) => obj);
 
         const state = game.getState?.();
 
@@ -1093,21 +1083,26 @@ describe("RootGame.setup", () => {
     };
     let awaitChoiceSpy: MockInstance<RootGame["awaitChoice"]>;
     let updateStateSpy: MockInstance<RootGame["updateState"]>;
-    type ChoiceDescription = Pick<ResolvedChoice, "playerID" | "type" | "options" | "value">;
+    type ChoiceDescription = Pick<ResolvedChoice, "type" | "options" | "value"> & Partial<Pick<ResolvedChoice, "playerID">>;
 
-    const resolvedChoices: Record<string, ChoiceDescription> = {
-        "3-player seating order": {
-            playerID: null,
-            type: "pickOrder",
-            options: {
-                description: RAND_ORDER_DESC.SEATING_ORDER,
-                options: [1, 2, 3],
+    let resolvedChoices: Record<string, ChoiceDescription>;
+
+    let resolvedChoiceList: ChoiceDescription[];
+
+    function initializeResolvedChoices() {
+        resolvedChoices = {
+            "3-player seating order": {
+                playerID: null,
+                type: "pickOrder",
+                options: {
+                    description: RAND_ORDER_DESC.SEATING_ORDER,
+                    options: [1, 2, 3],
+                },
+                value: [1, 2, 0],
             },
-            value: [1, 2, 0],
-        },
-    };
-
-    const resolvedChoiceList: ChoiceDescription[] = Object.values(resolvedChoices);
+        };
+        resolvedChoiceList = Object.values(resolvedChoices);
+    }
 
     async function awaitChoiceFake<T extends ChoiceType>(
         choice: PendingChoice<T>,
@@ -1115,7 +1110,7 @@ describe("RootGame.setup", () => {
         for (const resolvedChoice of resolvedChoiceList) {
             if (
                 choice.type === resolvedChoice.type &&
-                choice.playerID === resolvedChoice.playerID &&
+                (resolvedChoice.playerID === undefined || choice.playerID === resolvedChoice.playerID) &&
                 util.isDeepStrictEqual(choice.options, resolvedChoice.options)
             ) {
                 return resolvedChoice.value as ChoiceValueMap[T];
@@ -1135,6 +1130,7 @@ describe("RootGame.setup", () => {
     beforeEach(() => {
         basePlayOptions = getBasePlayOptions();
         game.options = basePlayOptions;
+        initializeResolvedChoices();
         awaitChoiceSpy = vi.spyOn(game, "awaitChoice").mockImplementation(awaitChoiceFake);
         updateStateSpy = vi.spyOn(game, "updateState").mockReturnValue(undefined); //TODO: add implementation for cards specifically
     });
@@ -1204,9 +1200,7 @@ describe("RootGame.setup", () => {
         const mockLandmark = (type: LandmarkType): Landmark =>
             mock<Landmark>({
                 name: type,
-                setup: async (g, id) => {
-                    mockSetupFunction();
-                },
+                setup: mockSetupFunction,
             });
 
         vi.spyOn(game, "landmarks", "get").mockReturnValue([
@@ -1226,11 +1220,20 @@ describe("RootGame.setup", () => {
     ])(
         "generates the correct number of promoted/demoted hirelings for the player count",
         (playerCount, numberOfPromotedHirelings) => {
-            const updateStateSpy = vi.spyOn(game, "updateState").mockReturnValue(undefined);
             const totalHirelings = 3;
             basePlayOptions.playerIDs = Array.from({ length: playerCount }, (_, i) => i + 1);
             game.options = basePlayOptions;
             game.setup();
+            const awaitChoiceHirelingCalls = awaitChoiceSpy.mock.calls.filter(
+                (call) => call[0].type === "pickX" && call[0].options.description === RAND_PICKX_DESC.HIRELINGS
+            ) as [PendingChoice<"pickX">][];
+            expect(awaitChoiceHirelingCalls).toHaveLength(2);
+            expect(awaitChoiceHirelingCalls[0][0].options.options).toEqual(basePlayOptions.setup.availableHirelings);
+            expect(awaitChoiceHirelingCalls[0][0].options.count).toBe(totalHirelings);
+            expect(awaitChoiceHirelingCalls[1][0].options.options.length).toBe(totalHirelings);
+            expect(awaitChoiceHirelingCalls[1][0].options.count).toBe(numberOfPromotedHirelings);
+
+
             const updateStateCalls = updateStateSpy.mock.calls;
             const hirelingAddedCalls = updateStateCalls.filter(
                 (call) => call[0].type === "hirelingAdded",
@@ -1255,22 +1258,17 @@ describe("RootGame.setup", () => {
             ...resolvedChoices["3-player seating order"],
             value: [0, 1, 2],
         };
-        basePlayOptions.setup.landmarksToUse = 2;
         const mockSetupFunction = vi.fn();
         function mockHireling(type: HirelingFactionType): Hireling {
             if (isDemotedHirelingFactionType(type)) {
                 return mock<DemotedHireling>({
                     name: type,
-                    setup: async (g, id) => {
-                        mockSetupFunction();
-                    },
+                    setup: mockSetupFunction,
                 });
             }
             return mock<PromotedHireling>({
                 name: type,
-                setup: async (g, id) => {
-                    mockSetupFunction();
-                },
+                setup: mockSetupFunction,
             });
         }
 
@@ -1309,7 +1307,7 @@ describe("RootGame.setup", () => {
             function mockFaction(type: PlayerFactionType): PlayerFaction {
                 return mock<PlayerFaction>({
                     name: type,
-                    setup: async (g, id) => {
+                    setup: async (_, id) => {
                         mockSetupFunction(type, id);
                     },
                 });
@@ -1366,6 +1364,7 @@ describe("RootGame.setup", () => {
             game.options = advancedSetupOptions;
         });
         test("order of events is correct", () => {
+            // TODO: rework this to be less brittle (should really just care about awaitChoice order)
             // Landmarks -> Hirelings -> Draw Cards -> Factions -> Discard Cards
             // We can check that the order is correct by looking at the order of calls in our updateStateSpy and awaitChoiceSpy
             game.setup();
@@ -1426,7 +1425,7 @@ describe("RootGame.setup", () => {
                 ...Array.from({ length: numberOfLandmarks }, (_, idx) => ({
                     type: "pickOne",
                     playerID: reversePlayerOrder[idx % reversePlayerOrder.length],
-                    options: expect.objectContaining({ description: RAND_PICK_DESC.LANDMARK }),
+                    options: expect.objectContaining({ description: PLAYER_CHOICE_DESC.LANDMARK_SETUP }),
                 })),
                 {
                     type: "pickX",
@@ -1436,7 +1435,7 @@ describe("RootGame.setup", () => {
                 ...Array.from({ length: numberOfHirelings }, (_, idx) => ({
                     type: "pickOne",
                     playerID: reversePlayerOrder[idx % reversePlayerOrder.length],
-                    options: expect.objectContaining({ description: RAND_PICK_DESC.HIRELING }),
+                    options: expect.objectContaining({ description: PLAYER_CHOICE_DESC.HIRELING_SETUP }),
                 })),
                 {
                     type: "pickOrder",
@@ -1451,11 +1450,11 @@ describe("RootGame.setup", () => {
                 ...Array.from({ length: numberOfPlayers }, (_, i) => ({
                     type: "pickOne",
                     playerID: reversePlayerOrder[i],
-                    options: expect.objectContaining({ description: RAND_PICK_DESC.FACTION }),
+                    options: expect.objectContaining({ description: PLAYER_CHOICE_DESC.STARTING_FACTION }),
                 })),
                 ...Array.from({ length: numberOfPlayers }, () => ({
                     type: "pickX",
-                    options: expect.objectContaining({ description: RAND_PICKX_DESC.CARDS_TO_RETURN }),
+                    options: expect.objectContaining({ description: PLAYER_CHOICE_DESC.RETURN_CARDS }),
                 })),
             ];
             expect(awaitChoiceCalls).toHaveLength(expectedAwaitChoiceCalls.length);
@@ -1496,7 +1495,7 @@ describe("RootGame.setup", () => {
             const returnCardsAwaitChoiceCalls = awaitChoiceSpy.mock.calls.filter(
                 (call) =>
                     call[0].type === "pickX" &&
-                    call[0].options.description === RAND_PICKX_DESC.CARDS_TO_RETURN
+                    call[0].options.description === PLAYER_CHOICE_DESC.RETURN_CARDS
             ) as [PendingChoice<"pickX">][];
             expect(returnCardsAwaitChoiceCalls).toHaveLength(3);
             returnCardsAwaitChoiceCalls.forEach((call) => {
@@ -1509,20 +1508,153 @@ describe("RootGame.setup", () => {
             });
         });
 
-        test("(# of players + 1) factions are selected for the draft", () => {});
-        test("factions cannot be added to the draft if their corresponding hireling is in the game", () => {});
-        test("the first faction in the draft is militant (7+ reach)", () => {});
-        test("no insurgents are selected for the draft in 2-player games", () => {});
+        test("(# of players + 1) factions are selected for the draft - one militant first, then the rest", () => {
+            const numberOfPlayers = 3;
+            game.setup();
+            expect(awaitChoiceSpy).toHaveBeenCalledWith(expect.objectContaining({
+                type: "pick",
+                options: expect.objectContaining({ description: RAND_PICK_DESC.FACTION}),
+            }));
+            expect(awaitChoiceSpy).toHaveBeenCalledWith(expect.objectContaining({
+                type: "pickX",
+                options: expect.objectContaining({ description: RAND_PICKX_DESC.FACTIONS, count: numberOfPlayers}),
+            }));
+        });
+        test("throws an error if there are not enough factions available for the draft", () => {
+            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","underground-duchy"];
+            advancedSetupOptions.setup.draftableFactions = factionsAvailable;
+            expect(() => game.setup()).toThrow("Not enough factions available for the draft"); //TODO: make error message text a constant and check against that
+        });
+        test("throws an error if there are no militant factions available for the first pick", () => {
+            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","woodland-alliance","lizard-cult"];
+            advancedSetupOptions.setup.draftableFactions = factionsAvailable;
+            expect(() => game.setup()).toThrow("No militant factions available for the first pick");
+        });
+        test("factions cannot be added to the draft if their corresponding hireling is in the game", () => {
+            const hirelingsAvailable: ExclusionType[] = ["feline","corvid","mole"];
+            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","underground-duchy","keepers-in-iron","marquise-de-cat", "eyrie-dynasties", "woodland-alliance"];
+            advancedSetupOptions.setup.availableHirelings = hirelingsAvailable;
+            advancedSetupOptions.setup.draftableFactions = factionsAvailable;
+            game.setup();
+            const awaitChoiceFirstFactionSelectCall = awaitChoiceSpy.mock.calls.find(
+                (call) =>
+                    call[0].type === "pick" &&
+                    call[0].options.description === PLAYER_CHOICE_DESC.STARTING_FACTION
+            ) as [PendingChoice<"pick">];
+            expect(awaitChoiceFirstFactionSelectCall).toBeDefined();
+            const firstFactionOptions = awaitChoiceFirstFactionSelectCall[0].options.options as PlayerFactionType[];
+            expect(firstFactionOptions).not.toContainEqual("corvid-conspiracy");
+            expect(firstFactionOptions).not.toContainEqual("underground-duchy");
+            expect(firstFactionOptions).not.toContainEqual("marquise-de-cat");
+        });
+        test("the first faction in the draft is militant (7+ reach)", () => {
+            game.setup();
+            const awaitChoiceMilitantSelectCall = awaitChoiceSpy.mock.calls.find(
+                (call) =>
+                    call[0].type === "pick" &&
+                    call[0].options.description === RAND_PICK_DESC.FACTION &&
+                    call[0].playerID === null
+            ) as [PendingChoice<"pick">];
+            expect(awaitChoiceMilitantSelectCall).toBeDefined();
+            const optionsForMilitantFaction = awaitChoiceMilitantSelectCall[0].options.options as PlayerFactionType[];
+            expect(optionsForMilitantFaction.every((option) => reachValues[option] >= 7)).toBe(true);
+        });
+        test("no insurgents are selected for the draft in 2-player games", () => {
+            basePlayOptions.playerIDs = [1, 2];
+            game.setup();
+            const awaitChoiceFirstFactionSelectCall = awaitChoiceSpy.mock.calls.find(
+                (call) =>
+                    call[0].type === "pick" &&
+                    call[0].options.description === PLAYER_CHOICE_DESC.STARTING_FACTION
+            ) as [PendingChoice<"pick">];
+            expect(awaitChoiceFirstFactionSelectCall).toBeDefined();
+            const firstFactionOptions = awaitChoiceFirstFactionSelectCall[0].options.options as PlayerFactionType[];
+            expect(firstFactionOptions.every((option) => reachValues[option] >= 7)).toBe(true);
+        });
 
-        test("players draft factions in reverse turn order", () => {});
-        test("players cannot draft the last faction in the draft if it is an insurgent and no militant faction has been drafted yet", () => {});
-        test("players setup their faction before the next player picks", () => {});
+        test("players draft factions in reverse turn order", () => {
+            resolvedChoices["3-player seating order"] = {
+                ...resolvedChoices["3-player seating order"],
+                value: [0, 1, 2],
+            };
+            const mockSetupFunction = vi.fn();
+            const mockFaction = (type: PlayerFactionType): PlayerFaction =>
+                mock<PlayerFaction>({
+                    name: type,
+                    setup: mockSetupFunction,
+                });
+            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","underground-duchy","keepers-in-iron","marquise-de-cat", "eyrie-dynasties", "woodland-alliance"];
+            advancedSetupOptions.setup.draftableFactions = factionsAvailable;
+            vi.spyOn(game, "factions", "get").mockReturnValue(factionsAvailable.map(mockFaction));
+            game.setup();
+            expect(mockSetupFunction).toHaveBeenCalledTimes(3);
+            expect(mockSetupFunction.mock.calls[0][1]).toBe(3);
+            expect(mockSetupFunction.mock.calls[1][1]).toBe(2);
+            expect(mockSetupFunction.mock.calls[2][1]).toBe(1);
+        });
+        test("players cannot draft the last faction in the draft if it is an insurgent and no militant faction has been drafted yet", () => {
+            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","lizard-cult","keepers-in-iron", "woodland-alliance"]; // insurgent, insurgent, militant, insurgent
+            advancedSetupOptions.setup.draftableFactions = factionsAvailable;
+            resolvedChoices["1st player faction"] = {
+                playerID: 3,
+                type: "pick",
+                options: {
+                    description: PLAYER_CHOICE_DESC.STARTING_FACTION,
+                    options: ["corvid-conspiracy","lizard-cult","keepers-in-iron"],
+                },
+                value: "lizard-cult",
+            };
+            resolvedChoices["2nd player faction"] = {
+                playerID: 2,
+                type: "pick",
+                options: {
+                    description: PLAYER_CHOICE_DESC.STARTING_FACTION,
+                    options: ["corvid-conspiracy","keepers-in-iron"],
+                },
+                value: "corvid-conspiracy",
+            };
+            game.setup();
+            const awaitChoiceThirdFactionSelectCall = awaitChoiceSpy.mock.calls.find(
+                (call) =>
+                    call[0].type === "pick" &&
+                    call[0].options.description === PLAYER_CHOICE_DESC.STARTING_FACTION &&
+                    call[0].playerID === 1
+            ) as [PendingChoice<"pick">];
+            expect(awaitChoiceThirdFactionSelectCall).toBeDefined();
+            expect(awaitChoiceThirdFactionSelectCall[0].options.options).toEqual(["keepers-in-iron"]);
+        });
+        test("players setup their faction before the next player picks", () => {
+            // We need to check that the setup function for the 1st player's faction is called before the awaitChoice for the 2nd player's faction pick
+            // To do this, we'll wrap the current awaitChoice implementation to record faction select calls, and mock the faction setup functions to record their calls to the same list.
+            const calls: { type: "setup" | "awaitChoice"; id: number | null }[] = [];
+            const currentAwaitChoiceImpl = awaitChoiceSpy.getMockImplementation()!;
+            awaitChoiceSpy.mockImplementation(async (choice) => {
+                if (choice.type === "pick" && choice.options.description === PLAYER_CHOICE_DESC.STARTING_FACTION) {
+                    calls.push({ type: "awaitChoice", id: choice.playerID });
+                }
+                return currentAwaitChoiceImpl(choice);
+            });
 
-        test("players cannot pick a homeland clearing that has already been chosen by another player", () => {});
-        test("players must follow homeland distance rules if possible", () => {});
-        test("if players cannot follow the homeland distance rules, they must follow the next most lenient placement rule if possible", () => {});
-
-        test("throws an error if the setup options are incomplete", () => {});
+            const mockFaction = (type: PlayerFactionType): PlayerFaction =>
+                mock<PlayerFaction>({
+                    name: type,
+                    setup: async (_, id) => {
+                        calls.push({ type: "setup", id });
+                    },
+                });
+            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","underground-duchy","keepers-in-iron","marquise-de-cat", "eyrie-dynasties", "woodland-alliance"];
+            advancedSetupOptions.setup.draftableFactions = factionsAvailable;
+            vi.spyOn(game, "factions", "get").mockReturnValue(factionsAvailable.map(mockFaction));
+            game.setup();
+            expect(calls).toEqual([
+                { type: "awaitChoice", id: 3 },
+                { type: "setup", id: 3 },
+                { type: "awaitChoice", id: 2 },
+                { type: "setup", id: 2 },
+                { type: "awaitChoice", id: 1 },
+                { type: "setup", id: 1 },
+            ]);
+        });
     });
 });
 

@@ -1,7 +1,7 @@
 import type {
     BoardType,
     DeckType,
-    HirelingFactionType,
+    ExclusionType,
     LandmarkType,
     PlayerFactionType,
 } from "../Enums";
@@ -13,7 +13,7 @@ interface SetupOptions {
     deck: DeckType;
     usingHirelings: boolean;
     landmarksToUse: number;
-    availableHirelings: HirelingFactionType[];
+    availableHirelings: ExclusionType[];
     availableLandmarks: LandmarkType[];
 }
 

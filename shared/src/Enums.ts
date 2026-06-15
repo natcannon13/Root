@@ -214,6 +214,21 @@ export const factionExclusionClassesMap: Record<FactionType, ExclusionType> = {
 };
 // Defines faction exclusion classes. Factions/Hirelings with the same exclusion class cannot be played together.
 
+export const exclusionClasses: Record<ExclusionType, {faction?: PlayerFactionType, promotedHireling?: PromotedHirelingFactionType, demotedHireling?: DemotedHirelingFactionType}> = 
+Object.entries(factionExclusionClassesMap).reduce((acc, [faction, exclusion]) => {
+    if (!acc[exclusion]) {
+        acc[exclusion] = {};
+    }
+    if (isPlayerFactionType(faction)) {
+        acc[exclusion].faction = faction;
+    } else if (isPromotedHirelingFactionType(faction)) {
+        acc[exclusion].promotedHireling = faction;
+    } else if (isDemotedHirelingFactionType(faction)) {
+        acc[exclusion].demotedHireling = faction;
+    }
+    return acc;
+}, {} as Record<ExclusionType, {faction?: PlayerFactionType, promotedHireling?: PromotedHirelingFactionType, demotedHireling?: DemotedHirelingFactionType}>);
+
 export const factionDependencies: Partial<Record<FactionType, FactionType>> = {
     "vagabond-2": "vagabond",
 };

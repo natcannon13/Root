@@ -27,6 +27,13 @@ export const RAND_PICKX_DESC = Object.freeze({
     CARDS_TO_RETURN: "cards-to-return",
 } as const);
 
+export const PLAYER_CHOICE_DESC = Object.freeze({
+    STARTING_FACTION: "Pick a faction to play as",
+    HIRELING_SETUP: "Pick a hireling to setup",
+    LANDMARK_SETUP: "Pick a landmark to setup",
+    RETURN_CARDS: "Pick cards to return to the deck",
+} as const);
+
 export type ChoiceOptionsMap = {
     pick: { description: string; options: string[] };
     pickX: { description: string; options: string[]; count: number };
