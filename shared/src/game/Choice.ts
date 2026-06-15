@@ -24,13 +24,13 @@ export const RAND_PICKX_DESC = Object.freeze({
     HIRELINGS: "hirelings",
     LANDMARKS: "landmarks",
     FACTIONS: "factions",
-    CARDS: "cards",
+    CARDS_TO_RETURN: "cards-to-return",
 } as const);
 
 export type ChoiceOptionsMap = {
-    pick: { options: string[] };
-    pickX: { options: string[]; count: number };
-    yesno: { question: string };
+    pick: { description: string; options: string[] };
+    pickX: { description: string; options: string[]; count: number };
+    yesno: { description: string };
     pickRange: { description: string; min: number; max: number };
     pickOrder: { description: string; options: any[] };
 };

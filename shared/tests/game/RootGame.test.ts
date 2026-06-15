@@ -753,7 +753,7 @@ describe("RootGame.updateState", () => {
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         };
         game.pendingChoice = pendingChoice;
         const resolution = "option1";
@@ -816,7 +816,7 @@ describe("RootGame.awaitChoice", () => {
             type: "pick",
             playerID: 1,
             resolved: true,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
             value: "option1",
         };
         mockPastChoices([past]);
@@ -826,7 +826,7 @@ describe("RootGame.awaitChoice", () => {
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         });
         expect(result).toEqual(past.value);
     });
@@ -838,7 +838,7 @@ describe("RootGame.awaitChoice", () => {
             playerID: 1,
             resolved: true,
             value: "option1",
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         };
         mockPastChoices([past]);
 
@@ -848,7 +848,7 @@ describe("RootGame.awaitChoice", () => {
                 type: "pick",
                 playerID: 1,
                 resolved: false,
-                options: { options: ["option1", "option2"] },
+                options: { description: "Pick an option", options: ["option1", "option2"] },
             }),
         ).rejects.toThrow();
     });
@@ -861,7 +861,7 @@ describe("RootGame.awaitChoice", () => {
             type: "pick",
             playerID: 2,
             resolved: false,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         });
         let isPending = true;
         p.then(() => (isPending = false));
@@ -880,7 +880,7 @@ describe("RootGame.awaitChoice", () => {
             playerID: 2,
             resolved: true,
             value: "option1",
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         };
         resolve?.();
 
@@ -895,7 +895,7 @@ describe("RootGame.awaitChoice", () => {
             type: "pick",
             playerID: 2,
             resolved: false,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         };
         const { getResolver, setter } = mockPromiseControl();
         const updateStateSpy = vi.spyOn(game, "updateState");
@@ -923,7 +923,7 @@ describe("RootGame.awaitChoice", () => {
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         });
 
         const reject = getRejecter();
@@ -941,7 +941,7 @@ describe("RootGame.awaitChoice", () => {
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         });
 
         // Change pendingChoice to a different id
@@ -950,7 +950,7 @@ describe("RootGame.awaitChoice", () => {
             type: "pick",
             playerID: 1,
             resolved: false,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         };
         getResolver?.();
 
@@ -965,7 +965,7 @@ describe("RootGame.awaitChoice", () => {
             type: "pick",
             playerID: 3,
             resolved: false,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         });
         game.pendingChoice = {
             id: "p4",
@@ -973,7 +973,7 @@ describe("RootGame.awaitChoice", () => {
             playerID: 3,
             resolved: true,
             value: "option1",
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         };
 
         getResolver?.();
@@ -990,7 +990,7 @@ describe("RootGame.awaitChoice", () => {
             type: "pick",
             playerID: 4,
             resolved: false,
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         });
         const resolved: Choice = {
             id: "p5",
@@ -998,7 +998,7 @@ describe("RootGame.awaitChoice", () => {
             playerID: 4,
             resolved: true,
             value: "option1",
-            options: { options: ["option1", "option2"] },
+            options: { description: "Pick an option", options: ["option1", "option2"] },
         };
         game.pendingChoice = resolved;
         getResolver?.();
@@ -1136,7 +1136,7 @@ describe("RootGame.setup", () => {
         basePlayOptions = getBasePlayOptions();
         game.options = basePlayOptions;
         awaitChoiceSpy = vi.spyOn(game, "awaitChoice").mockImplementation(awaitChoiceFake);
-        updateStateSpy = vi.spyOn(game, "updateState").mockReturnValue(undefined);
+        updateStateSpy = vi.spyOn(game, "updateState").mockReturnValue(undefined); //TODO: add implementation for cards specifically
     });
     test("randomizes seating order", () => {
         const seatingOrderChoice = resolvedChoices["3-player seating order"];
@@ -1341,7 +1341,7 @@ describe("RootGame.setup", () => {
             expect(() => game.setup()).toThrow("Invalid player ID: 99");
         });
         test("each player draws three cards", () => {
-            const drawCardSpy = vi.spyOn(game, "drawCard");
+            const drawCardSpy = vi.spyOn(game, "drawCard").mockResolvedValue(undefined);
             game.setup();
             expect(drawCardSpy).toHaveBeenCalledTimes(9);
             let cardsDrawnByPlayer: { [playerID: PlayerID]: number } = {};
@@ -1359,25 +1359,52 @@ describe("RootGame.setup", () => {
         });
     });
     describe("advanced setup", () => {
+        let advancedSetupOptions: PlayOptions & {setup: AdvancedSetupOptions};
         beforeEach(() => {
             // Replace standard setup with advanced setup in play options
-            const advancedSetupOptions = getAdvancedPlayOptions();
+            advancedSetupOptions = getAdvancedPlayOptions();
             game.options = advancedSetupOptions;
         });
         test("order of events is correct", () => {
             // Landmarks -> Hirelings -> Draw Cards -> Factions -> Discard Cards
             // We can check that the order is correct by looking at the order of calls in our updateStateSpy and awaitChoiceSpy
             game.setup();
-            const numberOfLandmarks = game.options.setup.landmarksToUse;
-            const numberOfHirelings = game.options.setup.usingHirelings ? 3 : 0; //TODO: number of hirelings requiring setup
-            const numberOfPlayers = game.options.playerIDs.length;
-            const reversePlayerOrder = [...game.options.playerIDs].reverse();
+            const numberOfLandmarks = advancedSetupOptions.setup.landmarksToUse;
+            const numberOfHirelings = advancedSetupOptions.setup.usingHirelings ? 3 : 0; //TODO: number of hirelings requiring setup
+            const numberOfPlayers = advancedSetupOptions.playerIDs.length;
+            const reversePlayerOrder = [...advancedSetupOptions.playerIDs].reverse();
+            const landmarksChosen = advancedSetupOptions.setup.availableLandmarks;
+            const hirelingsChosen = advancedSetupOptions.setup.availableHirelings;
+            const factionsChosen = advancedSetupOptions.setup.draftableFactions;
 
             const updateStateCalls = updateStateSpy.mock.calls;
             /**
              * updateState calls: turnOrderSet for seating, landmarkAdded for each landmark, hirelingAdded for each hireling,
-             *
+             * factionAdded for each faction
              */
+            const expectedUpdateStateCalls = [
+                {
+                    type: "turnOrderSet",
+                    playerIDs: advancedSetupOptions.playerIDs,
+                },
+                ...Array.from({ length: numberOfLandmarks }, (_, idx) => ({
+                    type: "landmarkAdded",
+                    landmark: landmarksChosen[idx],
+                })),
+                ...Array.from({ length: numberOfHirelings }, (_, idx) => ({
+                    type: "hirelingAdded",
+                    hireling: hirelingsChosen[idx],
+                })),
+                ...Array.from({ length: numberOfPlayers }, (_, idx) => ({
+                    type: "factionAdded",
+                    faction: factionsChosen[idx],
+                })),
+            ];
+            expect(updateStateCalls).toHaveLength(expectedUpdateStateCalls.length);
+            expectedUpdateStateCalls.forEach((expectedCall, index) => {
+                expect(updateStateCalls[index][0]).toEqual(expect.objectContaining(expectedCall));
+            });
+
             const awaitChoiceCalls = awaitChoiceSpy.mock.calls;
             /**
              * awaitChoice calls: pickOrder for seating, pickX for landmarks, pickOne (landmark #) times for placement,
@@ -1428,7 +1455,7 @@ describe("RootGame.setup", () => {
                 })),
                 ...Array.from({ length: numberOfPlayers }, () => ({
                     type: "pickX",
-                    options: expect.objectContaining({ description: RAND_PICKX_DESC.CARDS }),
+                    options: expect.objectContaining({ description: RAND_PICKX_DESC.CARDS_TO_RETURN }),
                 })),
             ];
             expect(awaitChoiceCalls).toHaveLength(expectedAwaitChoiceCalls.length);
@@ -1439,7 +1466,7 @@ describe("RootGame.setup", () => {
 
         test("each player draws five cards", () => {
             // Spy on drawCard to check that it's called the correct number of times for each player
-            const drawCardSpy = vi.spyOn(game, "drawCard");
+            const drawCardSpy = vi.spyOn(game, "drawCard").mockResolvedValue(undefined);
             game.setup();
             expect(drawCardSpy).toHaveBeenCalledTimes(15);
             let cardsDrawnByPlayer: { [playerID: PlayerID]: number } = {};
@@ -1456,7 +1483,7 @@ describe("RootGame.setup", () => {
             });
         });
         test("each player chooses two cards to return to the deck", () => {
-            const returnCardToDeckSpy = vi.spyOn(game, "returnCardToDeck");
+            const returnCardToDeckSpy = vi.spyOn(game, "returnCardToDeck").mockResolvedValue(undefined);
             game.setup();
             expect(returnCardToDeckSpy).toHaveBeenCalledTimes(6);
             let cardsReturnedByPlayer: { [playerID: PlayerID]: number } = {};
@@ -1466,6 +1493,15 @@ describe("RootGame.setup", () => {
                 const playerID = game.playerFactionMapping[playerFaction]!;
                 cardsReturnedByPlayer[playerID] = (cardsReturnedByPlayer[playerID] || 0) + 1;
             }
+            const returnCardsAwaitChoiceCalls = awaitChoiceSpy.mock.calls.filter(
+                (call) =>
+                    call[0].type === "pickX" &&
+                    call[0].options.description === RAND_PICKX_DESC.CARDS_TO_RETURN
+            ) as [PendingChoice<"pickX">][];
+            expect(returnCardsAwaitChoiceCalls).toHaveLength(3);
+            returnCardsAwaitChoiceCalls.forEach((call) => {
+                expect(call[0].options.count).toBe(2);
+            });
             expect(cardsReturnedByPlayer).toEqual({
                 1: 2,
                 2: 2,
