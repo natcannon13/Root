@@ -17,6 +17,7 @@ import type { StateStore } from "../stateStore/StateStore";
 import type { Choice, ChoiceType, ChoiceValueMap, PendingChoice, ResolvedChoice } from "./Choice";
 import type { Event } from "./Event";
 import type { PlayOptions } from "./PlayOptions";
+import { RandomEventHandler } from "./RandomEventHandler";
 import type { RootGameUpdate } from "./RootGameUpdate";
 
 export type RootGameStateStore = StateStore<RootGameState, RootGameUpdate>;
@@ -58,6 +59,7 @@ export class RootGame {
     pastChoices: ResolvedChoice[] = [];
     gameplayPromiseControl: PromiseControl | null = null; // When not null, indicates that an async gameplay loop is active and awaiting resolution.
     stateStore: RootGameStateStore;
+    randomEventHandler: RandomEventHandler = new RandomEventHandler();
     winner: PlayerFactionType | null = null;
     gameOver = false;
 

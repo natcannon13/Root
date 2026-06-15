@@ -51,7 +51,7 @@ import type { RootFactionState } from "../../src/state/RootFactionState";
 import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
-import { resolve } from "dns";
+
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
@@ -1656,15 +1656,6 @@ describe("RootGame.setup", () => {
             ]);
         });
     });
-});
-
-// --- placeLandmark ----------------------------------------------------------------
-
-// --- rollDie -----------------------------------------------------------------
-
-describe("RootGame.rollDie", () => {
-    test("returns a value between 0 and 3 inclusive", () => {});
-    test("returns all possible values with equal probability", () => {});
 });
 
 // --- isMoveLegal  ----------------------------------------------
