@@ -52,6 +52,7 @@ import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
 import type { Clearing } from "../../src/board/Clearing";
+import { makeClearing } from "../factories/factories";
 
 let game: RootGame;
 let stateStore: RootGameStateStore;
@@ -1660,8 +1661,8 @@ describe("RootGame.setup", () => {
 // --- isMoveLegal  ----------------------------------------------
 
 describe("RootGame.isMoveLegal ", () => {
-    const clearing1 = mock<Clearing>({ id: 1 });
-    const clearing2 = mock<Clearing>({ id: 2 });
+    const clearing1 = makeClearing({ id: 1 });
+    const clearing2 = makeClearing({ id: 2 });
     beforeEach(() => {
         mockBoard();
         vi.spyOn(board, "getLocation")

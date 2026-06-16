@@ -1,4 +1,4 @@
-import { mock } from "vitest-mock-extended";
+import { mock, type MockProxy } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
 import { Clearing } from "../../src/board/Clearing";
 import { Forest } from "../../src/board/Forest";
@@ -62,7 +62,7 @@ type PropertiesOnly<T> = {
     [K in keyof T as T[K] extends Function ? never : K]: T[K];
 };
 
-function genericMock<T>(overrides?: Partial<T>): T { // Lets us use mock with generics
+function genericMock<T>(overrides?: Partial<T>): MockProxy<T> { // Lets us use mock with generics
     return mock<T>(overrides as any); // Brute force solution since we don't have access to DeepPartial
 }
 
@@ -295,7 +295,7 @@ export function makeMove(overrides?: Partial<Move>): Move {
     };
 }
 
-export function makeEvent(overrides?: Partial<Event>): Event {
+export function makeEvent(overrides?: Partial<Event>): MockProxy<Event> {
     return mock<Event>({
         label: "event",
         isAction: false,
@@ -305,21 +305,21 @@ export function makeEvent(overrides?: Partial<Event>): Event {
 
 export function makeRulesChange<T extends ExtensionPointType = ExtensionPointType>(
     overrides?: Partial<RulesChange<T>>,
-): RulesChange<T> {
+): MockProxy<RulesChange<T>> {
     return genericMock<RulesChange<T>>({
         extensionName: makeExtensionPointType() as T,
         ...overrides,
     });
 }
 
-export function makeRulesModule(overrides?: Partial<RulesModule>): RulesModule {
+export function makeRulesModule(overrides?: Partial<RulesModule>): MockProxy<RulesModule> {
     return mock<RulesModule>({
         staticRulesChanges: [],
         ...overrides,
     });
 }
 
-export function makeFaction(overrides?: Partial<Faction>): Faction {
+export function makeFaction(overrides?: Partial<Faction>): MockProxy<Faction> {
     return mock<Faction>({
         ...makeRulesModule(),
         name: makeFactionType(),
@@ -339,7 +339,7 @@ export function makeFactionUpdate(overrides?: Partial<FactionUpdate>): FactionUp
     }
 }
 
-export function makePlayerFaction(overrides?: Partial<PlayerFaction>): PlayerFaction {
+export function makePlayerFaction(overrides?: Partial<PlayerFaction>): MockProxy<PlayerFaction> {
     return mock<PlayerFaction>({
         ...makeFaction(),
         name: makePlayerFactionType(),
@@ -351,7 +351,9 @@ export function makePlayerFaction(overrides?: Partial<PlayerFaction>): PlayerFac
     });
 }
 
-export function makePromotedHireling(overrides?: Partial<PromotedHireling>): PromotedHireling {
+export function makePromotedHireling(
+    overrides?: Partial<PromotedHireling>,
+): MockProxy<PromotedHireling> {
     return mock<PromotedHireling>({
         ...makeFaction(),
         name: makePromotedHirelingFactionType(),
@@ -362,7 +364,9 @@ export function makePromotedHireling(overrides?: Partial<PromotedHireling>): Pro
     });
 }
 
-export function makeDemotedHireling(overrides?: Partial<DemotedHireling>): DemotedHireling {
+export function makeDemotedHireling(
+    overrides?: Partial<DemotedHireling>,
+): MockProxy<DemotedHireling> {
     return mock<DemotedHireling>({
         ...makeFaction(),
         name: makeDemotedHirelingFactionType(),
@@ -565,46 +569,76 @@ export function makeAdvancedSetupOptions(
 }
 
 //TODO: swap these for mocks
-export function makeBattleState(overrides?: Partial<BattleState>): BattleState {
-    return Object.assign(new BattleState(makeBattle()), overrides);
+export function makeBattleState(overrides?: Partial<BattleState>): MockProxy<BattleState> {
+    return mock<BattleState>({
+        battle: makeBattle(),
+        pendingAttackerHits: 0,
+        pendingDefenderHits: 0,
+        battleSegment: null,
+        ...overrides,
+    });
 }
 
-export function makeTimeStep(overrides?: Partial<TimeStep>): TimeStep {
-    return Object.assign(new TimeStep(), overrides);
+export function makeTimeStep(overrides?: Partial<TimeStep>): MockProxy<TimeStep> {
+    return mock<TimeStep>({
+        currentTurn: "none",
+        phase: "none",
+        phaseSegment: "start",
+        ...overrides,
+    });
 }
 
-export function makeCardPile(overrides?: Partial<CardPile>): CardPile {
-    return Object.assign(new CardPile([]), overrides);
+export function makeCardPile(overrides?: Partial<CardPile>): MockProxy<CardPile> {
+    return mock<CardPile>({
+        cards: [],
+        ...overrides,
+    });
 }
 
-export function makeItem(overrides?: Partial<Item>): Item {
-    return Object.assign(new Item(makePieceID(), makeItemType()), overrides);
+export function makeItem(overrides?: Partial<Item>): MockProxy<Item> {
+    return mock<Item>({
+        id: makePieceID(),
+        name: makeItemType(),
+        owningFaction: null,
+        exhausted: false,
+        ...overrides,
+    });
 }
 
-export function makeRuin(overrides?: Partial<Ruin>): Ruin {
-    return Object.assign(new Ruin(makePieceID(), []), overrides);
+export function makeRuin(overrides?: Partial<Ruin>): MockProxy<Ruin> {
+    return mock<Ruin>({
+        id: makePieceID(),
+        name: "ruin",
+        owningFaction: null,
+        items: [],
+        remainingItemCount: 0,
+        ...overrides,
+    });
 }
 
-export function makeSupply(overrides?: Partial<Supply>): Supply {
-    return Object.assign(new Supply([]), overrides);
+export function makeSupply(overrides?: Partial<Supply>): MockProxy<Supply> {
+    return mock<Supply>({
+        ...overrides,
+    });
 }
 
-export function makeClearing(overrides?: Partial<Clearing>): Clearing {
-    return Object.assign(
-        new Clearing({
-            id: makeLocationID(),
-            printedSuit: null,
-            slotCount: 0,
-        }),
-        overrides,
-    );
+export function makeClearing(overrides?: Partial<Clearing>): MockProxy<Clearing> {
+    return mock<Clearing>({
+        id: makeLocationID(),
+        printedSuit: null,
+        slotCount: 0,
+        ...overrides,
+    });
 }
 
-export function makeForest(overrides?: Partial<Forest>): Forest {
-    return Object.assign(new Forest(makeLocationID()), overrides);
+export function makeForest(overrides?: Partial<Forest>): MockProxy<Forest> {
+    return mock<Forest>({
+        id: makeLocationID(),
+        ...overrides,
+    });
 }
 
-export function makeBoard(overrides?: Partial<Board>): Board {
+export function makeBoard(overrides?: Partial<Board>): MockProxy<Board> {
     const boardProperties: PropertiesOnly<Board> = {
         name: makeBoardType(),
         clearings: [],
@@ -676,7 +710,7 @@ export function makeRootGameUpdate<T extends GameUpdateType>(type: T, overrides?
 
 export function makeStateStore<State extends StateType, Transition extends TransitionType>(
     overrides?: Partial<StateStore<State, Transition>>
-): StateStore<State, Transition> {
+): MockProxy<StateStore<State, Transition>> {
     return mock<StateStore<State, Transition>>({
         ...overrides,
     });
@@ -684,7 +718,7 @@ export function makeStateStore<State extends StateType, Transition extends Trans
 
 export function makeHistoryNode<State extends StateType, Transition extends TransitionType>(
     overrides?: Partial<HistoryNode<State, Transition>>,
-): HistoryNode<State, Transition> {
+): MockProxy<HistoryNode<State, Transition>> {
     return genericMock<HistoryNode<State, Transition>>({
         state: makeStateType() as State,
         prevIdx: -1,
@@ -696,7 +730,7 @@ export function makeHistoryNode<State extends StateType, Transition extends Tran
 
 export function makeStateHistory<State extends StateType, Transition extends TransitionType>(
     overrides?: Partial<StateHistoryType<State, Transition>>
-): StateHistoryType<State, Transition> {
+): MockProxy<StateHistoryType<State, Transition>> {
     return genericMock<StateHistoryType<State, Transition>>({
         historyNodes: [],
         currentNode: makeHistoryNode<State, Transition>(),
@@ -704,11 +738,11 @@ export function makeStateHistory<State extends StateType, Transition extends Tra
     });
 }
 
-export function makeRandomEventHandler(): RandomEventHandler {
+export function makeRandomEventHandler(): MockProxy<RandomEventHandler> {
     return mock<RandomEventHandler>();
 }
 
-export function makeRootGame(overrides?: Partial<RootGame>): RootGame {
+export function makeRootGame(overrides?: Partial<RootGame>): MockProxy<RootGame> {
     return mock<RootGame>({
         version: DEFAULT_VERSION,
         options: makePlayOptions(),
