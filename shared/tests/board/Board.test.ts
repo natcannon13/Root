@@ -75,7 +75,7 @@ describe("Board - adjacency via paths (§2.2.1)", () => {
             forests: [],
             connections: [conn12],
         });
-        const adj = board.getClearingsAdjacent(c1);
+        const adj = board.getClearingsAdjacent(c1.id);
         expect(adj).toContain(c2);
         expect(adj).not.toContain(c3);
     });
@@ -89,8 +89,8 @@ describe("Board - adjacency via paths (§2.2.1)", () => {
             forests: [],
             connections: [mock<Connection>({ id: 12, locationIDs: [1, 2], type: "path" })],
         });
-        expect(board.getClearingsAdjacent(c1)).toContain(c2);
-        expect(board.getClearingsAdjacent(c2)).toContain(c1);
+        expect(board.getClearingsAdjacent(c1.id)).toContain(c2);
+        expect(board.getClearingsAdjacent(c2.id)).toContain(c1);
     });
 
     test("getClearingsAdjacent does NOT return the clearing itself", () => {
@@ -102,7 +102,7 @@ describe("Board - adjacency via paths (§2.2.1)", () => {
             forests: [],
             connections: [mock<Connection>({ id: 12, locationIDs: [1, 2], type: "path" })],
         });
-        expect(board.getClearingsAdjacent(c1)).not.toContain(c1);
+        expect(board.getClearingsAdjacent(c1.id)).not.toContain(c1);
     });
 
     test("getClearingsAdjacent returns empty when no paths exist", () => {
@@ -114,7 +114,7 @@ describe("Board - adjacency via paths (§2.2.1)", () => {
             forests: [],
             connections: [],
         });
-        expect(board.getClearingsAdjacent(c1)).toHaveLength(0);
+        expect(board.getClearingsAdjacent(c1.id)).toHaveLength(0);
     });
 
     test("getClearingsAdjacent throws for unknown location", () => {
@@ -124,7 +124,7 @@ describe("Board - adjacency via paths (§2.2.1)", () => {
             forests: [],
             connections: [],
         });
-        expect(() => board.getClearingsAdjacent(mock<Clearing>({ id: 999 }))).toThrow();
+        expect(() => board.getClearingsAdjacent(999)).toThrow();
     });
 
     test("getClearingsAdjacent does NOT return clearings linked by a river", () => {
@@ -136,7 +136,7 @@ describe("Board - adjacency via paths (§2.2.1)", () => {
             forests: [],
             connections: [mock<Connection>({ id: 12, locationIDs: [1, 2], type: "river" })],
         });
-        expect(board.getClearingsAdjacent(c1)).not.toContain(c2);
+        expect(board.getClearingsAdjacent(c1.id)).not.toContain(c2);
     });
 });
 
@@ -150,7 +150,7 @@ describe("Board - river adjacency (§2.3)", () => {
             forests: [],
             connections: [mock<Connection>({ id: 12, locationIDs: [1, 2], type: "river" })],
         });
-        expect(board.getClearingsAdjacentByRiver(c1)).toContain(c2);
+        expect(board.getClearingsAdjacentByRiver(c1.id)).toContain(c2);
     });
 
     test("getClearingsAdjacentByRiver does NOT return path-only neighbours", () => {
@@ -166,8 +166,8 @@ describe("Board - river adjacency (§2.3)", () => {
                 mock<Connection>({ id: 13, locationIDs: [1, 3], type: "river" }),
             ],
         });
-        expect(board.getClearingsAdjacentByRiver(c1)).not.toContain(c2);
-        expect(board.getClearingsAdjacentByRiver(c1)).toContain(c3);
+        expect(board.getClearingsAdjacentByRiver(c1.id)).not.toContain(c2);
+        expect(board.getClearingsAdjacentByRiver(c1.id)).toContain(c3);
     });
 });
 
@@ -187,7 +187,7 @@ describe("Board - forest adjacency (§2.4)", () => {
                 }),
             ],
         });
-        expect(board.getForestsAdjacent(c1)).toContain(f1);
+        expect(board.getForestsAdjacent(c1.id)).toContain(f1);
     });
 
     test("getForestsAdjacent does NOT return non-adjacent forests", () => {
@@ -199,7 +199,7 @@ describe("Board - forest adjacency (§2.4)", () => {
             forests: [f1],
             connections: [],
         });
-        expect(board.getForestsAdjacent(c1)).not.toContain(f1);
+        expect(board.getForestsAdjacent(c1.id)).not.toContain(f1);
     });
 
     test("getForestsAdjacent throws for unknown location", () => {
@@ -209,7 +209,7 @@ describe("Board - forest adjacency (§2.4)", () => {
             forests: [],
             connections: [],
         });
-        expect(() => board.getForestsAdjacent(mock<Clearing>({ id: 999 }))).toThrow();
+        expect(() => board.getForestsAdjacent(999)).toThrow();
     });
 
     test("getForestsAdjacent returns forests adjacent to a forest", () => {
@@ -227,7 +227,7 @@ describe("Board - forest adjacency (§2.4)", () => {
                 }),
             ],
         });
-        expect(board.getForestsAdjacent(f1)).toContain(f2);
+        expect(board.getForestsAdjacent(f1.id)).toContain(f2);
     });
 });
 
@@ -244,7 +244,7 @@ describe("Board - getConnectionTypesBetween", () => {
                 mock<Connection>({ id: 13, locationIDs: [1, 2], type: "river" }),
             ],
         });
-        expect(board.getConnectionTypesBetween(c1, c2)).toEqual(["path", "river"]);
+        expect(board.getConnectionTypesBetween(c1.id, c2.id)).toEqual(["path", "river"]);
     });
 });
 
@@ -346,7 +346,7 @@ describe("Board - place", () => {
             forests: [],
             connections: [],
         });
-        board.place([t], 1);
+        board.place([t.id], c1.id);
         expect(c1.addPieces).toHaveBeenCalledWith([t.id]);
     });
 });
@@ -388,6 +388,8 @@ describe("Board - remove", () => {
         expect(() => board.remove([t.id], 1)).toThrow();
     });
 });
+
+describe("Board - replace", () => {});
 
 describe("Board - getState", () => {
     test("getState returns a RootBoardState that reflects the current board state", () => {

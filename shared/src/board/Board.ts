@@ -44,19 +44,19 @@ export class Board implements RulesModule {
         this.items = [];
     }
 
-    getClearingsAdjacent(location: Location): Clearing[] {
+    getClearingsAdjacent(locationID: LocationID): Clearing[] {
         throw new Error("Board.getClearingsAdjacent not implemented");
     }
 
-    getClearingsAdjacentByRiver(location: Location): Clearing[] {
+    getClearingsAdjacentByRiver(locationID: LocationID): Clearing[] {
         throw new Error("Board.getClearingsAdjacentByRiver not implemented");
     }
 
-    getForestsAdjacent(location: Location): Forest[] {
+    getForestsAdjacent(locationID: LocationID): Forest[] {
         throw new Error("Board.getForestsAdjacent not implemented");
     }
 
-    getConnectionTypesBetween(location1: Location, location2: Location): Set<ConnectionType> {
+    getConnectionTypesBetween(location1: LocationID, location2: LocationID): Set<ConnectionType> {
         throw new Error("Board.getConnectionTypesBetween not implemented");
     }
 
@@ -68,16 +68,20 @@ export class Board implements RulesModule {
         throw new Error("Board.getCorners not implemented");
     }
 
-    move(pieces: Piece[], startingLocationID: LocationID, endingLocationID: LocationID): void {
+    move(pieces: PieceID[], startingLocationID: LocationID, endingLocationID: LocationID): void {
         throw new Error("Board.move not implemented");
     }
 
-    place(pieces: Piece[], locationID: LocationID): void {
+    place(pieces: PieceID[], locationID: LocationID): void {
         throw new Error("Board.place not implemented");
     }
 
-    remove(pieces: Piece[], locationID: LocationID): void {
+    remove(pieces: PieceID[], locationID: LocationID): void {
         throw new Error("Board.remove not implemented");
+    }
+
+    replace(oldPieceID: PieceID, newPiece: Piece, locationID: LocationID): void {
+        throw new Error("Board.replace not implemented");
     }
 
     getState(perspective?: PlayerFactionType): RootBoardState {
