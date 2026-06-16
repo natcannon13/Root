@@ -12,7 +12,6 @@ interface HirelingBase extends Faction {
     controlCounter: number;
     controllingFaction: PlayerFactionType | null;
     getState: () => RootHirelingState;
-    updateState: (s: RootHirelingState) => void;
 }
 
 export interface PromotedHireling extends HirelingBase {

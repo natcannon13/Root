@@ -607,7 +607,7 @@ describe("RootGame.updateState", () => {
             .mockReturnValue(undefined);
         game.updateState({
             type: "factionStateUpdate",
-            options: { faction, updateType, value },
+            options:{update: { faction, updateType, value }},
             id: "u8",
             version: VERSION,
         });
@@ -1664,7 +1664,7 @@ describe("RootGame.isMoveLegal ", () => {
     const clearing2 = mock<Clearing>({ id: 2 });
     beforeEach(() => {
         mockBoard();
-        
+        vi.spyOn(board, "getLocation")
     });
     test("is legal when mover rules the origin clearing", async () => {
         
@@ -1675,6 +1675,8 @@ describe("RootGame.isMoveLegal ", () => {
     test("is illegal when mover rules neither origin nor destination ", () => {});
 
     test("is illegal when origin and destination are not adjacent", () => {});
+
+    test("is illegal when either location is a forest", () => {});
 
     test("is illegal to move zero pieces", () => {});
 });

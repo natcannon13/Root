@@ -11,7 +11,7 @@ export interface TransitionType {
     version: string;
 }
 
-export class StateStore<State, Transition extends TransitionType> {
+export class StateStore<State extends StateType, Transition extends TransitionType> {
     private state?: State;
     private history: StateHistory<State, Transition> = new StateHistory();
     private subscribers: Array<(transition: Transition) => void> = [];

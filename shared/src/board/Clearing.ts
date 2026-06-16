@@ -9,6 +9,7 @@ export class Clearing extends Location {
     id: LocationID;
     printedSuit: Suit | null;
     slotCount: number;
+    type: "clearing" = "clearing";
 
     constructor({
         id,
@@ -49,4 +50,8 @@ export class Clearing extends Location {
     getCardboard(faction: FactionType): Array<Building | Token> {
         return [];
     }
+}
+
+export function isClearing(location: Location): location is Clearing {
+    return location.type === "clearing";
 }

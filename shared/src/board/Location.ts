@@ -2,8 +2,11 @@ import type { Piece, PieceID } from "../pieces/Piece";
 
 export type LocationID = number;
 
+export type LocationType = "clearing" | "forest";
+
 export abstract class Location {
     public id: LocationID = 0;
+    public abstract type: LocationType;
 
     addPieces(pieces: Piece[]): void {}
     removePieces(pieceIDs: PieceID[]): void {}

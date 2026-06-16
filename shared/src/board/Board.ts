@@ -80,6 +80,14 @@ export class Board implements RulesModule {
         throw new Error("Board.getLocation not implemented");
     }
 
+    getClearing(id: LocationID): Clearing | undefined {
+        throw new Error("Board.getClearing not implemented");
+    }
+
+    getForest(id: LocationID): Forest | undefined {
+        throw new Error("Board.getForest not implemented");
+    }
+
     getCorners(): [Clearing, Clearing][] {
         throw new Error("Board.getCorners not implemented");
     }

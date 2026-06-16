@@ -10,6 +10,7 @@ import type {
 } from "../Enums";
 import type { Battle } from "../gameActions/Battle";
 import type { PieceID } from "../pieces/Piece";
+import type { FactionUpdate } from "../rulesModule/FactionUpdate";
 import type { RootGameState } from "../state/RootGameState";
 import type { TransitionType } from "../stateStore/StateStore";
 import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./Choice";
@@ -41,7 +42,7 @@ const ValidGameUpdateTypes = [
 
 export type GameUpdateType = (typeof ValidGameUpdateTypes)[number];
 
-type GameUpdateValueMap = {
+export type GameUpdateValueMap = {
     stateSet: { newState: RootGameState };
     factionSelected: { playerID: PlayerID; faction: PlayerFactionType };
     turnOrderSet: { turnOrder: PlayerID[] };
@@ -52,11 +53,7 @@ type GameUpdateValueMap = {
     place: { pieces: PieceID[]; to: LocationID };
     remove: { pieces: PieceID[]; from: LocationID };
     addToSupply: { pieces: PieceID[]; faction: FactionType };
-    factionStateUpdate: {
-        faction: FactionType;
-        updateType: string;
-        value: any;
-    };
+    factionStateUpdate: { update: FactionUpdate };
     startBattle: { battle: Battle };
     battleSegmentChange: { newBattleSegment: BattlePhaseType | null };
     pendingHitsChange: { attackerHits?: number; defenderHits?: number };

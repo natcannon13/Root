@@ -1,9 +1,9 @@
 import type { RootGame } from "../game/RootGame";
 
-export type ExtensionPointType = string;
+export type ExtensionPointType = "placeholder-1" | "placeholder-2" | "placeholder-3";
 
 type RulesChangeCallbackMap = {
-    [extensionName: ExtensionPointType]: (game: RootGame, ...args: any[]) => void;
+    [K in ExtensionPointType]: (game: RootGame, ...args: any[]) => void;
 };
 
 export interface RulesChange<T extends ExtensionPointType = ExtensionPointType> {

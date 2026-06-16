@@ -290,6 +290,10 @@ describe("Board - getLocation", () => {
     });
 });
 
+describe("Board - getClearing", () => {}); // TODO: add tests
+
+describe("Board - getForest", () => {}); // TODO: add tests
+
 describe("Board - move", () => {
     test("move removes pieces from the origin clearing and places them in the destination clearing", () => {
         const c1 = mock<Clearing>({ id: 1 });
