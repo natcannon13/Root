@@ -3,7 +3,7 @@ import type { PlayerID, RootGame } from "../game/RootGame";
 import type { RulesChange } from "./RulesChange";
 
 export interface RulesModule {
-    staticRulesChanges: RulesChange[];
-    setup: (game: RootGame, playerID: PlayerID) => Promise<void>;
-    globalEvents: (game: RootGame) => Event[];
+    readonly staticRulesChanges: RulesChange[];
+    readonly setup: (game: RootGame, playerID: PlayerID) => Promise<void>;
+    readonly globalEvents: (game: RootGame) => Event[];
 }

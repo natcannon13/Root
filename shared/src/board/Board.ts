@@ -1,4 +1,4 @@
-import type { BoardType, ConnectionType, PlayerFactionType } from "../Enums";
+import type { BoardType, ConnectionType, ItemType, PlayerFactionType } from "../Enums";
 import type { Event } from "../game/Event";
 import type { Item } from "../Item";
 import type { Piece, PieceID } from "../pieces/Piece";
@@ -11,12 +11,28 @@ import type { Forest } from "./Forest";
 import type { Location, LocationID } from "./Location";
 
 export class Board implements RulesModule {
-    name: BoardType;
-    clearings: Clearing[];
-    forests: Forest[];
-    connections: Connection[];
-    items: Item[];
-    staticRulesChanges: RulesChange[] = [];
+    readonly name: BoardType;
+    private _clearings: Clearing[];
+    private _forests: Forest[];
+    private _connections: Connection[];
+    private _items: Item[];
+    readonly staticRulesChanges: RulesChange[] = [];
+
+    get clearings(): ReadonlyArray<Clearing> {
+        return this._clearings;
+    }
+
+    get forests(): ReadonlyArray<Forest> {
+        return this._forests;
+    }
+
+    get connections(): ReadonlyArray<Connection> {
+        return this._connections;
+    }
+
+    get items(): ReadonlyArray<Item> {
+        return this._items;
+    }
 
     async setup(): Promise<void> {
         // optional: rules module setup hook
@@ -38,10 +54,10 @@ export class Board implements RulesModule {
         connections: Connection[];
     }) {
         this.name = name;
-        this.clearings = clearings;
-        this.forests = forests;
-        this.connections = connections;
-        this.items = [];
+        this._clearings = clearings;
+        this._forests = forests;
+        this._connections = connections;
+        this._items = [];
     }
 
     getClearingsAdjacent(locationID: LocationID): Clearing[] {
@@ -82,6 +98,14 @@ export class Board implements RulesModule {
 
     replace(oldPieceID: PieceID, newPiece: Piece, locationID: LocationID): void {
         throw new Error("Board.replace not implemented");
+    }
+
+    hasItem(item: ItemType): boolean {
+        throw new Error("Board.hasItem not implemented");
+    }
+
+    takeItem(item: ItemType): Item {
+        throw new Error("Board.takeItem not implemented");
     }
 
     getState(perspective?: PlayerFactionType): RootBoardState {

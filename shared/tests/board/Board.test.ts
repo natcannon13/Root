@@ -389,7 +389,11 @@ describe("Board - remove", () => {
     });
 });
 
-describe("Board - replace", () => {});
+describe("Board - replace", () => {}); //TODO: add tests
+
+describe("Board - hasItem", () => {}); //TODO: add tests
+
+describe("Board - takeItem", () => {}); //TODO: add tests
 
 describe("Board - getState", () => {
     test("getState returns a RootBoardState that reflects the current board state", () => {
