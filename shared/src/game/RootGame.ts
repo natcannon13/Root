@@ -127,6 +127,10 @@ export class RootGame {
         throw new Error("RootGame.isCraftLegal not implemented");
     }
 
+    isEnemy(faction1: PlayerFactionType, faction2: PlayerFactionType): boolean {
+        throw new Error("RootGame.isEnemy not implemented");
+    }
+
     async move(move: Move) {
         throw new Error("RootGame.move not implemented");
     }

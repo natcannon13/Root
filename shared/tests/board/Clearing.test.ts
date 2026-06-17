@@ -233,6 +233,8 @@ describe("Clearing - rule (§2.5, §G.28)", () => {
         ]);
         expect(c.getRuler()).toBe("marquise-de-cat");
     });
+
+    // TODO: controlled hirelings count towards rule
 });
 
 describe("Clearing - warrior and cardboard queries", () => {

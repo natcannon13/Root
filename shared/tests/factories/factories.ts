@@ -278,8 +278,8 @@ export function makeCardPileLocation(overrides?: Partial<CardPileLocation> & Pic
 
 export function makeBattle(overrides?: Partial<Battle>): Battle {
     return {
-        attackerID: makeFactionType(),
-        defenderID: makeFactionType(),
+        attacker: makeFactionType(),
+        defender: makeFactionType(),
         clearingID: makeLocationID(),
         ...overrides,
     };

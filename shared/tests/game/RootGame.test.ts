@@ -52,7 +52,7 @@ import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
 import type { Clearing } from "../../src/board/Clearing";
-import { makeClearing, makeFactionType, makeForest, makePiece, makePlayerFaction } from "../factories/factories";
+import { makeClearing, makeFactionType, makeForest, makePawn, makePiece, makePlayerFaction } from "../factories/factories";
 import type { Connection } from "../../src/board/Connection";
 
 let game: RootGame;
@@ -1815,19 +1815,78 @@ describe("RootGame.isMoveLegal ", () => {
 // --- isBattleLegal  ----------------------------------------------------
 
 describe("RootGame.isBattleLegal ", () => {
-    test("is legal when attacker has warriors in the clearing and there is a defender", () => {});
+    const clearing = makeClearing({id: 1});
+    beforeEach(() => {
+        vi.spyOn(board, "getClearing").mockReturnValue(clearing);
+        vi.spyOn(game, "isEnemy").mockReturnValue(true);
+    });
 
-    test("is illegal when attacker has no pieces in the clearing", () => {});
+    test("is legal when attacker has warriors in the clearing and there is a defender", () => {
+        const attacker = makeFactionType();
+        const defender = makeFactionType();
+        const attackerWarrior = makePawn({ owningFaction: attacker });
+        const defenderWarrior = makePawn({ owningFaction: defender });
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([attackerWarrior, defenderWarrior]);
+        const isLegal = game.isBattleLegal({
+            attacker,
+            defender,
+            clearingID: clearing.id,
+        });
+        expect(isLegal).toBe(true);
+    });
 
-    test("is illegal when defender has no pieces in the clearing", () => {});
+    test("is illegal when attacker has no pieces in the clearing", () => {
+        const attacker = makeFactionType();
+        const defender = makeFactionType();
+        const defenderWarrior = makePawn({ owningFaction: defender });
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([defenderWarrior]);
+        const isLegal = game.isBattleLegal({
+            attacker,
+            defender,
+            clearingID: clearing.id,
+        });
+        expect(isLegal).toBe(false);
+    });
 
-    test("is illegal to battle yourself", () => {});
+    test("is illegal when defender has no pieces in the clearing", () => {
+        const attacker = makeFactionType();
+        const defender = makeFactionType();
+        const attackerWarrior = makePawn({ owningFaction: attacker });
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([attackerWarrior]);
+        const isLegal = game.isBattleLegal({
+            attacker,
+            defender,
+            clearingID: clearing.id,
+        });
+        expect(isLegal).toBe(false);
+    });
 
-    test("is illegal to battle with zero attacking warriors ", () => {});
+    test("is illegal to battle yourself", () => {
+        const attacker = makeFactionType();
+        const attackerWarrior = makePawn({ owningFaction: attacker });
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([attackerWarrior]);
+        const isLegal = game.isBattleLegal({
+            attacker,
+            defender: attacker,
+            clearingID: clearing.id,
+        });
+        expect(isLegal).toBe(false);
+    });
 
-    test("is illegal to battle a hireling you control", () => {});
-
-    test("is illegal to battle a faction that is not an enemy", () => {});
+    test("is illegal to battle a faction that is not an enemy", () => {
+        const attacker = makeFactionType();
+        const defender = makeFactionType();
+        const attackerWarrior = makePawn({ owningFaction: attacker });
+        const defenderWarrior = makePawn({ owningFaction: defender });
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([attackerWarrior, defenderWarrior]);
+        vi.spyOn(game, "isEnemy").mockReturnValue(false);
+        const isLegal = game.isBattleLegal({
+            attacker,
+            defender,
+            clearingID: clearing.id,
+        });
+        expect(isLegal).toBe(false);
+    });
 });
 
 // --- isPlaceLegal  ---------------------------------------------------
@@ -1856,6 +1915,12 @@ describe("RootGame.isCraftLegal", () => {
     test("cannot craft a dominance card ", () => {});
 
     test("cannot craft duplicate persistent effects ", () => {});
+});
+
+// --- isEnemy  -----------------------------------------------------
+
+describe("RootGame.isEnemy", () => {
+    // TODO: Implement isEnemy tests
 });
 
 // --- move  -----------------------------------------------------
