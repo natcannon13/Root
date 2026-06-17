@@ -52,7 +52,7 @@ import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
 import type { Clearing } from "../../src/board/Clearing";
-import { makeClearing } from "../factories/factories";
+import { makeClearing, makeFactionType, makeForest, makePiece, makePlayerFaction } from "../factories/factories";
 
 let game: RootGame;
 let stateStore: RootGameStateStore;
@@ -1661,14 +1661,38 @@ describe("RootGame.setup", () => {
 // --- isMoveLegal  ----------------------------------------------
 
 describe("RootGame.isMoveLegal ", () => {
-    const clearing1 = makeClearing({ id: 1 });
-    const clearing2 = makeClearing({ id: 2 });
+    const clearingIDs = [1, 2];
+    const forestIDs = [3, 4];
+
+    const clearings = Array.from(clearingIDs, (id) => makeClearing({ id }));
+    const forests = Array.from(forestIDs, (id) => makeForest({ id }));
     beforeEach(() => {
         mockBoard();
-        vi.spyOn(board, "getLocation")
+        vi.spyOn(board, "getLocation").mockImplementation((locationID: LocationID) => {
+            if (clearingIDs.includes(locationID)) {
+                return clearings.find((clearing) => clearing.id === locationID)!;
+            }
+            if (forestIDs.includes(locationID)) {
+                return forests.find((forest) => forest.id === locationID)!;
+            }
+            throw new Error(`Location not found: ${locationID}`);
+        });
     });
     test("is legal when mover rules the origin clearing", async () => {
-        
+        const mover = makeFactionType();
+        const piece = makePiece({ owningFaction: mover });
+        const originClearing = clearings[0];
+        const destinationClearing = clearings[1];
+        vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
+        vi.spyOn(originClearing, "getRuler").mockReturnValue(mover);
+        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(null);
+        const isLegal = await game.isMoveLegal({
+            mover,
+            pieces: [piece],
+            startingLocationID: originClearing.id,
+            endingLocationID: destinationClearing.id,
+        });
+        expect(isLegal).toBe(true);
     });
 
     test("is legal when mover rules the destination clearing", () => {});
