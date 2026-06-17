@@ -53,6 +53,7 @@ import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
 import type { Clearing } from "../../src/board/Clearing";
 import { makeClearing, makeFactionType, makeForest, makePiece, makePlayerFaction } from "../factories/factories";
+import type { Connection } from "../../src/board/Connection";
 
 let game: RootGame;
 let stateStore: RootGameStateStore;
@@ -1661,8 +1662,20 @@ describe("RootGame.setup", () => {
 // --- isMoveLegal  ----------------------------------------------
 
 describe("RootGame.isMoveLegal ", () => {
-    const clearingIDs = [1, 2];
-    const forestIDs = [3, 4];
+    const clearingIDs = [1, 2, 3, 4];
+    const forestIDs = [5, 6, 7, 8];
+    const connections: Connection[] = [
+        { id: 1, locationIDs: [1, 2], type: "path" },
+        { id: 2, locationIDs: [2, 3], type: "path" },
+        { id: 3, locationIDs: [3, 4], type: "path" },
+        { id: 4, locationIDs: [4, 1], type: "path" },
+        { id: 5, locationIDs: [5, 6], type: "forest-adjacency" },
+        { id: 6, locationIDs: [6, 7], type: "forest-adjacency" },
+        { id: 7, locationIDs: [7, 8], type: "forest-adjacency" },
+        { id: 8, locationIDs: [8, 5], type: "forest-adjacency" },
+        { id: 9, locationIDs: [1, 3], type: "river" },
+        { id: 10, locationIDs: [1, 5], type: "forest-adjacency" },
+    ];
 
     const clearings = Array.from(clearingIDs, (id) => makeClearing({ id }));
     const forests = Array.from(forestIDs, (id) => makeForest({ id }));
@@ -1676,6 +1689,11 @@ describe("RootGame.isMoveLegal ", () => {
                 return forests.find((forest) => forest.id === locationID)!;
             }
             throw new Error(`Location not found: ${locationID}`);
+        });
+        vi.spyOn(board, "getConnectionTypesBetween").mockImplementation((location1ID: LocationID, location2ID: LocationID) => {
+            return connections
+                .filter((connection) => connection.locationIDs.includes(location1ID) && connection.locationIDs.includes(location2ID))
+                .map((connection) => connection.type);
         });
     });
     test("is legal when mover rules the origin clearing", async () => {
@@ -1695,15 +1713,103 @@ describe("RootGame.isMoveLegal ", () => {
         expect(isLegal).toBe(true);
     });
 
-    test("is legal when mover rules the destination clearing", () => {});
+    test("is legal when mover rules the destination clearing", async () => {
+        const mover = makeFactionType();
+        const piece = makePiece({ owningFaction: mover });
+        const originClearing = clearings[0];
+        const destinationClearing = clearings[1];
+        vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
+        vi.spyOn(originClearing, "getRuler").mockReturnValue(null);
+        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(mover);
+        const isLegal = await game.isMoveLegal({
+            mover,
+            pieces: [piece],
+            startingLocationID: originClearing.id,
+            endingLocationID: destinationClearing.id,
+        });
+        expect(isLegal).toBe(true);
+    });
 
-    test("is illegal when mover rules neither origin nor destination ", () => {});
+    test("is illegal when mover rules neither origin nor destination ", async () => {
+        const mover = makeFactionType();
+        const piece = makePiece({ owningFaction: mover });
+        const originClearing = clearings[0];
+        const destinationClearing = clearings[1];
+        vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
+        vi.spyOn(originClearing, "getRuler").mockReturnValue(null);
+        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(null);
+        const isLegal = await game.isMoveLegal({
+            mover,
+            pieces: [piece],
+            startingLocationID: originClearing.id,
+            endingLocationID: destinationClearing.id,
+        });
+        expect(isLegal).toBe(false);
+    });
 
-    test("is illegal when origin and destination are not adjacent", () => {});
+    test("is illegal when origin and destination are not adjacent", async () => {
+        const mover = makeFactionType();
+        const piece = makePiece({ owningFaction: mover });
+        const originClearing = clearings[0];
+        const destinationClearing = clearings[2]; // Not adjacent to origin
+        vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
+        vi.spyOn(originClearing, "getRuler").mockReturnValue(null);
+        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(null);
+        const isLegal = await game.isMoveLegal({
+            mover,
+            pieces: [piece],
+            startingLocationID: originClearing.id,
+            endingLocationID: destinationClearing.id,
+        });
+        expect(isLegal).toBe(false);
+    });
 
-    test("is illegal when either location is a forest", () => {});
+    test("is illegal when origin is a forest", async () => {
+        const mover = makeFactionType();
+        const piece = makePiece({ owningFaction: mover });
+        const originForest = forests[0];
+        const destinationClearing = clearings[0];
+        vi.spyOn(originForest, "hasPieces").mockReturnValue(true);
+        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(mover);
+        const isLegal = await game.isMoveLegal({
+            mover,
+            pieces: [piece],
+            startingLocationID: originForest.id,
+            endingLocationID: destinationClearing.id,
+        });
+        expect(isLegal).toBe(false);
+    });
 
-    test("is illegal to move zero pieces", () => {});
+    test("is illegal when destination is a forest", async () => {
+        const mover = makeFactionType();
+        const piece = makePiece({ owningFaction: mover });
+        const originClearing = clearings[0];
+        const destinationForest = forests[0];
+        vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
+        vi.spyOn(originClearing, "getRuler").mockReturnValue(mover);
+        const isLegal = await game.isMoveLegal({
+            mover,
+            pieces: [piece],
+            startingLocationID: originClearing.id,
+            endingLocationID: destinationForest.id,
+        });
+        expect(isLegal).toBe(false);
+    });
+
+    test("is illegal to move zero pieces", async () => {
+        const mover = makeFactionType();
+        const originClearing = clearings[0];
+        const destinationClearing = clearings[1];
+        vi.spyOn(originClearing, "getRuler").mockReturnValue(null);
+        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(null);
+        const isLegal = await game.isMoveLegal({
+            mover,
+            pieces: [],
+            startingLocationID: originClearing.id,
+            endingLocationID: destinationClearing.id,
+        });
+        expect(isLegal).toBe(false);
+    });
 });
 
 // --- isBattleLegal  ----------------------------------------------------
