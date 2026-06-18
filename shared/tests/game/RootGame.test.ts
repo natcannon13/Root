@@ -55,6 +55,7 @@ import { TimeStep } from "../../src/state/TimeStep";
 import type { Clearing } from "../../src/board/Clearing";
 import { makeBuilding, makeClearing, makeFactionType, makeForest, makePawn, makePiece, makePlayerFaction, makeToken } from "../factories/factories";
 import type { Connection } from "../../src/board/Connection";
+import type { Forest } from "../../src/board/Forest";
 
 let game: RootGame;
 let stateStore: RootGameStateStore;
@@ -1687,9 +1688,11 @@ describe("RootGame.isMoveLegal ", () => {
     ];
     const rulingMap = new Map<LocationID, FactionType | null>();
 
-    const clearings = Array.from(clearingIDs, (id) => makeClearing({ id }));
-    const forests = Array.from(forestIDs, (id) => makeForest({ id }));
+    let clearings: Clearing[];
+    let forests: Forest[];
     beforeEach(() => {
+        clearings = Array.from(clearingIDs, (id) => makeClearing({ id }));
+        forests = Array.from(forestIDs, (id) => makeForest({ id }));
         mockBoard();
         vi.spyOn(board, "getLocation").mockImplementation((locationID: LocationID) => {
             if (clearingIDs.includes(locationID)) {
@@ -1831,8 +1834,9 @@ describe("RootGame.isMoveLegal ", () => {
 // --- isBattleLegal  ----------------------------------------------------
 
 describe("RootGame.isBattleLegal ", () => {
-    const clearing = makeClearing({id: 1});
+    let clearing: Clearing;
     beforeEach(() => {
+        clearing = makeClearing({id: 1});
         vi.spyOn(board, "getClearing").mockReturnValue(clearing);
         vi.spyOn(game, "isEnemy").mockReturnValue(true);
     });
@@ -1908,7 +1912,12 @@ describe("RootGame.isBattleLegal ", () => {
 // --- isPlaceLegal  ---------------------------------------------------
 
 describe("RootGame.isPlaceLegal", () => {
-    test("placing a building is legal when there is an open slot", () => {});
+    
+    const clearing = makeClearing({id: 1});
+    
+    test("placing a building is legal when there is an open slot", () => {
+
+    });
 
     test("placing a building is illegal when there are no open slots ", () => {});
 });
