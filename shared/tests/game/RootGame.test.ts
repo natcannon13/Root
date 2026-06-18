@@ -9,6 +9,7 @@ import type { CardPileLocation } from "../../src/cards/CardPileLocation";
 import {
     type BattlePhaseType,
     type ExclusionType,
+    type FactionType,
     type HirelingFactionType,
     isDemotedHirelingFactionType,
     isPromotedHirelingFactionType,
@@ -52,7 +53,7 @@ import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
 import type { Clearing } from "../../src/board/Clearing";
-import { makeClearing, makeFactionType, makeForest, makePawn, makePiece, makePlayerFaction } from "../factories/factories";
+import { makeBuilding, makeClearing, makeFactionType, makeForest, makePawn, makePiece, makePlayerFaction, makeToken } from "../factories/factories";
 import type { Connection } from "../../src/board/Connection";
 
 let game: RootGame;
@@ -1659,6 +1660,14 @@ describe("RootGame.setup", () => {
     });
 });
 
+// --- drawCard  --------------------------------------------------
+
+describe("RootGame.drawCard", () => {});
+
+// --- returnCardToDeck  --------------------------------------------------
+
+describe("RootGame.returnCardToDeck", () => {});
+
 // --- isMoveLegal  ----------------------------------------------
 
 describe("RootGame.isMoveLegal ", () => {
@@ -1676,6 +1685,7 @@ describe("RootGame.isMoveLegal ", () => {
         { id: 9, locationIDs: [1, 3], type: "river" },
         { id: 10, locationIDs: [1, 5], type: "forest-adjacency" },
     ];
+    const rulingMap = new Map<LocationID, FactionType | null>();
 
     const clearings = Array.from(clearingIDs, (id) => makeClearing({ id }));
     const forests = Array.from(forestIDs, (id) => makeForest({ id }));
@@ -1695,6 +1705,12 @@ describe("RootGame.isMoveLegal ", () => {
                 .filter((connection) => connection.locationIDs.includes(location1ID) && connection.locationIDs.includes(location2ID))
                 .map((connection) => connection.type);
         });
+        vi.spyOn(game, "getRuler").mockImplementation((locationID: LocationID) => {
+            if (forestIDs.includes(locationID)) {
+                return null; // No one rules forests
+            }
+            return rulingMap.get(locationID) || null;
+        });
     });
     test("is legal when mover rules the origin clearing", async () => {
         const mover = makeFactionType();
@@ -1702,8 +1718,8 @@ describe("RootGame.isMoveLegal ", () => {
         const originClearing = clearings[0];
         const destinationClearing = clearings[1];
         vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
-        vi.spyOn(originClearing, "getRuler").mockReturnValue(mover);
-        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(null);
+        rulingMap.set(originClearing.id, mover);
+        rulingMap.set(destinationClearing.id, null);
         const isLegal = await game.isMoveLegal({
             mover,
             pieces: [piece],
@@ -1719,8 +1735,8 @@ describe("RootGame.isMoveLegal ", () => {
         const originClearing = clearings[0];
         const destinationClearing = clearings[1];
         vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
-        vi.spyOn(originClearing, "getRuler").mockReturnValue(null);
-        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(mover);
+        rulingMap.set(originClearing.id, null);
+        rulingMap.set(destinationClearing.id, mover);
         const isLegal = await game.isMoveLegal({
             mover,
             pieces: [piece],
@@ -1736,8 +1752,8 @@ describe("RootGame.isMoveLegal ", () => {
         const originClearing = clearings[0];
         const destinationClearing = clearings[1];
         vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
-        vi.spyOn(originClearing, "getRuler").mockReturnValue(null);
-        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(null);
+        rulingMap.set(originClearing.id, null);
+        rulingMap.set(destinationClearing.id, null);
         const isLegal = await game.isMoveLegal({
             mover,
             pieces: [piece],
@@ -1753,8 +1769,8 @@ describe("RootGame.isMoveLegal ", () => {
         const originClearing = clearings[0];
         const destinationClearing = clearings[2]; // Not adjacent to origin
         vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
-        vi.spyOn(originClearing, "getRuler").mockReturnValue(null);
-        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(null);
+        rulingMap.set(originClearing.id, mover);
+        rulingMap.set(destinationClearing.id, mover);
         const isLegal = await game.isMoveLegal({
             mover,
             pieces: [piece],
@@ -1770,7 +1786,7 @@ describe("RootGame.isMoveLegal ", () => {
         const originForest = forests[0];
         const destinationClearing = clearings[0];
         vi.spyOn(originForest, "hasPieces").mockReturnValue(true);
-        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(mover);
+        rulingMap.set(destinationClearing.id, mover);
         const isLegal = await game.isMoveLegal({
             mover,
             pieces: [piece],
@@ -1786,7 +1802,7 @@ describe("RootGame.isMoveLegal ", () => {
         const originClearing = clearings[0];
         const destinationForest = forests[0];
         vi.spyOn(originClearing, "hasPieces").mockReturnValue(true);
-        vi.spyOn(originClearing, "getRuler").mockReturnValue(mover);
+        rulingMap.set(originClearing.id, mover);
         const isLegal = await game.isMoveLegal({
             mover,
             pieces: [piece],
@@ -1800,8 +1816,8 @@ describe("RootGame.isMoveLegal ", () => {
         const mover = makeFactionType();
         const originClearing = clearings[0];
         const destinationClearing = clearings[1];
-        vi.spyOn(originClearing, "getRuler").mockReturnValue(null);
-        vi.spyOn(destinationClearing, "getRuler").mockReturnValue(null);
+        rulingMap.set(originClearing.id, null);
+        rulingMap.set(destinationClearing.id, null);
         const isLegal = await game.isMoveLegal({
             mover,
             pieces: [],
@@ -1921,6 +1937,90 @@ describe("RootGame.isCraftLegal", () => {
 
 describe("RootGame.isEnemy", () => {
     // TODO: Implement isEnemy tests
+});
+
+// --- getRuler  -----------------------------------------------------
+
+describe("RootGame.getRuler", () => {
+    let clearing: Clearing;
+    beforeEach(() => {
+        clearing = makeClearing({ id: 1, printedSuit: "fox", slotCount: 3 });
+        vi.spyOn(board, "getClearing").mockReturnValue(clearing);
+        vi.spyOn(clearing, "getCardboard").mockReturnValue([]);
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([]);
+    });
+    test("getRuler() returns the faction with the most warriors", () => {
+        const marquiseWarriors = [
+            makePawn({ owningFaction: "marquise-de-cat", isWarrior: true }),
+            makePawn({ owningFaction: "marquise-de-cat", isWarrior: true }),
+        ];
+        const woodlandWarriors = [
+            makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
+        ];
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([...marquiseWarriors, ...woodlandWarriors]);
+        expect(game.getRuler(1)).toBe("marquise-de-cat");
+    });
+
+    test("getRuler() returns null on a tie", () => {
+        const marquiseWarriors = [
+            makePawn({ owningFaction: "marquise-de-cat", isWarrior: true }),
+            makePawn({ owningFaction: "marquise-de-cat", isWarrior: true }),
+        ];
+        const woodlandWarriors = [
+            makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
+            makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
+        ];
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([...marquiseWarriors, ...woodlandWarriors]);
+        expect(game.getRuler(1)).toBeNull();
+    });
+
+    test("getRuler() returns null when the clearing is empty", () => {
+        vi.spyOn(clearing, "getCardboard").mockReturnValue([]);
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([]);
+        expect(game.getRuler(1)).toBeNull();
+    });
+
+    test("tokens do NOT contribute to rule", () => {
+        // Eyrie has 1 warrior; Marquise has 3 wood tokens but no warriors
+        const marquiseTokens = [
+            makeToken({ owningFaction: "marquise-de-cat", faceUp: true }),
+            makeToken({ owningFaction: "marquise-de-cat", faceUp: true }),
+            makeToken({ owningFaction: "marquise-de-cat", faceUp: true }),
+        ];
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true })]);
+        vi.spyOn(clearing, "getCardboard").mockReturnValue(marquiseTokens);
+        expect(game.getRuler(1)).toBe("eyrie-dynasties");
+    });
+
+    test("buildings count toward rule", () => {
+        const marquiseBuildings = [
+            makeBuilding({ id: 1, name: "workshop", owningFaction: "marquise-de-cat" }),
+            makeBuilding({ id: 2, name: "recruiter", owningFaction: "marquise-de-cat" }),
+        ];
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true })]);
+        vi.spyOn(clearing, "getCardboard").mockReturnValue(marquiseBuildings);
+        expect(game.getRuler(1)).toBe("marquise-de-cat");
+    });
+
+    test("rule requires a plurality, not a majority", () => {
+        const marquiseWarriors = [
+            makePawn({ owningFaction: "marquise-de-cat", isWarrior: true }),
+            makePawn({ owningFaction: "marquise-de-cat", isWarrior: true }),
+            makePawn({ owningFaction: "marquise-de-cat", isWarrior: true }),
+        ];
+        const woodlandWarriors = [
+            makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
+            makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
+        ];
+        const eyrieWarriors = [
+            makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true }),
+            makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true }),
+        ];
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([...marquiseWarriors, ...woodlandWarriors, ...eyrieWarriors]);
+        expect(game.getRuler(1)).toBe("marquise-de-cat");
+    });
+
+    // TODO: controlled hirelings count towards rule
 });
 
 // --- move  -----------------------------------------------------

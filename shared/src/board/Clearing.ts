@@ -41,9 +41,6 @@ export class Clearing extends Location {
         return [];
     }
     replace(oldPieceID: PieceID, newPiece: Piece): void {}
-    getRuler(): FactionType | null {
-        return null;
-    }
     getWarriors(faction: FactionType): Pawn[] {
         return [];
     }

@@ -131,6 +131,10 @@ export class RootGame {
         throw new Error("RootGame.isEnemy not implemented");
     }
 
+    getRuler(clearingID: LocationID): FactionType | null {
+        throw new Error("RootGame.getRuler not implemented");
+    }
+
     async move(move: Move) {
         throw new Error("RootGame.move not implemented");
     }
