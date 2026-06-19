@@ -1,4 +1,4 @@
-import type { BoardType, ConnectionType, ItemType, PlayerFactionType } from "../Enums";
+import type { BoardType, ConnectionType, ItemType, PlayerFactionType, Suit } from "../Enums";
 import type { Event } from "../game/Event";
 import type { Item } from "../Item";
 import type { Piece, PieceID } from "../pieces/Piece";
@@ -114,6 +114,10 @@ export class Board implements RulesModule {
 
     takeItem(item: ItemType): Item {
         throw new Error("Board.takeItem not implemented");
+    }
+
+    getSuitsOfPiece(pieceID: PieceID): Suit[] | null {
+        throw new Error("Board.getSuitsOfPiece not implemented");
     }
 
     getState(perspective?: PlayerFactionType): RootBoardState {

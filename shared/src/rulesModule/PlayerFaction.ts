@@ -11,6 +11,7 @@ export interface PlayerFaction extends Faction {
     score: number;
     hand: CardPile;
     revealedCards: CardPile;
+    craftedImprovements: CardPile;
     piles: Record<string, CardPile>;
     takePhase: (timeStep: TimeStep) => Promise<void>;
     getEvents: (timeStep: TimeStep) => Event[];

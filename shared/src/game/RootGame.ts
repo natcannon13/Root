@@ -119,11 +119,7 @@ export class RootGame {
         throw new Error("RootGame.isPlaceLegal not implemented");
     }
 
-    isCraftLegal(
-        faction: PlayerFactionType,
-        card: Card,
-        craftingPieces: Piece[],
-    ): boolean {
+    isCraftLegal(faction: PlayerFactionType, card: Card, craftingPieces: PieceID[]): boolean {
         throw new Error("RootGame.isCraftLegal not implemented");
     }
 
@@ -147,7 +143,7 @@ export class RootGame {
         throw new Error("RootGame.place not implemented");
     }
 
-    async craft(faction: PlayerFactionType, card: Card, craftingPieces: Piece[]) {
+    async craft(faction: PlayerFactionType, card: Card, craftingPieces: PieceID[]) {
         throw new Error("RootGame.craft not implemented");
     }
 

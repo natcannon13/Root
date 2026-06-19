@@ -2,6 +2,9 @@ import util from "util";
 import { beforeEach, describe, expect, type MockInstance, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
+import type { Clearing } from "../../src/board/Clearing";
+import type { Connection } from "../../src/board/Connection";
+import type { Forest } from "../../src/board/Forest";
 import type { LocationID } from "../../src/board/Location";
 import type { Card } from "../../src/cards/Card";
 import { CardPile } from "../../src/cards/CardPile";
@@ -18,6 +21,7 @@ import {
     type PlayerFactionType,
     reachValues,
     standardSetupOrder,
+    type Suit,
 } from "../../src/Enums";
 import * as Factory from "../../src/Factory";
 import {
@@ -52,10 +56,23 @@ import type { RootFactionState } from "../../src/state/RootFactionState";
 import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
-import type { Clearing } from "../../src/board/Clearing";
-import { makeBuilding, makeClearing, makeFactionType, makeForest, makePawn, makePiece, makePlayerFaction, makeToken } from "../factories/factories";
-import type { Connection } from "../../src/board/Connection";
-import type { Forest } from "../../src/board/Forest";
+import {
+    makeBoard,
+    makeBuilding,
+    makeCard,
+    makeCardPile,
+    makeClearing,
+    makeDemotedHireling,
+    makeFactionType,
+    makeForest,
+    makeLandmark,
+    makePawn,
+    makePiece,
+    makePlayerFaction,
+    makePromotedHireling,
+    makeResolvedChoice,
+    makeToken,
+} from "../factories/factories";
 
 let game: RootGame;
 let stateStore: RootGameStateStore;
@@ -64,7 +81,7 @@ let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
 let board: ReturnType<typeof mock<Board>>;
 let factions: Partial<Record<PlayerFactionType, ReturnType<typeof mock<PlayerFaction>>>>;
 let hirelings: Partial<Record<HirelingFactionType, ReturnType<typeof mock<Hireling>>>>;
-let landmarks: ReturnType<typeof mock<Landmark>>[];
+let landmarks: Landmark[];
 
 let playerFactionMapping: Partial<Record<PlayerFactionType, PlayerID>>;
 let turnOrder: PlayerID[]; // Array of player IDs in turn order
@@ -90,19 +107,14 @@ function getBasePlayOptions(): PlayOptions & { setup: StandardSetupOptions } {
             deck: "base",
             usingHirelings: true,
             landmarksToUse: 2,
-            availableHirelings: [
-                "corvid",
-                "rat",
-                "feline",
-                "farmer",
-            ],
+            availableHirelings: ["corvid", "rat", "feline", "farmer"],
             availableLandmarks: ["tower", "ferry", "elder-treetop"],
         },
         playerIDs: [1, 2, 3],
     } satisfies PlayOptions;
 }
 
-function getAdvancedPlayOptions(): PlayOptions & {setup: AdvancedSetupOptions;} {
+function getAdvancedPlayOptions(): PlayOptions & { setup: AdvancedSetupOptions } {
     return {
         setup: {
             type: "advanced",
@@ -118,12 +130,7 @@ function getAdvancedPlayOptions(): PlayOptions & {setup: AdvancedSetupOptions;} 
             deck: "base",
             usingHirelings: true,
             landmarksToUse: 2,
-            availableHirelings: [
-                "corvid",
-                "rat",
-                "feline",
-                "farmer",
-            ],
+            availableHirelings: ["corvid", "rat", "feline", "farmer"],
             availableLandmarks: ["tower", "ferry", "elder-treetop"],
         },
         playerIDs: [1, 2, 3],
@@ -143,7 +150,7 @@ function mockGame(options: PlayOptions = mock<PlayOptions>()) {
 }
 
 function mockBoard() {
-    board = mock<Board>();
+    board = makeBoard();
     vi.spyOn(game, "board", "get").mockReturnValue(board);
 }
 
@@ -152,7 +159,7 @@ function mockFactions(factionTurnOrder: { faction: PlayerFactionType; playerID: 
     playerFactionMapping = {};
     turnOrder = [];
     for (const { faction, playerID } of factionTurnOrder) {
-        factions[faction] = mock<PlayerFaction>({ name: faction });
+        factions[faction] = makePlayerFaction({ name: faction });
         playerFactionMapping[faction] = playerID;
         turnOrder.push(playerID);
     }
@@ -166,11 +173,11 @@ function mockHirelings(hirelingTypes: HirelingFactionType[] = []) {
     hirelings = {};
     for (const hirelingType of hirelingTypes) {
         if (isDemotedHirelingFactionType(hirelingType)) {
-            hirelings[hirelingType] = mock<DemotedHireling>({
+            hirelings[hirelingType] = makeDemotedHireling({
                 name: hirelingType,
             });
         } else {
-            hirelings[hirelingType] = mock<PromotedHireling>({
+            hirelings[hirelingType] = makePromotedHireling({
                 name: hirelingType,
             });
         }
@@ -180,22 +187,22 @@ function mockHirelings(hirelingTypes: HirelingFactionType[] = []) {
 }
 
 function mockLandmarks(landmarkTypes: LandmarkType[] = []) {
-    landmarks = landmarkTypes.map((landmarkType) => mock<Landmark>({ name: landmarkType }));
+    landmarks = landmarkTypes.map((landmarkType) => makeLandmark({ name: landmarkType }));
     vi.spyOn(game, "landmarks", "get").mockReturnValue(landmarks);
 }
 
 function mockDeck() {
-    deck = mock<CardPile>();
+    deck = makeCardPile();
     vi.spyOn(game, "deck", "get").mockReturnValue(deck);
 }
 
 function mockDiscardPile() {
-    discardPile = mock<CardPile>();
+    discardPile = makeCardPile();
     vi.spyOn(game, "discardPile", "get").mockReturnValue(discardPile);
 }
 
 function mockDominancePile() {
-    dominancePile = mock<CardPile>();
+    dominancePile = makeCardPile();
     vi.spyOn(game, "dominancePile", "get").mockReturnValue(dominancePile);
 }
 
@@ -204,7 +211,7 @@ function mockSpentCraftingPieces(pieces: PieceID[] = []) {
 }
 
 function mockPastChoices(choices: Partial<ResolvedChoice>[] = []) {
-    pastChoices = choices.map((choice) => mock<ResolvedChoice>(choice));
+    pastChoices = choices.map((choice) => makeResolvedChoice("pick", choice));
     vi.spyOn(game, "pastChoices", "get").mockReturnValue(pastChoices);
 }
 
@@ -611,7 +618,7 @@ describe("RootGame.updateState", () => {
             .mockReturnValue(undefined);
         game.updateState({
             type: "factionStateUpdate",
-            options:{update: { faction, updateType, value }},
+            options: { update: { faction, updateType, value } },
             id: "u8",
             version: VERSION,
         });
@@ -1086,7 +1093,8 @@ describe("RootGame.setup", () => {
     };
     let awaitChoiceSpy: MockInstance<RootGame["awaitChoice"]>;
     let updateStateSpy: MockInstance<RootGame["updateState"]>;
-    type ChoiceDescription = Pick<ResolvedChoice, "type" | "options" | "value"> & Partial<Pick<ResolvedChoice, "playerID">>;
+    type ChoiceDescription = Pick<ResolvedChoice, "type" | "options" | "value"> &
+        Partial<Pick<ResolvedChoice, "playerID">>;
 
     let resolvedChoices: Record<string, ChoiceDescription>;
 
@@ -1113,7 +1121,8 @@ describe("RootGame.setup", () => {
         for (const resolvedChoice of resolvedChoiceList) {
             if (
                 choice.type === resolvedChoice.type &&
-                (resolvedChoice.playerID === undefined || choice.playerID === resolvedChoice.playerID) &&
+                (resolvedChoice.playerID === undefined ||
+                    choice.playerID === resolvedChoice.playerID) &&
                 util.isDeepStrictEqual(choice.options, resolvedChoice.options)
             ) {
                 return resolvedChoice.value as ChoiceValueMap[T];
@@ -1228,14 +1237,17 @@ describe("RootGame.setup", () => {
             game.options = basePlayOptions;
             game.setup();
             const awaitChoiceHirelingCalls = awaitChoiceSpy.mock.calls.filter(
-                (call) => call[0].type === "pickX" && call[0].options.description === RAND_PICKX_DESC.HIRELINGS
+                (call) =>
+                    call[0].type === "pickX" &&
+                    call[0].options.description === RAND_PICKX_DESC.HIRELINGS,
             ) as [PendingChoice<"pickX">][];
             expect(awaitChoiceHirelingCalls).toHaveLength(2);
-            expect(awaitChoiceHirelingCalls[0][0].options.options).toEqual(basePlayOptions.setup.availableHirelings);
+            expect(awaitChoiceHirelingCalls[0][0].options.options).toEqual(
+                basePlayOptions.setup.availableHirelings,
+            );
             expect(awaitChoiceHirelingCalls[0][0].options.count).toBe(totalHirelings);
             expect(awaitChoiceHirelingCalls[1][0].options.options.length).toBe(totalHirelings);
             expect(awaitChoiceHirelingCalls[1][0].options.count).toBe(numberOfPromotedHirelings);
-
 
             const updateStateCalls = updateStateSpy.mock.calls;
             const hirelingAddedCalls = updateStateCalls.filter(
@@ -1360,7 +1372,7 @@ describe("RootGame.setup", () => {
         });
     });
     describe("advanced setup", () => {
-        let advancedSetupOptions: PlayOptions & {setup: AdvancedSetupOptions};
+        let advancedSetupOptions: PlayOptions & { setup: AdvancedSetupOptions };
         beforeEach(() => {
             // Replace standard setup with advanced setup in play options
             advancedSetupOptions = getAdvancedPlayOptions();
@@ -1428,7 +1440,9 @@ describe("RootGame.setup", () => {
                 ...Array.from({ length: numberOfLandmarks }, (_, idx) => ({
                     type: "pickOne",
                     playerID: reversePlayerOrder[idx % reversePlayerOrder.length],
-                    options: expect.objectContaining({ description: PLAYER_CHOICE_DESC.LANDMARK_SETUP }),
+                    options: expect.objectContaining({
+                        description: PLAYER_CHOICE_DESC.LANDMARK_SETUP,
+                    }),
                 })),
                 {
                     type: "pickX",
@@ -1438,7 +1452,9 @@ describe("RootGame.setup", () => {
                 ...Array.from({ length: numberOfHirelings }, (_, idx) => ({
                     type: "pickOne",
                     playerID: reversePlayerOrder[idx % reversePlayerOrder.length],
-                    options: expect.objectContaining({ description: PLAYER_CHOICE_DESC.HIRELING_SETUP }),
+                    options: expect.objectContaining({
+                        description: PLAYER_CHOICE_DESC.HIRELING_SETUP,
+                    }),
                 })),
                 {
                     type: "pickOrder",
@@ -1453,11 +1469,15 @@ describe("RootGame.setup", () => {
                 ...Array.from({ length: numberOfPlayers }, (_, i) => ({
                     type: "pickOne",
                     playerID: reversePlayerOrder[i],
-                    options: expect.objectContaining({ description: PLAYER_CHOICE_DESC.STARTING_FACTION }),
+                    options: expect.objectContaining({
+                        description: PLAYER_CHOICE_DESC.STARTING_FACTION,
+                    }),
                 })),
                 ...Array.from({ length: numberOfPlayers }, () => ({
                     type: "pickX",
-                    options: expect.objectContaining({ description: PLAYER_CHOICE_DESC.RETURN_CARDS }),
+                    options: expect.objectContaining({
+                        description: PLAYER_CHOICE_DESC.RETURN_CARDS,
+                    }),
                 })),
             ];
             expect(awaitChoiceCalls).toHaveLength(expectedAwaitChoiceCalls.length);
@@ -1485,7 +1505,9 @@ describe("RootGame.setup", () => {
             });
         });
         test("each player chooses two cards to return to the deck", () => {
-            const returnCardToDeckSpy = vi.spyOn(game, "returnCardToDeck").mockResolvedValue(undefined);
+            const returnCardToDeckSpy = vi
+                .spyOn(game, "returnCardToDeck")
+                .mockResolvedValue(undefined);
             game.setup();
             expect(returnCardToDeckSpy).toHaveBeenCalledTimes(6);
             let cardsReturnedByPlayer: { [playerID: PlayerID]: number } = {};
@@ -1498,7 +1520,7 @@ describe("RootGame.setup", () => {
             const returnCardsAwaitChoiceCalls = awaitChoiceSpy.mock.calls.filter(
                 (call) =>
                     call[0].type === "pickX" &&
-                    call[0].options.description === PLAYER_CHOICE_DESC.RETURN_CARDS
+                    call[0].options.description === PLAYER_CHOICE_DESC.RETURN_CARDS,
             ) as [PendingChoice<"pickX">][];
             expect(returnCardsAwaitChoiceCalls).toHaveLength(3);
             returnCardsAwaitChoiceCalls.forEach((call) => {
@@ -1514,38 +1536,60 @@ describe("RootGame.setup", () => {
         test("(# of players + 1) factions are selected for the draft - one militant first, then the rest", () => {
             const numberOfPlayers = 3;
             game.setup();
-            expect(awaitChoiceSpy).toHaveBeenCalledWith(expect.objectContaining({
-                type: "pick",
-                options: expect.objectContaining({ description: RAND_PICK_DESC.FACTION}),
-            }));
-            expect(awaitChoiceSpy).toHaveBeenCalledWith(expect.objectContaining({
-                type: "pickX",
-                options: expect.objectContaining({ description: RAND_PICKX_DESC.FACTIONS, count: numberOfPlayers}),
-            }));
+            expect(awaitChoiceSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: "pick",
+                    options: expect.objectContaining({ description: RAND_PICK_DESC.FACTION }),
+                }),
+            );
+            expect(awaitChoiceSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: "pickX",
+                    options: expect.objectContaining({
+                        description: RAND_PICKX_DESC.FACTIONS,
+                        count: numberOfPlayers,
+                    }),
+                }),
+            );
         });
         test("throws an error if there are not enough factions available for the draft", () => {
-            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","underground-duchy"];
+            const factionsAvailable: PlayerFactionType[] = [
+                "corvid-conspiracy",
+                "underground-duchy",
+            ];
             advancedSetupOptions.setup.draftableFactions = factionsAvailable;
             expect(() => game.setup()).toThrow("Not enough factions available for the draft"); //TODO: make error message text a constant and check against that
         });
         test("throws an error if there are no militant factions available for the first pick", () => {
-            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","woodland-alliance","lizard-cult"];
+            const factionsAvailable: PlayerFactionType[] = [
+                "corvid-conspiracy",
+                "woodland-alliance",
+                "lizard-cult",
+            ];
             advancedSetupOptions.setup.draftableFactions = factionsAvailable;
             expect(() => game.setup()).toThrow("No militant factions available for the first pick");
         });
         test("factions cannot be added to the draft if their corresponding hireling is in the game", () => {
-            const hirelingsAvailable: ExclusionType[] = ["feline","corvid","mole"];
-            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","underground-duchy","keepers-in-iron","marquise-de-cat", "eyrie-dynasties", "woodland-alliance"];
+            const hirelingsAvailable: ExclusionType[] = ["feline", "corvid", "mole"];
+            const factionsAvailable: PlayerFactionType[] = [
+                "corvid-conspiracy",
+                "underground-duchy",
+                "keepers-in-iron",
+                "marquise-de-cat",
+                "eyrie-dynasties",
+                "woodland-alliance",
+            ];
             advancedSetupOptions.setup.availableHirelings = hirelingsAvailable;
             advancedSetupOptions.setup.draftableFactions = factionsAvailable;
             game.setup();
             const awaitChoiceFirstFactionSelectCall = awaitChoiceSpy.mock.calls.find(
                 (call) =>
                     call[0].type === "pick" &&
-                    call[0].options.description === PLAYER_CHOICE_DESC.STARTING_FACTION
+                    call[0].options.description === PLAYER_CHOICE_DESC.STARTING_FACTION,
             ) as [PendingChoice<"pick">];
             expect(awaitChoiceFirstFactionSelectCall).toBeDefined();
-            const firstFactionOptions = awaitChoiceFirstFactionSelectCall[0].options.options as PlayerFactionType[];
+            const firstFactionOptions = awaitChoiceFirstFactionSelectCall[0].options
+                .options as PlayerFactionType[];
             expect(firstFactionOptions).not.toContainEqual("corvid-conspiracy");
             expect(firstFactionOptions).not.toContainEqual("underground-duchy");
             expect(firstFactionOptions).not.toContainEqual("marquise-de-cat");
@@ -1556,11 +1600,14 @@ describe("RootGame.setup", () => {
                 (call) =>
                     call[0].type === "pick" &&
                     call[0].options.description === RAND_PICK_DESC.FACTION &&
-                    call[0].playerID === null
+                    call[0].playerID === null,
             ) as [PendingChoice<"pick">];
             expect(awaitChoiceMilitantSelectCall).toBeDefined();
-            const optionsForMilitantFaction = awaitChoiceMilitantSelectCall[0].options.options as PlayerFactionType[];
-            expect(optionsForMilitantFaction.every((option) => reachValues[option] >= 7)).toBe(true);
+            const optionsForMilitantFaction = awaitChoiceMilitantSelectCall[0].options
+                .options as PlayerFactionType[];
+            expect(optionsForMilitantFaction.every((option) => reachValues[option] >= 7)).toBe(
+                true,
+            );
         });
         test("no insurgents are selected for the draft in 2-player games", () => {
             basePlayOptions.playerIDs = [1, 2];
@@ -1568,10 +1615,11 @@ describe("RootGame.setup", () => {
             const awaitChoiceFirstFactionSelectCall = awaitChoiceSpy.mock.calls.find(
                 (call) =>
                     call[0].type === "pick" &&
-                    call[0].options.description === PLAYER_CHOICE_DESC.STARTING_FACTION
+                    call[0].options.description === PLAYER_CHOICE_DESC.STARTING_FACTION,
             ) as [PendingChoice<"pick">];
             expect(awaitChoiceFirstFactionSelectCall).toBeDefined();
-            const firstFactionOptions = awaitChoiceFirstFactionSelectCall[0].options.options as PlayerFactionType[];
+            const firstFactionOptions = awaitChoiceFirstFactionSelectCall[0].options
+                .options as PlayerFactionType[];
             expect(firstFactionOptions.every((option) => reachValues[option] >= 7)).toBe(true);
         });
 
@@ -1586,7 +1634,14 @@ describe("RootGame.setup", () => {
                     name: type,
                     setup: mockSetupFunction,
                 });
-            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","underground-duchy","keepers-in-iron","marquise-de-cat", "eyrie-dynasties", "woodland-alliance"];
+            const factionsAvailable: PlayerFactionType[] = [
+                "corvid-conspiracy",
+                "underground-duchy",
+                "keepers-in-iron",
+                "marquise-de-cat",
+                "eyrie-dynasties",
+                "woodland-alliance",
+            ];
             advancedSetupOptions.setup.draftableFactions = factionsAvailable;
             vi.spyOn(game, "factions", "get").mockReturnValue(factionsAvailable.map(mockFaction));
             game.setup();
@@ -1596,14 +1651,19 @@ describe("RootGame.setup", () => {
             expect(mockSetupFunction.mock.calls[2][1]).toBe(1);
         });
         test("players cannot draft the last faction in the draft if it is an insurgent and no militant faction has been drafted yet", () => {
-            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","lizard-cult","keepers-in-iron", "woodland-alliance"]; // insurgent, insurgent, militant, insurgent
+            const factionsAvailable: PlayerFactionType[] = [
+                "corvid-conspiracy",
+                "lizard-cult",
+                "keepers-in-iron",
+                "woodland-alliance",
+            ]; // insurgent, insurgent, militant, insurgent
             advancedSetupOptions.setup.draftableFactions = factionsAvailable;
             resolvedChoices["1st player faction"] = {
                 playerID: 3,
                 type: "pick",
                 options: {
                     description: PLAYER_CHOICE_DESC.STARTING_FACTION,
-                    options: ["corvid-conspiracy","lizard-cult","keepers-in-iron"],
+                    options: ["corvid-conspiracy", "lizard-cult", "keepers-in-iron"],
                 },
                 value: "lizard-cult",
             };
@@ -1612,7 +1672,7 @@ describe("RootGame.setup", () => {
                 type: "pick",
                 options: {
                     description: PLAYER_CHOICE_DESC.STARTING_FACTION,
-                    options: ["corvid-conspiracy","keepers-in-iron"],
+                    options: ["corvid-conspiracy", "keepers-in-iron"],
                 },
                 value: "corvid-conspiracy",
             };
@@ -1621,10 +1681,12 @@ describe("RootGame.setup", () => {
                 (call) =>
                     call[0].type === "pick" &&
                     call[0].options.description === PLAYER_CHOICE_DESC.STARTING_FACTION &&
-                    call[0].playerID === 1
+                    call[0].playerID === 1,
             ) as [PendingChoice<"pick">];
             expect(awaitChoiceThirdFactionSelectCall).toBeDefined();
-            expect(awaitChoiceThirdFactionSelectCall[0].options.options).toEqual(["keepers-in-iron"]);
+            expect(awaitChoiceThirdFactionSelectCall[0].options.options).toEqual([
+                "keepers-in-iron",
+            ]);
         });
         test("players setup their faction before the next player picks", () => {
             // We need to check that the setup function for the 1st player's faction is called before the awaitChoice for the 2nd player's faction pick
@@ -1632,7 +1694,10 @@ describe("RootGame.setup", () => {
             const calls: { type: "setup" | "awaitChoice"; id: number | null }[] = [];
             const currentAwaitChoiceImpl = awaitChoiceSpy.getMockImplementation()!;
             awaitChoiceSpy.mockImplementation(async (choice) => {
-                if (choice.type === "pick" && choice.options.description === PLAYER_CHOICE_DESC.STARTING_FACTION) {
+                if (
+                    choice.type === "pick" &&
+                    choice.options.description === PLAYER_CHOICE_DESC.STARTING_FACTION
+                ) {
                     calls.push({ type: "awaitChoice", id: choice.playerID });
                 }
                 return currentAwaitChoiceImpl(choice);
@@ -1645,7 +1710,14 @@ describe("RootGame.setup", () => {
                         calls.push({ type: "setup", id });
                     },
                 });
-            const factionsAvailable: PlayerFactionType[] = ["corvid-conspiracy","underground-duchy","keepers-in-iron","marquise-de-cat", "eyrie-dynasties", "woodland-alliance"];
+            const factionsAvailable: PlayerFactionType[] = [
+                "corvid-conspiracy",
+                "underground-duchy",
+                "keepers-in-iron",
+                "marquise-de-cat",
+                "eyrie-dynasties",
+                "woodland-alliance",
+            ];
             advancedSetupOptions.setup.draftableFactions = factionsAvailable;
             vi.spyOn(game, "factions", "get").mockReturnValue(factionsAvailable.map(mockFaction));
             game.setup();
@@ -1703,11 +1775,17 @@ describe("RootGame.isMoveLegal ", () => {
             }
             throw new Error(`Location not found: ${locationID}`);
         });
-        vi.spyOn(board, "getConnectionTypesBetween").mockImplementation((location1ID: LocationID, location2ID: LocationID) => {
-            return connections
-                .filter((connection) => connection.locationIDs.includes(location1ID) && connection.locationIDs.includes(location2ID))
-                .map((connection) => connection.type);
-        });
+        vi.spyOn(board, "getConnectionTypesBetween").mockImplementation(
+            (location1ID: LocationID, location2ID: LocationID) => {
+                return connections
+                    .filter(
+                        (connection) =>
+                            connection.locationIDs.includes(location1ID) &&
+                            connection.locationIDs.includes(location2ID),
+                    )
+                    .map((connection) => connection.type);
+            },
+        );
         vi.spyOn(game, "getRuler").mockImplementation((locationID: LocationID) => {
             if (forestIDs.includes(locationID)) {
                 return null; // No one rules forests
@@ -1836,7 +1914,8 @@ describe("RootGame.isMoveLegal ", () => {
 describe("RootGame.isBattleLegal ", () => {
     let clearing: Clearing;
     beforeEach(() => {
-        clearing = makeClearing({id: 1});
+        clearing = makeClearing({ id: 1 });
+        mockBoard();
         vi.spyOn(board, "getClearing").mockReturnValue(clearing);
         vi.spyOn(game, "isEnemy").mockReturnValue(true);
     });
@@ -1912,34 +1991,193 @@ describe("RootGame.isBattleLegal ", () => {
 // --- isPlaceLegal  ---------------------------------------------------
 
 describe("RootGame.isPlaceLegal", () => {
-    
-    const clearing = makeClearing({id: 1});
-    
-    test("placing a building is legal when there is an open slot", () => {
+    let clearing: Clearing;
 
+    beforeEach(() => {
+        clearing = makeClearing({ id: 1, printedSuit: "fox", slotCount: 2 });
+        mockBoard();
+        vi.spyOn(board, "getClearing").mockReturnValue(clearing);
     });
 
-    test("placing a building is illegal when there are no open slots ", () => {});
+    test("placing a building is legal when there is an open slot", () => {
+        vi.spyOn(clearing, "openSlots").mockReturnValue(1);
+        const piece = makeBuilding({ id: 1, name: "workshop", owningFaction: "marquise-de-cat" });
+        const isLegal = game.isPlaceLegal([piece], clearing.id);
+        expect(isLegal).toBe(true);
+    });
+
+    test("placing a building is illegal when there are no open slots ", () => {
+        vi.spyOn(clearing, "openSlots").mockReturnValue(0);
+        const piece = makeBuilding({ id: 1, name: "workshop", owningFaction: "marquise-de-cat" });
+        const isLegal = game.isPlaceLegal([piece], clearing.id);
+        expect(isLegal).toBe(false);
+    });
 });
 
 // --- isCraftLegal  -----------------------------------------------------
 
 describe("RootGame.isCraftLegal", () => {
-    test("is legal when unexhausted crafting pieces cover all required suits", () => {});
+    let faction: PlayerFaction;
+    const idSuitMap: { [key: number]: string[] } = {
+        1: ["fox"],
+        2: ["mouse"],
+        3: ["rabbit"],
+        4: ["fox"],
+        5: ["mouse"],
+        6: ["rabbit"],
+        8: ["fox", "mouse"],
+        9: ["fox", "rabbit"],
+        10: ["mouse", "rabbit"],
+        11: ["fox", "mouse", "rabbit"],
+    };
+    beforeEach(() => {
+        mockFactions([{ faction: "marquise-de-cat", playerID: 1 }]);
+        faction = factions["marquise-de-cat"]!;
+        mockBoard();
+        vi.spyOn(board, "getSuitsOfPiece").mockImplementation((pieceID: PieceID) => {
+            return idSuitMap[pieceID] || [];
+        });
+    });
+    test.each([
+        [
+            [1, 2],
+            ["fox", "mouse"],
+        ],
+        [
+            [2, 3],
+            ["rabbit", "mouse"],
+        ],
+        [
+            [6, 10],
+            ["rabbit", "mouse"],
+        ],
+        [
+            [1, 4],
+            ["fox", "fox"],
+        ],
+        [
+            [8, 9, 10],
+            ["fox", "rabbit", "mouse"],
+        ],
+    ] satisfies [PieceID[], Suit[]][])(
+        "is legal when unexhausted crafting pieces cover all required suits",
+        (craftingPieces: PieceID[], requiredSuits: Suit[]) => {
+            const card = makeCard({
+                id: 1,
+                name: "Test Crafting Card",
+                craftingCost: requiredSuits,
+                isAmbush: false,
+                isDominance: false,
+            });
+            const isLegal = game.isCraftLegal(faction.name, card, craftingPieces);
+            expect(isLegal).toBe(true);
+        },
+    );
 
-    test("is illegal when crafting pieces do not cover all required suits ", () => {});
+    test.each([
+        [[], ["fox"]],
+        [
+            [1, 2],
+            ["fox", "rabbit"],
+        ],
+        [
+            [1, 8],
+            ["mouse", "mouse"],
+        ],
+        [
+            [2, 10],
+            ["mouse", "mouse", "mouse"],
+        ],
+        [
+            [8, 9, 10],
+            ["rabbit", "rabbit", "rabbit"],
+        ],
+    ] satisfies [PieceID[], Suit[]][])(
+        "is illegal when crafting pieces do not cover all required suits ",
+        (craftingPieces: PieceID[], requiredSuits: Suit[]) => {
+            const card = makeCard({
+                id: 1,
+                name: "Test Crafting Card",
+                craftingCost: requiredSuits,
+                isAmbush: false,
+                isDominance: false,
+            });
+            const isLegal = game.isCraftLegal(faction.name, card, craftingPieces);
+            expect(isLegal).toBe(false);
+        },
+    );
 
-    test("is illegal to craft with exhausted pieces ", () => {});
+    test("is illegal to craft with exhausted pieces", () => {
+        const requiredSuits: Suit[] = ["fox", "mouse"];
+        const craftingPieces: PieceID[] = [1, 2];
+        const spentCraftingPieces: PieceID[] = [1, 2];
+        vi.spyOn(game, "spentCraftingPieces", "get").mockReturnValue(spentCraftingPieces);
+        const card = makeCard({
+            id: 1,
+            name: "Test Crafting Card",
+            craftingCost: requiredSuits,
+            isAmbush: false,
+            isDominance: false,
+        });
+        const isLegal = game.isCraftLegal(faction.name, card, craftingPieces);
+        expect(isLegal).toBe(false);
+    });
 
-    test("presence of extra crafting pieces does not affect legality, even if exhausted ", () => {});
+    test.each([
+        [[1, 2], [4, 5], ["fox", "mouse"], true],
+        [[2, 3], [5, 6], ["rabbit", "mouse"], true],
+        [[6, 10], [8, 3], ["rabbit", "mouse"], true],
+        [[1, 4], [8, 11], ["fox", "fox"], true],
+        [[8, 9, 10], [1], ["fox", "rabbit", "mouse"], true],
+        [[], [1], ["fox"], false],
+        [[1, 2], [3], ["fox", "rabbit"], false],
+        [[1, 8], [2], ["mouse", "mouse"], false],
+        [[2, 10], [5, 11], ["mouse", "mouse", "mouse"], false],
+        [[8, 9, 10], [11], ["rabbit", "rabbit", "rabbit"], false],
+    ] satisfies [PieceID[], PieceID[], Suit[], boolean][])(
+        "presence of extra crafting pieces does not affect legality, even if exhausted ",
+        (craftingPieces, exhaustedPieces, requiredSuits, expected) => {
+            vi.spyOn(game, "spentCraftingPieces", "get").mockReturnValue(exhaustedPieces);
+            const card = makeCard({
+                id: 1,
+                name: "Test Crafting Card",
+                craftingCost: requiredSuits,
+                isAmbush: false,
+                isDominance: false,
+            });
+            const allPieces = [...craftingPieces, ...exhaustedPieces];
+            const isLegal = game.isCraftLegal(faction.name, card, allPieces);
+            expect(isLegal).toBe(expected);
+        },
+    );
 
-    test("is illegal when no crafting pieces are provided", () => {});
+    test("cannot craft a card with a null crafting cost", () => {
+        const craftingPieces: PieceID[] = [8, 9, 10, 11];
+        const card = makeCard({
+            id: 1,
+            name: "Test Crafting Card",
+            craftingCost: null,
+            isAmbush: false,
+            isDominance: false,
+        });
+        const isLegal = game.isCraftLegal(faction.name, card, craftingPieces);
+        expect(isLegal).toBe(false);
+    });
 
-    test("cannot craft an ambush card ", () => {});
-
-    test("cannot craft a dominance card ", () => {});
-
-    test("cannot craft duplicate persistent effects ", () => {});
+    test("cannot craft duplicate persistent effects", () => {
+        const craftedImprovements = makeCardPile();
+        vi.spyOn(faction, "craftedImprovements", "get").mockReturnValue(craftedImprovements);
+        vi.spyOn(craftedImprovements, "hasCard").mockReturnValue(true);
+        const card = makeCard({
+            id: 1,
+            name: "Test Crafting Card",
+            craftingCost: ["fox"],
+            isAmbush: false,
+            isDominance: false,
+        });
+        const isLegal = game.isCraftLegal(faction.name, card, [1]);
+        expect(isLegal).toBe(false);
+    });
 });
 
 // --- isEnemy  -----------------------------------------------------
@@ -1966,7 +2204,10 @@ describe("RootGame.getRuler", () => {
         const woodlandWarriors = [
             makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
         ];
-        vi.spyOn(clearing, "getWarriors").mockReturnValue([...marquiseWarriors, ...woodlandWarriors]);
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([
+            ...marquiseWarriors,
+            ...woodlandWarriors,
+        ]);
         expect(game.getRuler(1)).toBe("marquise-de-cat");
     });
 
@@ -1979,7 +2220,10 @@ describe("RootGame.getRuler", () => {
             makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
             makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
         ];
-        vi.spyOn(clearing, "getWarriors").mockReturnValue([...marquiseWarriors, ...woodlandWarriors]);
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([
+            ...marquiseWarriors,
+            ...woodlandWarriors,
+        ]);
         expect(game.getRuler(1)).toBeNull();
     });
 
@@ -1996,7 +2240,9 @@ describe("RootGame.getRuler", () => {
             makeToken({ owningFaction: "marquise-de-cat", faceUp: true }),
             makeToken({ owningFaction: "marquise-de-cat", faceUp: true }),
         ];
-        vi.spyOn(clearing, "getWarriors").mockReturnValue([makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true })]);
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([
+            makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true }),
+        ]);
         vi.spyOn(clearing, "getCardboard").mockReturnValue(marquiseTokens);
         expect(game.getRuler(1)).toBe("eyrie-dynasties");
     });
@@ -2006,7 +2252,9 @@ describe("RootGame.getRuler", () => {
             makeBuilding({ id: 1, name: "workshop", owningFaction: "marquise-de-cat" }),
             makeBuilding({ id: 2, name: "recruiter", owningFaction: "marquise-de-cat" }),
         ];
-        vi.spyOn(clearing, "getWarriors").mockReturnValue([makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true })]);
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([
+            makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true }),
+        ]);
         vi.spyOn(clearing, "getCardboard").mockReturnValue(marquiseBuildings);
         expect(game.getRuler(1)).toBe("marquise-de-cat");
     });
@@ -2025,7 +2273,11 @@ describe("RootGame.getRuler", () => {
             makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true }),
             makePawn({ owningFaction: "eyrie-dynasties", isWarrior: true }),
         ];
-        vi.spyOn(clearing, "getWarriors").mockReturnValue([...marquiseWarriors, ...woodlandWarriors, ...eyrieWarriors]);
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([
+            ...marquiseWarriors,
+            ...woodlandWarriors,
+            ...eyrieWarriors,
+        ]);
         expect(game.getRuler(1)).toBe("marquise-de-cat");
     });
 

@@ -25,6 +25,9 @@ export class Clearing extends Location {
         this.printedSuit = printedSuit;
         this.slotCount = slotCount;
     }
+    get suits(): Suit[] {
+        throw new Error("Clearing.suits not implemented");
+    }
 
     matches(suit: Suit | null): boolean {
         return false;

@@ -1,8 +1,10 @@
 import { mock, type MockProxy } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
 import { Clearing } from "../../src/board/Clearing";
+import type { Connection, ConnectionID } from "../../src/board/Connection";
 import { Forest } from "../../src/board/Forest";
-import { Item } from "../../src/Item";
+import type { LocationID, LocationType } from "../../src/board/Location";
+import type { Card, CardID } from "../../src/cards/Card";
 import { CardPile } from "../../src/cards/CardPile";
 import type { CardLocationType, CardPileLocation } from "../../src/cards/CardPileLocation";
 import {
@@ -22,7 +24,41 @@ import {
     type PromotedHirelingFactionType,
     type Suit,
 } from "../../src/Enums";
-import type { Card, CardID } from "../../src/cards/Card";
+import type {
+    Choice,
+    ChoiceID,
+    ChoiceOptionsMap,
+    ChoiceType,
+    ChoiceValueMap,
+    PendingChoice,
+    ResolvedChoice,
+} from "../../src/game/Choice";
+import type { Event } from "../../src/game/Event";
+import type { PlayOptions } from "../../src/game/PlayOptions";
+import { RandomEventHandler } from "../../src/game/RandomEventHandler";
+import type { PlayerID, RootGame } from "../../src/game/RootGame";
+import type {
+    GameUpdateType,
+    GameUpdateValueMap,
+    RootGameUpdate,
+} from "../../src/game/RootGameUpdate";
+import type { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
+import type { Battle } from "../../src/gameActions/Battle";
+import type { Move } from "../../src/gameActions/Move";
+import { Item } from "../../src/Item";
+import type { Building } from "../../src/pieces/Building";
+import type { Pawn } from "../../src/pieces/Pawn";
+import type { Piece, PieceID } from "../../src/pieces/Piece";
+import { Ruin } from "../../src/pieces/Ruin";
+import { Supply } from "../../src/pieces/Supply";
+import type { Token } from "../../src/pieces/Token";
+import type { Faction } from "../../src/rulesModule/Faction";
+import type { FactionUpdate } from "../../src/rulesModule/FactionUpdate";
+import type { DemotedHireling, Hireling, PromotedHireling } from "../../src/rulesModule/Hireling";
+import type { Landmark, LandmarkID } from "../../src/rulesModule/Landmark";
+import type { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
+import type { ExtensionPointType, RulesChange } from "../../src/rulesModule/RulesChange";
+import type { RulesModule } from "../../src/rulesModule/RulesModule";
 import { BattleState } from "../../src/state/BattleState";
 import type { RootBoardState } from "../../src/state/RootBoardState";
 import type { CardPileState } from "../../src/state/RootCardPileState";
@@ -30,39 +66,16 @@ import type { RootFactionState } from "../../src/state/RootFactionState";
 import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
+import type { StateHistory as StateHistoryType } from "../../src/stateStore/StateHistory";
 import { HistoryNode } from "../../src/stateStore/StateHistory";
 import { StateStore, type StateType, type TransitionType } from "../../src/stateStore/StateStore";
-import type { Battle } from "../../src/gameActions/Battle";
-import type { Move } from "../../src/gameActions/Move";
-import type { Choice, ChoiceID, ChoiceOptionsMap, ChoiceType, ChoiceValueMap, PendingChoice, ResolvedChoice } from "../../src/game/Choice";
-import type { Event } from "../../src/game/Event";
-import type { PlayOptions } from "../../src/game/PlayOptions";
-import type { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
-import { RandomEventHandler } from "../../src/game/RandomEventHandler";
-import type { RootGame, PlayerID } from "../../src/game/RootGame";
-import type { GameUpdateType, GameUpdateValueMap, RootGameUpdate } from "../../src/game/RootGameUpdate";
-import type { Piece, PieceID } from "../../src/pieces/Piece";
-import type { Pawn } from "../../src/pieces/Pawn";
-import type { Token } from "../../src/pieces/Token";
-import type { Building } from "../../src/pieces/Building";
-import { Ruin } from "../../src/pieces/Ruin";
-import { Supply } from "../../src/pieces/Supply";
-import type { Faction } from "../../src/rulesModule/Faction";
-import type { RulesChange, ExtensionPointType } from "../../src/rulesModule/RulesChange";
-import type { RulesModule } from "../../src/rulesModule/RulesModule";
-import type { Hireling, DemotedHireling, PromotedHireling } from "../../src/rulesModule/Hireling";
-import type { Landmark, LandmarkID } from "../../src/rulesModule/Landmark";
-import type { PlayerFaction } from "../../src/rulesModule/PlayerFaction";
-import type { LocationID, LocationType } from "../../src/board/Location";
-import type { Connection, ConnectionID } from "../../src/board/Connection";
-import type { StateHistory as StateHistoryType } from "../../src/stateStore/StateHistory";
-import type { FactionUpdate } from "../../src/rulesModule/FactionUpdate";
 
 type PropertiesOnly<T> = {
     [K in keyof T as T[K] extends Function ? never : K]: T[K];
 };
 
-function genericMock<T>(overrides?: Partial<T>): MockProxy<T> { // Lets us use mock with generics
+function genericMock<T>(overrides?: Partial<T>): MockProxy<T> {
+    // Lets us use mock with generics
     return mock<T>(overrides as any); // Brute force solution since we don't have access to DeepPartial
 }
 
@@ -249,7 +262,9 @@ export function makeCard(overrides?: Partial<Card>): Card {
     };
 }
 
-export function makeCardPileLocation(overrides?: Partial<CardPileLocation> & Pick<CardPileLocation, "name">): CardPileLocation {
+export function makeCardPileLocation(
+    overrides?: Partial<CardPileLocation> & Pick<CardPileLocation, "name">,
+): CardPileLocation {
     if (!overrides) {
         return {
             name: "nowhere",
@@ -336,17 +351,21 @@ export function makeFactionUpdate(overrides?: Partial<FactionUpdate>): FactionUp
         updateType: "updateType",
         value: null,
         ...overrides,
-    }
+    };
 }
 
 export function makePlayerFaction(overrides?: Partial<PlayerFaction>): MockProxy<PlayerFaction> {
-    return mock<PlayerFaction>({
+    const defaults: PropertiesOnly<PlayerFaction> = {
         ...makeFaction(),
         name: makePlayerFactionType(),
         score: 0,
         hand: makeCardPile(),
         revealedCards: makeCardPile(),
+        craftedImprovements: makeCardPile(),
         piles: {},
+    };
+    return mock<PlayerFaction>({
+        ...defaults,
         ...overrides,
     });
 }
@@ -377,8 +396,11 @@ export function makeDemotedHireling(
     });
 }
 
-export function makeHireling(overrides?: Partial<Hireling>): Hireling {
-    if (overrides?.isDemoted || overrides?.name && isDemotedHirelingFactionType(overrides?.name)) {
+export function makeHireling(overrides?: Partial<Hireling>): MockProxy<Hireling> {
+    if (
+        overrides?.isDemoted ||
+        (overrides?.name && isDemotedHirelingFactionType(overrides?.name))
+    ) {
         return makeDemotedHireling(overrides as Partial<DemotedHireling>);
     }
     return makePromotedHireling(overrides as Partial<PromotedHireling>);
@@ -436,7 +458,10 @@ export function makeRootHirelingState(overrides?: Partial<RootHirelingState>): R
     };
 }
 
-export function makeChoiceOptions<T extends ChoiceType>(type: T, overrides?: Partial<ChoiceOptionsMap[T]>): ChoiceOptionsMap[T] {
+export function makeChoiceOptions<T extends ChoiceType>(
+    type: T,
+    overrides?: Partial<ChoiceOptionsMap[T]>,
+): ChoiceOptionsMap[T] {
     switch (type) {
         case "pick":
             return {
@@ -503,7 +528,7 @@ export function makePendingChoice<T extends ChoiceType>(
     } as PendingChoice<T>;
 }
 
-export function makeResolvedChoice<T extends ChoiceType>(
+export function makeResolvedChoice<T extends ChoiceType = "pick">(
     type: T,
     overrides?: Partial<ResolvedChoice<T>>,
 ): ResolvedChoice<T> {
@@ -674,8 +699,10 @@ export function makeRootGameState(overrides?: Partial<RootGameState>): RootGameS
     };
 }
 
-export function makeRootGameUpdate<T extends GameUpdateType>(type: T, overrides?: Partial<RootGameUpdate>): RootGameUpdate {
-
+export function makeRootGameUpdate<T extends GameUpdateType>(
+    type: T,
+    overrides?: Partial<RootGameUpdate>,
+): RootGameUpdate {
     const optionsMap: { [K in GameUpdateType]: GameUpdateValueMap[K] } = {
         stateSet: { newState: makeRootGameState() },
         factionSelected: { playerID: makePlayerID(), faction: makePlayerFactionType() },
@@ -688,7 +715,11 @@ export function makeRootGameUpdate<T extends GameUpdateType>(type: T, overrides?
         remove: { pieces: [makePieceID()], from: makeLocationID() },
         addToSupply: { pieces: [makePieceID()], faction: makeFactionType() },
         factionStateUpdate: { update: makeFactionUpdate() },
-        moveCard: { cardID: makeCardID(), from: makeCardPileLocation(), to: makeCardPileLocation() },
+        moveCard: {
+            cardID: makeCardID(),
+            from: makeCardPileLocation(),
+            to: makeCardPileLocation(),
+        },
         startBattle: { battle: makeBattle() },
         battleSegmentChange: { newBattleSegment: makeBattlePhaseType() },
         pendingHitsChange: { attackerHits: 1, defenderHits: 1 },
@@ -696,7 +727,11 @@ export function makeRootGameUpdate<T extends GameUpdateType>(type: T, overrides?
         crafting: { craftingPiecesUsed: [makePieceID()] },
         craftingReset: { craftingPiecesReset: [makePieceID()] },
         choicePended: { choice: makeChoice(makeChoiceType()) },
-        choiceResolved: { choiceID: makeChoiceID(), type: "pick", resolution: makeChoiceValue("pick") },
+        choiceResolved: {
+            choiceID: makeChoiceID(),
+            type: "pick",
+            resolution: makeChoiceValue("pick"),
+        },
         compound: { updates: [] },
     };
     return {
@@ -709,7 +744,7 @@ export function makeRootGameUpdate<T extends GameUpdateType>(type: T, overrides?
 }
 
 export function makeStateStore<State extends StateType, Transition extends TransitionType>(
-    overrides?: Partial<StateStore<State, Transition>>
+    overrides?: Partial<StateStore<State, Transition>>,
 ): MockProxy<StateStore<State, Transition>> {
     return mock<StateStore<State, Transition>>({
         ...overrides,
@@ -729,7 +764,7 @@ export function makeHistoryNode<State extends StateType, Transition extends Tran
 }
 
 export function makeStateHistory<State extends StateType, Transition extends TransitionType>(
-    overrides?: Partial<StateHistoryType<State, Transition>>
+    overrides?: Partial<StateHistoryType<State, Transition>>,
 ): MockProxy<StateHistoryType<State, Transition>> {
     return genericMock<StateHistoryType<State, Transition>>({
         historyNodes: [],
@@ -769,4 +804,3 @@ export function makeRootGame(overrides?: Partial<RootGame>): MockProxy<RootGame>
     });
 }
 //#endregion
-
