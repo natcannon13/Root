@@ -123,7 +123,7 @@ export class RootGame {
         throw new Error("RootGame.isCraftLegal not implemented");
     }
 
-    isEnemy(faction1: PlayerFactionType, faction2: PlayerFactionType): boolean {
+    isEnemy(faction1: FactionType, faction2: FactionType): boolean {
         throw new Error("RootGame.isEnemy not implemented");
     }
 

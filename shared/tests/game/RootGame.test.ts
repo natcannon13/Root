@@ -1912,6 +1912,7 @@ describe("RootGame.isMoveLegal ", () => {
 // --- isBattleLegal  ----------------------------------------------------
 
 describe("RootGame.isBattleLegal ", () => {
+    // TODO: update to reflect that attacking with non-warrior pawns is legal
     let clearing: Clearing;
     beforeEach(() => {
         clearing = makeClearing({ id: 1 });
@@ -2183,7 +2184,76 @@ describe("RootGame.isCraftLegal", () => {
 // --- isEnemy  -----------------------------------------------------
 
 describe("RootGame.isEnemy", () => {
-    // TODO: Implement isEnemy tests
+    const factionTypes = [
+        "marquise-de-cat",
+        "eyrie-dynasties",
+        "woodland-alliance",
+    ] as PlayerFactionType[];
+    const hirelingTypes = [
+        "badger-bodyguards",
+        "bandit-gangs",
+        "bat-messengers",
+    ] as HirelingFactionType[];
+    beforeEach(() => {
+        mockFactions(factionTypes.map((faction, index) => ({ faction, playerID: index + 1 })));
+        mockHirelings(hirelingTypes);
+        hirelings;
+        for (const hireling of Object.values(hirelings)) {
+            vi.spyOn(hireling, "controllingFaction", "get").mockReturnValue(null);
+        }
+    });
+    test("player factions are enemies with each other", () => {
+        const playerFaction1 = factionTypes[0];
+        const playerFaction2 = factionTypes[1];
+        expect(game.isEnemy(playerFaction1, playerFaction2)).toBe(true);
+    });
+    test("player factions are not enemies with themselves", () => {
+        const playerFaction1 = factionTypes[0];
+        expect(game.isEnemy(playerFaction1, playerFaction1)).toBe(false);
+    });
+    test("player factions are enemies with uncontrolled hirelings", () => {
+        const playerFaction1 = factionTypes[0];
+        const uncontrolledHireling = hirelingTypes[0];
+        expect(game.isEnemy(playerFaction1, uncontrolledHireling)).toBe(true);
+    });
+    test("player factions are enemies with hirelings controlled by enemy factions", () => {
+        const playerFaction1 = factionTypes[0];
+        const playerFaction2 = factionTypes[1];
+        const hireling = hirelingTypes[0];
+        vi.spyOn(hirelings[hireling]!, "controllingFaction", "get").mockReturnValue(playerFaction2);
+        expect(game.isEnemy(playerFaction1, hireling)).toBe(true);
+    });
+    test("player factions are not enemies with hirelings they control", () => {
+        const playerFaction1 = factionTypes[0];
+        const hireling = hirelingTypes[0];
+        vi.spyOn(hirelings[hireling]!, "controllingFaction", "get").mockReturnValue(playerFaction1);
+        expect(game.isEnemy(playerFaction1, hireling)).toBe(false);
+    });
+    test("hirelings controlled by the same faction are not enemies with each other", () => {
+        const playerFaction1 = factionTypes[0];
+        const hireling1 = hirelingTypes[0];
+        const hireling2 = hirelingTypes[1];
+        vi.spyOn(hirelings[hireling1]!, "controllingFaction", "get").mockReturnValue(
+            playerFaction1,
+        );
+        vi.spyOn(hirelings[hireling2]!, "controllingFaction", "get").mockReturnValue(
+            playerFaction1,
+        );
+        expect(game.isEnemy(hireling1, hireling2)).toBe(false);
+    });
+    test("hirelings not controlled by the same faction are enemies with each other", () => {
+        const playerFaction1 = factionTypes[0];
+        const playerFaction2 = factionTypes[1];
+        const hireling1 = hirelingTypes[0];
+        const hireling2 = hirelingTypes[1];
+        vi.spyOn(hirelings[hireling1]!, "controllingFaction", "get").mockReturnValue(
+            playerFaction1,
+        );
+        vi.spyOn(hirelings[hireling2]!, "controllingFaction", "get").mockReturnValue(
+            playerFaction2,
+        );
+        expect(game.isEnemy(hireling1, hireling2)).toBe(true);
+    });
 });
 
 // --- getRuler  -----------------------------------------------------
