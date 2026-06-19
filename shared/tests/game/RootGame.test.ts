@@ -45,6 +45,7 @@ import {
 import type { RootGameUpdate } from "../../src/game/RootGameUpdate";
 import type { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
 import type { Battle } from "../../src/gameActions/Battle";
+import type { Move } from "../../src/gameActions/Move";
 import type { PieceID } from "../../src/pieces/Piece";
 import type { DemotedHireling, Hireling, PromotedHireling } from "../../src/rulesModule/Hireling";
 import type { Landmark } from "../../src/rulesModule/Landmark";
@@ -1744,6 +1745,7 @@ describe("RootGame.returnCardToDeck", () => {});
 // --- isMoveLegal  ----------------------------------------------
 
 describe("RootGame.isMoveLegal ", () => {
+    // TODO: update tests to reflect that moving non-pawn pieces is illegal.
     const clearingIDs = [1, 2, 3, 4];
     const forestIDs = [5, 6, 7, 8];
     const connections: Connection[] = [
@@ -2398,8 +2400,45 @@ describe("RootGame.getRuler", () => {
 // --- move  -----------------------------------------------------
 
 describe("RootGame.move", () => {
-    test("moves pieces from origin to destination clearing ", () => {});
-    test("throws an error if move is illegal ", () => {});
+    let clearing1: Clearing;
+    let clearing2: Clearing;
+    beforeEach(() => {
+        clearing1 = makeClearing({ id: 1 });
+        clearing2 = makeClearing({ id: 2 });
+        mockBoard();
+        vi.spyOn(board, "getClearing").mockImplementation((id: LocationID) => {
+            if (id === clearing1.id) {
+                return clearing1;
+            }
+            if (id === clearing2.id) {
+                return clearing2;
+            }
+            throw new Error(`Clearing not found: ${id}`);
+        });
+        vi.spyOn(game, "isMoveLegal").mockReturnValue(true);
+    });
+    test("delegates move execution to the board", () => {
+        const piece = makePiece({ id: 1, owningFaction: "marquise-de-cat" });
+        const move: Move = {
+            mover: "marquise-de-cat",
+            pieces: [piece],
+            startingLocationID: clearing1.id,
+            endingLocationID: clearing2.id,
+        };
+        game.move(move);
+        expect(board.move).toHaveBeenCalledWith(move);
+    });
+    test("throws an error if move is illegal ", () => {
+        vi.spyOn(game, "isMoveLegal").mockReturnValue(false);
+        const piece = makePiece({ id: 1, owningFaction: "marquise-de-cat" });
+        const move: Move = {
+            mover: "marquise-de-cat",
+            pieces: [piece],
+            startingLocationID: clearing1.id,
+            endingLocationID: clearing2.id,
+        };
+        expect(() => game.move(move)).toThrow();
+    });
 });
 
 // --- battle  -----------------------------------------------------
