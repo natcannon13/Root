@@ -2351,7 +2351,48 @@ describe("RootGame.getRuler", () => {
         expect(game.getRuler(1)).toBe("marquise-de-cat");
     });
 
-    // TODO: controlled hirelings count towards rule
+    test("controlled hirelings count toward rule", () => {
+        mockHirelings(["badger-bodyguards"]);
+        const marquiseWarriors = [makePawn({ owningFaction: "marquise-de-cat", isWarrior: true })];
+        const hirelingWarriors = [
+            makePawn({ owningFaction: "badger-bodyguards", isWarrior: true }),
+            makePawn({ owningFaction: "badger-bodyguards", isWarrior: true }),
+        ];
+        const woodlandWarriors = [
+            makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
+            makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
+        ];
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([
+            ...marquiseWarriors,
+            ...hirelingWarriors,
+            ...woodlandWarriors,
+        ]);
+        vi.spyOn(hirelings["badger-bodyguards"]!, "controllingFaction", "get").mockReturnValue(
+            "marquise-de-cat",
+        );
+        expect(game.getRuler(1)).toBe("marquise-de-cat");
+    });
+
+    test("uncontrolled hirelings can rule", () => {
+        mockHirelings(["badger-bodyguards"]);
+        const hirelingWarriors = [
+            makePawn({ owningFaction: "badger-bodyguards", isWarrior: true }),
+            makePawn({ owningFaction: "badger-bodyguards", isWarrior: true }),
+            makePawn({ owningFaction: "badger-bodyguards", isWarrior: true }),
+        ];
+        const woodlandWarriors = [
+            makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
+            makePawn({ owningFaction: "woodland-alliance", isWarrior: true }),
+        ];
+        vi.spyOn(clearing, "getWarriors").mockReturnValue([
+            ...hirelingWarriors,
+            ...woodlandWarriors,
+        ]);
+        vi.spyOn(hirelings["badger-bodyguards"]!, "controllingFaction", "get").mockReturnValue(
+            null,
+        );
+        expect(game.getRuler(1)).toBe("badger-bodyguards");
+    });
 });
 
 // --- move  -----------------------------------------------------
