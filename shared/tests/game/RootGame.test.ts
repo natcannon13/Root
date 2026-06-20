@@ -1,3 +1,4 @@
+//#region --- imports ----------------------------------------------------------------
 import util from "util";
 import { beforeEach, describe, expect, type MockInstance, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
@@ -76,10 +77,13 @@ import {
     makeResolvedChoice,
     makeToken,
 } from "../factories/factories";
-
+//#endregion
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
+
+let awaitChoiceSpy: MockInstance<RootGame["awaitChoice"]>;
+let updateStateSpy: MockInstance<RootGame["updateState"]>;
 
 let board: ReturnType<typeof mock<Board>>;
 let factions: Partial<Record<PlayerFactionType, ReturnType<typeof mock<PlayerFaction>>>>;
@@ -140,8 +144,54 @@ function getAdvancedPlayOptions(): PlayOptions & { setup: AdvancedSetupOptions }
     } satisfies PlayOptions;
 }
 
+type ChoiceDescription = Pick<ResolvedChoice, "type" | "options" | "value"> &
+    Partial<Pick<ResolvedChoice, "playerID">>;
+let resolvedChoices: Record<string, ChoiceDescription>;
+let resolvedChoiceList: ChoiceDescription[];
+function initializeResolvedChoices() {
+    resolvedChoices = {
+        "3-player seating order": {
+            playerID: null,
+            type: "pickOrder",
+            options: {
+                description: RAND_ORDER_DESC.SEATING_ORDER,
+                options: [1, 2, 3],
+            },
+            value: [1, 2, 0],
+        },
+    };
+    resolvedChoiceList = Object.values(resolvedChoices);
+}
+
+async function awaitChoiceFake<T extends ChoiceType>(
+    choice: PendingChoice<T>,
+): Promise<ChoiceValueMap[T]> {
+    for (const resolvedChoice of resolvedChoiceList) {
+        if (
+            choice.type === resolvedChoice.type &&
+            (resolvedChoice.playerID === undefined ||
+                choice.playerID === resolvedChoice.playerID) &&
+            util.isDeepStrictEqual(choice.options, resolvedChoice.options)
+        ) {
+            return resolvedChoice.value as ChoiceValueMap[T];
+        }
+    }
+    if (choice.type === "pickOrder") {
+        return choice.options.options.map((_, i) => i) as ChoiceValueMap[T];
+    }
+    if (choice.type === "pickX") {
+        return choice.options.options.slice(0, choice.options.count) as ChoiceValueMap[T];
+    }
+    if (choice.type === "pick") {
+        return choice.options.options[0] as ChoiceValueMap[T];
+    }
+    throw new Error(`No response found for choice: ${JSON.stringify(choice)}`);
+}
+
 beforeEach(() => {
     mockGame();
+    initializeResolvedChoices();
+    awaitChoiceSpy = vi.spyOn(game, "awaitChoice").mockImplementation(awaitChoiceFake);
 });
 
 function mockGame(options: PlayOptions = mock<PlayOptions>()) {
@@ -151,7 +201,7 @@ function mockGame(options: PlayOptions = mock<PlayOptions>()) {
     stateStoreSubscribeMock = subscribe;
     game = new RootGame(stateStore, options);
 }
-
+//#region --- mock component getters ---
 function mockBoard() {
     board = makeBoard();
     vi.spyOn(game, "board", "get").mockReturnValue(board);
@@ -271,8 +321,8 @@ function createRootGameState(overrides: Partial<RootGameState> = {}): RootGameSt
         ...overrides,
     };
 }
-
-// --- constructor ----------------------------------------------------------------
+//#endregion
+//#region --- constructor ----------------------------------------------------------------
 
 describe("RootGame constructor", () => {
     test("registers a listener with the state store", () => {
@@ -292,8 +342,8 @@ describe("RootGame constructor", () => {
         expect(initializeStateSpy).toHaveBeenCalledWith(stateFromOptionsSpy.mock.results[0].value);
     });
 });
-
-// --- getState ----------------------------------------------------------------
+//#endregion
+//#region --- getState ----------------------------------------------------------------
 
 describe("RootGame.getState", () => {
     test("returns a state object that reflects the current game state", () => {
@@ -377,8 +427,8 @@ describe("RootGame.getState", () => {
         expect(pf2.getState).toHaveBeenCalledWith(true);
     });
 });
-
-// --- initializeState ----------------------------------------------------------------
+//#endregion
+//#region --- initializeState ----------------------------------------------------------------
 
 describe("RootGame.initializeState", () => {
     // TODO: redo these tests with real data after everything has been implemented
@@ -465,8 +515,8 @@ describe("RootGame.initializeState", () => {
         expect(initializeStateSpy).toHaveBeenCalledWith(state);
     });
 });
-
-// --- updateState ----------------------------------------------------------------
+//#endregion
+//#region --- updateState ----------------------------------------------------------------
 
 describe("RootGame.updateState", () => {
     test("calls updateState on StateStore with the provided update", () => {
@@ -809,10 +859,15 @@ describe("RootGame.updateState", () => {
         expect(updateStateSpy).toHaveBeenNthCalledWith(4, update3);
     });
 });
-
-// --- awaitChoice ----------------------------------------------------------------
+//#endregion
+//#region --- awaitChoice ----------------------------------------------------------------
 
 describe("RootGame.awaitChoice", () => {
+    beforeEach(() => {
+        // Reset the mock implementation before each test so that we can test
+        // the real implementation of awaitChoice
+        awaitChoiceSpy.mockRestore();
+    });
     test("returns right away with the appropriate value if a matching choice exists in past choices", async () => {
         const past: Choice = {
             id: "c1",
@@ -1017,8 +1072,8 @@ describe("RootGame.awaitChoice", () => {
         expect(setter).toHaveBeenCalledWith(null); // Check that gameplayPromiseControl was set to null
     });
 });
-
-// --- playTurn ----------------------------------------------------------------
+//#endregion
+//#region --- playTurn ----------------------------------------------------------------
 
 describe("RootGame.playTurn", () => {
     let takePhaseSpy: ReturnType<typeof vi.spyOn>;
@@ -1087,66 +1142,17 @@ describe("RootGame.playTurn", () => {
         );
     });
 });
-
-// --- setup ----------------------------------------------------------------
+//#endregion
+//#region --- setup ----------------------------------------------------------------
 
 describe("RootGame.setup", () => {
     let basePlayOptions: PlayOptions & {
         setup: StandardSetupOptions;
     };
-    let awaitChoiceSpy: MockInstance<RootGame["awaitChoice"]>;
-    let updateStateSpy: MockInstance<RootGame["updateState"]>;
-    type ChoiceDescription = Pick<ResolvedChoice, "type" | "options" | "value"> &
-        Partial<Pick<ResolvedChoice, "playerID">>;
 
-    let resolvedChoices: Record<string, ChoiceDescription>;
-
-    let resolvedChoiceList: ChoiceDescription[];
-
-    function initializeResolvedChoices() {
-        resolvedChoices = {
-            "3-player seating order": {
-                playerID: null,
-                type: "pickOrder",
-                options: {
-                    description: RAND_ORDER_DESC.SEATING_ORDER,
-                    options: [1, 2, 3],
-                },
-                value: [1, 2, 0],
-            },
-        };
-        resolvedChoiceList = Object.values(resolvedChoices);
-    }
-
-    async function awaitChoiceFake<T extends ChoiceType>(
-        choice: PendingChoice<T>,
-    ): Promise<ChoiceValueMap[T]> {
-        for (const resolvedChoice of resolvedChoiceList) {
-            if (
-                choice.type === resolvedChoice.type &&
-                (resolvedChoice.playerID === undefined ||
-                    choice.playerID === resolvedChoice.playerID) &&
-                util.isDeepStrictEqual(choice.options, resolvedChoice.options)
-            ) {
-                return resolvedChoice.value as ChoiceValueMap[T];
-            }
-        }
-        if (choice.type === "pickOrder") {
-            return choice.options.options.map((_, i) => i) as ChoiceValueMap[T];
-        }
-        if (choice.type === "pickX") {
-            return choice.options.options.slice(0, choice.options.count) as ChoiceValueMap[T];
-        }
-        if (choice.type === "pick") {
-            return choice.options.options[0] as ChoiceValueMap[T];
-        }
-        throw new Error(`No response found for choice: ${JSON.stringify(choice)}`);
-    }
     beforeEach(() => {
         basePlayOptions = getBasePlayOptions();
         game.options = basePlayOptions;
-        initializeResolvedChoices();
-        awaitChoiceSpy = vi.spyOn(game, "awaitChoice").mockImplementation(awaitChoiceFake);
         updateStateSpy = vi.spyOn(game, "updateState").mockReturnValue(undefined); //TODO: add implementation for cards specifically
     });
     test("randomizes seating order", () => {
@@ -1735,16 +1741,16 @@ describe("RootGame.setup", () => {
         });
     });
 });
-
-// --- drawCard  --------------------------------------------------
+// #endregion
+//#region --- drawCard  --------------------------------------------------
 
 describe("RootGame.drawCard", () => {});
-
-// --- returnCardToDeck  --------------------------------------------------
+//#endregion
+//#region --- returnCardToDeck  --------------------------------------------------
 
 describe("RootGame.returnCardToDeck", () => {});
-
-// --- isMoveLegal  ----------------------------------------------
+//#endregion
+//#region --- isMoveLegal  ----------------------------------------------
 
 describe("RootGame.isMoveLegal ", () => {
     // TODO: update tests to reflect that moving non-pawn pieces is illegal.
@@ -1912,8 +1918,8 @@ describe("RootGame.isMoveLegal ", () => {
         expect(isLegal).toBe(false);
     });
 });
-
-// --- isBattleLegal  ----------------------------------------------------
+//#endregion
+//#region --- isBattleLegal  ----------------------------------------------------
 
 describe("RootGame.isBattleLegal ", () => {
     // TODO: update to reflect that attacking with non-warrior pawns is legal
@@ -1992,8 +1998,8 @@ describe("RootGame.isBattleLegal ", () => {
         expect(isLegal).toBe(false);
     });
 });
-
-// --- isPlaceLegal  ---------------------------------------------------
+//#endregion
+//#region --- isPlaceLegal  ---------------------------------------------------
 
 describe("RootGame.isPlaceLegal", () => {
     let clearing: Clearing;
@@ -2018,8 +2024,8 @@ describe("RootGame.isPlaceLegal", () => {
         expect(isLegal).toBe(false);
     });
 });
-
-// --- isCraftLegal  -----------------------------------------------------
+//#endregion
+//#region --- isCraftLegal  -----------------------------------------------------
 
 describe("RootGame.isCraftLegal", () => {
     let faction: PlayerFaction;
@@ -2184,8 +2190,8 @@ describe("RootGame.isCraftLegal", () => {
         expect(isLegal).toBe(false);
     });
 });
-
-// --- isEnemy  -----------------------------------------------------
+//#endregion
+//#region --- isEnemy  -----------------------------------------------------
 
 describe("RootGame.isEnemy", () => {
     const factionTypes = [
@@ -2259,8 +2265,8 @@ describe("RootGame.isEnemy", () => {
         expect(game.isEnemy(hireling1, hireling2)).toBe(true);
     });
 });
-
-// --- getRuler  -----------------------------------------------------
+//#endregion
+//#region --- getRuler  -----------------------------------------------------
 
 describe("RootGame.getRuler", () => {
     let clearing: Clearing;
@@ -2398,8 +2404,8 @@ describe("RootGame.getRuler", () => {
         expect(game.getRuler(1)).toBe("badger-bodyguards");
     });
 });
-
-// --- move  -----------------------------------------------------
+//#endregion
+//#region --- move  -----------------------------------------------------
 
 describe("RootGame.move", () => {
     let clearing1: Clearing;
@@ -2442,8 +2448,8 @@ describe("RootGame.move", () => {
         expect(() => game.move(move)).toThrow();
     });
 });
-
-// --- battle  -----------------------------------------------------
+//#endregion
+//#region --- battle  -----------------------------------------------------
 
 describe("RootGame.battle", () => {
     /**
@@ -2517,15 +2523,15 @@ describe("RootGame.battle", () => {
         test("battle continues as normal if at least 1 attacking warrior remains after ambush", () => {});
     });
 });
-
-// --- place -------------------------------------------------------------
+//#endregion
+//#region --- place -------------------------------------------------------------
 describe("RootGame.place", () => {
     test("places pieces in target location", () => {});
     test("removes pieces from the source supply", () => {});
     test("throws an error if the placement is invalid", () => {});
 });
-
-// --- craft -------------------------------------------------------------
+//#endregion
+//#region --- craft -------------------------------------------------------------
 describe("RootGame.craft", () => {
     test("removes the card from the player's hand", () => {});
     test("adds the card to the player's crafted improvements", () => {});
@@ -2533,8 +2539,8 @@ describe("RootGame.craft", () => {
     test("adds the crafted pieces to the spent crafting components", () => {});
     test("throws an error if the crafting is invalid", () => {});
 });
-
-// --- dealHits ----------------------------------------------------------
+//#endregion
+//#region --- dealHits ----------------------------------------------------------
 describe("RootGame.dealHits", () => {
     test("player must remove a piece for each hit they receive", () => {});
 
@@ -2546,14 +2552,14 @@ describe("RootGame.dealHits", () => {
 
     test("hirelings do not score VP for their controller when removing enemy buildings or tokens", () => {});
 });
-
-// --- getGlobalEvents ----------------------------------------------------
+//#endregion
+//#region --- getGlobalEvents ----------------------------------------------------
 
 describe("RootGame.getGlobalEvents", () => {
     test("collects global events from all RulesModules", () => {});
 });
-
-// --- Victory - score tracking  --------------------------------
+//#endregion
+//#region --- Victory - score tracking  --------------------------------
 
 describe("RootGame - victory conditions ", () => {
     test("gameOver is false at the start", () => {});
@@ -2572,8 +2578,8 @@ describe("RootGame - victory conditions ", () => {
 
     test("bird dominance failure: a player claiming a bird dominance card but not ruling two opposite corner clearings at start of birdsong does not win ", () => {});
 });
-
-// --- Dominance  --------------------------------------------------------
+//#endregion
+//#region --- Dominance  --------------------------------------------------------
 
 describe("RootGame - dominance ", () => {
     test("players may activate a dominance card in their hand during their daylight ", () => {});
@@ -2592,8 +2598,8 @@ describe("RootGame - dominance ", () => {
 
     test("cannot treat a bird dominance card as another suit when taking it ", () => {});
 });
-
-// --- Deck reshuffling  --------------------------------------------------
+//#endregion
+//#region --- Deck reshuffling  --------------------------------------------------
 
 describe("RootGame - deck management ", () => {
     test("reshuffles discard pile into deck when deck is empty", () => {});
@@ -2602,9 +2608,10 @@ describe("RootGame - deck management ", () => {
 
     test("dominance cards are not reshuffled into the deck ", () => {});
 });
-
-// --- Piece placement limits  -----------------------------------------
+//#endregion
+//#region --- Piece placement limits  -----------------------------------------
 
 describe("RootGame - piece limits ", () => {
     test("does not place pieces beyond supply limit", () => {});
 });
+//#endregion
