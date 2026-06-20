@@ -16,7 +16,7 @@ import type { TransitionType } from "../stateStore/StateStore";
 import type { Choice, ChoiceID, ChoiceType, ChoiceValueMap } from "./Choice";
 import type { PlayerID } from "./RootGame";
 
-const ValidGameUpdateTypes = [
+export const ValidGameUpdateTypes = [
     "stateSet", // Sets the entire state. Used at the beginning of the game and when making an admin edit.
     "factionSelected", // Creates a connection between faction and player ID. Used for the initial faction selection at the start of the game.
     "turnOrderSet", // Sets the turn order. Used for the initial turn order setup at the start of the game.

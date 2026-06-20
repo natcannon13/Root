@@ -1,6 +1,6 @@
 //#region --- imports ----------------------------------------------------------------
 import util from "util";
-import { beforeEach, describe, expect, type MockInstance, test, vi } from "vitest";
+import { beforeEach, describe, expect, type Mock, type MockInstance, test, vi } from "vitest";
 import { mock } from "vitest-mock-extended";
 import { Board } from "../../src/board/Board";
 import type { Clearing } from "../../src/board/Clearing";
@@ -43,7 +43,11 @@ import {
     RootGame,
     type RootGameStateStore,
 } from "../../src/game/RootGame";
-import type { RootGameUpdate } from "../../src/game/RootGameUpdate";
+import {
+    type GameUpdateType,
+    type RootGameUpdate,
+    ValidGameUpdateTypes,
+} from "../../src/game/RootGameUpdate";
 import type { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
 import type { Battle } from "../../src/gameActions/Battle";
 import type { Move } from "../../src/gameActions/Move";
@@ -78,6 +82,13 @@ import {
     makeToken,
 } from "../factories/factories";
 //#endregion
+function buildRecord<K extends string, V>(
+    keys: readonly K[],
+    getValue: (key: K) => V,
+): Record<K, V> {
+    return Object.fromEntries(keys.map((k) => [k, getValue(k)] as const)) as Record<K, V>; // single boundary cast, lives here only
+}
+
 let game: RootGame;
 let stateStore: RootGameStateStore;
 let stateStoreSubscribeMock: ReturnType<typeof vi.fn>;
@@ -188,10 +199,23 @@ async function awaitChoiceFake<T extends ChoiceType>(
     throw new Error(`No response found for choice: ${JSON.stringify(choice)}`);
 }
 
+let updateStateTypeSpies: Record<GameUpdateType, Mock<RootGame["updateState"]>>;
+
+function initializeUpdateStateTypeSpies() {
+    updateStateTypeSpies = buildRecord(ValidGameUpdateTypes, () => vi.fn());
+}
+
+function updateStateFake(update: RootGameUpdate) {
+    const spy = updateStateTypeSpies[update.type];
+    spy(update);
+}
+
 beforeEach(() => {
     mockGame();
     initializeResolvedChoices();
     awaitChoiceSpy = vi.spyOn(game, "awaitChoice").mockImplementation(awaitChoiceFake);
+    initializeUpdateStateTypeSpies();
+    updateStateSpy = vi.spyOn(game, "updateState").mockImplementation(updateStateFake);
 });
 
 function mockGame(options: PlayOptions = mock<PlayOptions>()) {
@@ -519,6 +543,9 @@ describe("RootGame.initializeState", () => {
 //#region --- updateState ----------------------------------------------------------------
 
 describe("RootGame.updateState", () => {
+    beforeEach(() => {
+        updateStateSpy.mockRestore();
+    });
     test("calls updateState on StateStore with the provided update", () => {
         const update: RootGameUpdate = mock<RootGameUpdate>();
         const updateStateSpy = vi.spyOn(stateStore, "updateState").mockReturnValue(undefined);
@@ -1153,7 +1180,7 @@ describe("RootGame.setup", () => {
     beforeEach(() => {
         basePlayOptions = getBasePlayOptions();
         game.options = basePlayOptions;
-        updateStateSpy = vi.spyOn(game, "updateState").mockReturnValue(undefined); //TODO: add implementation for cards specifically
+        //TODO: add updateState implementation for cards specifically
     });
     test("randomizes seating order", () => {
         const seatingOrderChoice = resolvedChoices["3-player seating order"];
