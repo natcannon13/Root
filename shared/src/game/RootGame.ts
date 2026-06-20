@@ -131,6 +131,15 @@ export class RootGame {
         throw new Error("RootGame.getRuler not implemented");
     }
 
+    // move, battle, place, and craft are the initial entry points for those
+    // actions. They then call updateState and awaitChoice as necessary to
+    // execute the action and its consequences. UpdateState is then responsible
+    // for delegating state updates to the appropriate modules (e.g. Board,
+    // PlayerFaction).
+
+    // These functions are also responsible for handling any events triggered by
+    // the action.
+
     async move(move: Move) {
         throw new Error("RootGame.move not implemented");
     }

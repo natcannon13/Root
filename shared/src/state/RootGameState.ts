@@ -19,7 +19,7 @@ export interface RootGameState extends StateType {
     readonly boardState: RootBoardState;
     readonly factionState: Partial<Record<PlayerFactionType, RootFactionState>>;
     readonly hirelingState: Partial<Record<HirelingFactionType, RootHirelingState>>;
-    readonly landmarks: LandmarkType[];
+    readonly landmarks: LandmarkType[]; //TODO: update landmarks to have state
     readonly currentTimeStep: TimeStep;
     readonly battleState: BattleState | null;
     readonly deck: CardPileState;

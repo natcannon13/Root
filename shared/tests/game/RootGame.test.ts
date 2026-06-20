@@ -46,6 +46,7 @@ import type { RootGameUpdate } from "../../src/game/RootGameUpdate";
 import type { AdvancedSetupOptions, StandardSetupOptions } from "../../src/game/SetupOptions";
 import type { Battle } from "../../src/gameActions/Battle";
 import type { Move } from "../../src/gameActions/Move";
+import type { Pawn } from "../../src/pieces/Pawn";
 import type { PieceID } from "../../src/pieces/Piece";
 import type { DemotedHireling, Hireling, PromotedHireling } from "../../src/rulesModule/Hireling";
 import type { Landmark } from "../../src/rulesModule/Landmark";
@@ -58,6 +59,7 @@ import type { RootGameState } from "../../src/state/RootGameState";
 import type { RootHirelingState } from "../../src/state/RootHirelingState";
 import { TimeStep } from "../../src/state/TimeStep";
 import {
+    makeBattleState,
     makeBoard,
     makeBuilding,
     makeCard,
@@ -2444,23 +2446,61 @@ describe("RootGame.move", () => {
 // --- battle  -----------------------------------------------------
 
 describe("RootGame.battle", () => {
-    // --- battle - dice and hit counting  ------------------------
-
-    test("throws an error if battle is illegal ", () => {});
-    test("if timestep battleSegment is not none, skips to that segment ", () => {});
+    /**
+     * battle takes a Battle as a parameter. battle depends on: RootGame's
+     * faction retrieval (mocked by mockFactions), Board.getClearing,
+     * RootGame.isBattleLegal, RootGame.battleState, Clearing.getWarriors,
+     * RootGame.dealHits, RootGame.updateState, RootGame.awaitChoice
+     */
+    let clearing: Clearing;
+    let battleState: BattleState;
+    const factionTypes = ["marquise-de-cat", "eyrie-dynasties"] as const;
+    const factionWarriorNumbers: { [faction in (typeof factionTypes)[number]]: number } = {
+        "marquise-de-cat": 0,
+        "eyrie-dynasties": 0,
+    };
+    const battle: Battle = {
+        attacker: factionTypes[0],
+        defender: factionTypes[1],
+        clearingID: 1,
+    };
+    beforeEach(() => {
+        mockFactions(factionTypes.map((faction, index) => ({ faction, playerID: index + 1 })));
+        clearing = makeClearing({ id: 1 });
+        mockBoard();
+        vi.spyOn(board, "getClearing").mockReturnValue(clearing);
+        vi.spyOn(clearing, "getWarriors").mockImplementation(() => {
+            const warriors: Pawn[] = [];
+            let warriorIDCounter = 1;
+            for (const faction of factionTypes) {
+                for (let i = 0; i < factionWarriorNumbers[faction]; i++) {
+                    warriors.push(makePawn({ id: warriorIDCounter++, owningFaction: faction }));
+                }
+            }
+            return warriors;
+        });
+        vi.spyOn(game, "isBattleLegal").mockReturnValue(true);
+        battleState = makeBattleState();
+        vi.spyOn(game, "battleState", "get").mockReturnValue(battleState);
+    });
+    test("throws an error if battle is illegal ", () => {
+        vi.spyOn(game, "isBattleLegal").mockReturnValue(false);
+        expect(() => game.battle(battle)).toThrow();
+    });
+    test("if battleState.battleSegment is not null, skips to that segment ", () => {});
 
     describe("RootGame.battle - hit counting", () => {
-        test("attacker deals hits equal to the higher roll ", () => {});
+        test("attacker deals hits equal to the higher roll", () => {});
 
-        test("defender deals hits equal to the lower roll ", () => {});
+        test("defender deals hits equal to the lower roll", () => {});
 
-        test("equal rolls give both sides the same number of hits ", () => {});
+        test("equal rolls give both sides the same number of hits", () => {});
 
-        test("rolled hits are capped by attacker warrior count ", () => {});
+        test("rolled hits are capped by attacker warrior count", () => {});
 
-        test("rolled hits are capped by defender warrior count ", () => {});
+        test("rolled hits are capped by defender warrior count", () => {});
 
-        test("defenseless: attacker deals extra hit when defender has no warriors ", () => {});
+        test("defenseless: attacker deals extra hit when defender has no warriors", () => {});
     });
 
     describe("RootGame.battle - ambush ", () => {
@@ -2468,13 +2508,13 @@ describe("RootGame.battle", () => {
 
         test("defender cannot play an ambush that doesn't match the clearing suit", () => {});
 
-        test("attacker can foil ambush with an ambush card matching the clearing suit ", () => {});
+        test("attacker can foil ambush with an ambush card matching the clearing suit", () => {});
 
-        test("attacker cannot foil ambush with an ambush card that doesn't match the clearing suit ", () => {});
+        test("attacker cannot foil ambush with an ambush card that doesn't match the clearing suit", () => {});
 
-        test("battle ends immediately if no attacking warriors remain after ambush, even if the attacker has other pieces ", () => {});
+        test("battle ends immediately if no attacking warriors remain after ambush, even if the attacker has other pieces", () => {});
 
-        test("battle continues as normal if at least 1 attacking warrior remains after ambush ", () => {});
+        test("battle continues as normal if at least 1 attacking warrior remains after ambush", () => {});
     });
 });
 
