@@ -50,6 +50,7 @@ function InviteLinks({ links }) {
       >
         Copy All
       </button>
+      <h3>If you are the host, join as Player 1.</h3>
 
     </div>
   );

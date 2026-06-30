@@ -43,7 +43,9 @@ function LobbyPage() {
   return (
     <div style = {gridStyle}>
       <div>
-        <SetupSettings/>
+        {
+          seatIndex == 0 && <SetupSettings/>
+        }
       </div>
     <div>
 
