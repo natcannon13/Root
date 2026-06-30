@@ -1,10 +1,10 @@
 import "./GamePage.css";
 
-import Board from "../components/game/Board/Board";
-import ActionMenu from "../components/game/ActionMenu/ActionMenu";
-import PlayerInfo from "../components/game/PlayerPanel/PlayerInfo";
-import GameInfo from "../components/game/GamePanel/GameInfo";
-import ChatBox from "../components/game/Chat/ChatBox";
+import Board from "../components/game/Board";
+import ActionMenu from "../components/game/ActionMenu";
+import PlayerInfo from "../components/game/PlayerInfo";
+import GameInfo from "../components/game/GameInfo";
+import ChatBox from "../components/ChatBox";
 
 function GamePage() {
     return (

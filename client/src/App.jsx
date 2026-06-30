@@ -7,7 +7,7 @@ import HomePage from "./pages/HomePage";
 import CreateGamePage from "./pages/CreateGamePage";
 import JoinPage from "./pages/JoinPage";
 import LobbyPage from "./pages/LobbyPage";
-//import GamePage from "./pages/GamePage";
+import GamePage from "./pages/GamePage";
 
 function App() {
   const navigate = useNavigate();
