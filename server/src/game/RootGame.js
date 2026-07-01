@@ -1,8 +1,13 @@
 class RootGame{
-    constructor(){
+    constructor(seats, setup){
         this.state = {
             stage: "drafting",
-            players: [],
+            setup: setup,
+            players: seats.map(seat => ({
+                seatIndex: seat.index,
+                name: seat.playerName,
+                faction: seat.faction
+            })),
             turn: 0
         }
     }

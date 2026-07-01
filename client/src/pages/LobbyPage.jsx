@@ -38,13 +38,21 @@ function LobbyPage() {
     }));
   }
 
+  function startGame() {
+    socket.send(JSON.stringify({
+      type: "START_GAME",
+      payload: {}
+    }));
+  }
+
   const mySeat = seatIndex != null ? lobby.seats[seatIndex] : undefined;
+  const canStart = lobby.seats.every(s => s.connected && s.ready);
 
   return (
     <div style = {gridStyle}>
       <div>
         {
-          seatIndex == 0 && <SetupSettings/>
+          seatIndex == 0 && <SetupSettings setupType={lobby.setup} />
         }
       </div>
     <div>
@@ -74,6 +82,19 @@ function LobbyPage() {
                 : "Ready"
             }
           </button>
+        )
+      }
+
+      {
+        seatIndex === 0 && (
+          <div>
+            <button onClick={startGame} disabled={!canStart}>
+              Start Game
+            </button>
+            {!canStart && (
+              <p>Waiting for all players to be ready</p>
+            )}
+          </div>
         )
       }
 

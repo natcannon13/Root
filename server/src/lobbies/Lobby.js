@@ -1,5 +1,6 @@
 const RootGame = require("../game/RootGame.js");
 const ChatManager = require("../chat/ChatManager.js");
+const ChatMessage = require("../chat/ChatMessage.js");
 const crypto = require("crypto");
 const Seat = require("./Seat");
 
@@ -61,6 +62,47 @@ class Lobby{
             ),
             setup: this.setup
         };
+    }
+
+    canStart(){
+        return this.status === "waiting"
+            && this.seats.length > 0
+            && this.seats.every(s => s.connected && s.ready);
+    }
+
+    startGame(){
+        this.status = "playing";
+        this.game = new RootGame(this.seats, this.setup);
+
+        const msg = new ChatMessage(
+            crypto.randomUUID(),
+            -1,
+            "System",
+            "system",
+            "Game started",
+            Date.now()
+        );
+        this.chat.addMessage(msg);
+        this.broadcastChat(msg.toPayload());
+
+        this.broadcastGameStarted();
+    }
+
+    broadcastGameStarted(){
+        const gameState = this.game.getState();
+        for (let i = 0; i < this.seats.length; i++) {
+            const seat = this.seats[i];
+            if (seat.connected && seat.socket) {
+                seat.socket.send(JSON.stringify({
+                    type: "GAME_STARTED",
+                    payload: {
+                        lobby: this.getLobbyData(),
+                        seatIndex: i,
+                        game: gameState
+                    }
+                }));
+            }
+        }
     }
 
 }

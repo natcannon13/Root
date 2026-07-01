@@ -44,7 +44,7 @@ const ValidBoardTypes = [
     "marsh",
     "custom",
 ] as const;
-const ValidSetupTypes = ["standard", "advanced"] as const;
+const ValidSetupTypes = ["standard", "advanced", "tournament"] as const;
 const ValidBattlePhaseTypes = [
     `ambush`,
     `before-roll`,

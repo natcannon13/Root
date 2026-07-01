@@ -25,7 +25,7 @@ function App() {
 
         <Route path="/lobby/:lobbyId/:seatIndex" element={<LobbyPage />} />
 
-        <Route path="/game/:lobbyID/:seatIndex" element={<GamePage />} />
+        <Route path="/game/:lobbyId/:seatIndex" element={<GamePage />} />
       </Routes>
     </div>
   );

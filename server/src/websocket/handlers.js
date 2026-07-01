@@ -50,6 +50,35 @@ function handleMessage(ws, data, lobbyManager){
             break;
         }
 
+        case "START_GAME":{
+            if(!ws.lobby || !ws.seat){
+                return;
+            }
+            if(ws.seat.index !== 0){
+                ws.send(JSON.stringify({
+                    type: "ERROR",
+                    payload: "Only the host can start the game"
+                }));
+                return;
+            }
+            if(ws.lobby.status !== "waiting"){
+                ws.send(JSON.stringify({
+                    type: "ERROR",
+                    payload: "Game has already started"
+                }));
+                return;
+            }
+            if(!ws.lobby.canStart()){
+                ws.send(JSON.stringify({
+                    type: "ERROR",
+                    payload: "Not all players are ready"
+                }));
+                return;
+            }
+            ws.lobby.startGame();
+            break;
+        }
+
         case "CHAT_MESSAGE":{
             if(!ws.lobby || !ws.seat){
                 return;

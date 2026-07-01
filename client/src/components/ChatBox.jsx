@@ -68,7 +68,7 @@ function ChatBox() {
   }
 
   return (
-    <section className="chat-box" aria-label="Lobby chat">
+    <section className="chat-box" aria-label="Chat">
       <h2 className="chat-header">Chat</h2>
 
       <div className="chat-messages" role="log" aria-live="polite">

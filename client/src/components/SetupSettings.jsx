@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
-import useGameStore from "../state/gameStore";
-
-function SetupSettings(setupType){
+function SetupSettings({ setupType }){
 const [map, setMap] = useState("autumn");
 const [deck, setDeck] = useState("mr");
 const [knaveVB, setKnaveVB] = useState("knaves");

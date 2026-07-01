@@ -40,13 +40,20 @@ export function initializeSocketHandlers(navigate) {
 
         useGameStore.getState().setLobby(data.payload.lobby);
         useGameStore.getState().setSeatIndex(data.payload.seatIndex);
-        console.log(data);
-        navigate(`/lobby/${data.payload.lobby.lobbyId}/${data.payload.seatIndex}`);
+
+        const { lobby, seatIndex } = data.payload;
+        const onGamePage = window.location.pathname.startsWith("/game/");
+
+        if (lobby.status === "waiting" && !onGamePage) {
+          navigate(`/lobby/${lobby.lobbyId}/${seatIndex}`);
+        }
         break;
       }
 
       case "GAME_STARTED": {
 
+        useGameStore.getState().setLobby(data.payload.lobby);
+        useGameStore.getState().setSeatIndex(data.payload.seatIndex);
         useGameStore
           .getState()
           .setGameState(data.payload);
