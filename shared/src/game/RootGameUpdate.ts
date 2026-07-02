@@ -55,7 +55,7 @@ export type GameUpdateValueMap = {
     addToSupply: { pieces: PieceID[]; faction: FactionType };
     factionStateUpdate: { update: FactionUpdate };
     startBattle: { battle: Battle };
-    battleSegmentChange: { newBattleSegment: BattlePhaseType | null };
+    battleSegmentChange: { newBattleSegment: BattlePhaseType };
     pendingHitsChange: { attackerHits?: number; defenderHits?: number };
     endBattle: {};
     moveCard: { cardID: CardID; from: CardPileLocation; to: CardPileLocation };

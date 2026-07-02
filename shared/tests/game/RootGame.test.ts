@@ -31,10 +31,12 @@ import {
     type ChoiceValueMap,
     type PendingChoice,
     PLAYER_CHOICE_DESC,
+    RAND_NUMBER_DESC,
     RAND_ORDER_DESC,
     RAND_PICK_DESC,
     RAND_PICKX_DESC,
     type ResolvedChoice,
+    YESNO_DESC,
 } from "../../src/game/Choice";
 import type { PlayOptions } from "../../src/game/PlayOptions";
 import {
@@ -87,6 +89,23 @@ function buildRecord<K extends string, V>(
     getValue: (key: K) => V,
 ): Record<K, V> {
     return Object.fromEntries(keys.map((k) => [k, getValue(k)] as const)) as Record<K, V>; // single boundary cast, lives here only
+}
+function assertIsType<T>(obj: any): asserts obj is T {}
+
+function addSideEffectToSpy<T extends (...args: any) => any>(
+    spy: MockInstance<T>,
+    sideEffect: (...args: Parameters<T>) => void,
+): void {
+    const original = spy.getMockImplementation();
+
+    spy.mockImplementation(((...args: Parameters<T>) => {
+        const result = original?.(...args);
+        sideEffect(...args);
+        return result;
+    }) as any);
+    //As any? *gesp* In this case it's necessary because I can't figure out how
+    //to reconstruct the internal types. The generics on the function should
+    //catch any errors.
 }
 
 let game: RootGame;
@@ -159,6 +178,7 @@ type ChoiceDescription = Pick<ResolvedChoice, "type" | "options" | "value"> &
     Partial<Pick<ResolvedChoice, "playerID">>;
 let resolvedChoices: Record<string, ChoiceDescription>;
 let resolvedChoiceList: ChoiceDescription[];
+let rolls: number[];
 function initializeResolvedChoices() {
     resolvedChoices = {
         "3-player seating order": {
@@ -172,6 +192,11 @@ function initializeResolvedChoices() {
         },
     };
     resolvedChoiceList = Object.values(resolvedChoices);
+    rolls = [];
+}
+function addResolvedChoices(newChoices: Record<string, ChoiceDescription>) {
+    Object.assign(resolvedChoices, newChoices);
+    resolvedChoiceList = [...resolvedChoiceList, ...Object.values(resolvedChoices)];
 }
 
 async function awaitChoiceFake<T extends ChoiceType>(
@@ -187,6 +212,12 @@ async function awaitChoiceFake<T extends ChoiceType>(
             return resolvedChoice.value as ChoiceValueMap[T];
         }
     }
+    if (choice.type === "pickRange" && choice.options.description === RAND_NUMBER_DESC.ROLL) {
+        if (rolls.length === 0) {
+            throw new Error(`No more rolls available for choice: ${JSON.stringify(choice)}`);
+        }
+        return rolls.shift() as ChoiceValueMap[T];
+    }
     if (choice.type === "pickOrder") {
         return choice.options.options.map((_, i) => i) as ChoiceValueMap[T];
     }
@@ -195,6 +226,9 @@ async function awaitChoiceFake<T extends ChoiceType>(
     }
     if (choice.type === "pick") {
         return choice.options.options[0] as ChoiceValueMap[T];
+    }
+    if (choice.type === "yesno") {
+        return false as ChoiceValueMap[T];
     }
     throw new Error(`No response found for choice: ${JSON.stringify(choice)}`);
 }
@@ -2483,7 +2517,7 @@ describe("RootGame.battle", () => {
      * battle takes a Battle as a parameter. battle depends on: RootGame's
      * faction retrieval (mocked by mockFactions), Board.getClearing,
      * RootGame.isBattleLegal, RootGame.battleState, Clearing.getWarriors,
-     * RootGame.dealHits, RootGame.updateState, RootGame.awaitChoice
+     * RootGame.dealHits, RootGame.updateState, RootGame.awaitChoice, <cards>
      */
     let clearing: Clearing;
     let battleState: BattleState;
@@ -2492,13 +2526,23 @@ describe("RootGame.battle", () => {
         "marquise-de-cat": 0,
         "eyrie-dynasties": 0,
     };
-    const battle: Battle = {
+    const factionPlayerIDs: { [faction in (typeof factionTypes)[number]]: PlayerID } = {
+        "marquise-de-cat": 1,
+        "eyrie-dynasties": 2,
+    } as const;
+    const battle = {
         attacker: factionTypes[0],
         defender: factionTypes[1],
         clearingID: 1,
-    };
+    } satisfies Battle;
+    const choiceNames = {
+        DEFENDER_AMBUSH: "defender may ambush",
+        FOIL_AMBUSH: "attacker may foil ambush",
+    } as const;
     beforeEach(() => {
-        mockFactions(factionTypes.map((faction, index) => ({ faction, playerID: index + 1 })));
+        mockFactions(
+            factionTypes.map((faction) => ({ faction, playerID: factionPlayerIDs[faction] })),
+        );
         clearing = makeClearing({ id: 1 });
         mockBoard();
         vi.spyOn(board, "getClearing").mockReturnValue(clearing);
@@ -2515,26 +2559,80 @@ describe("RootGame.battle", () => {
         vi.spyOn(game, "isBattleLegal").mockReturnValue(true);
         battleState = makeBattleState();
         vi.spyOn(game, "battleState", "get").mockReturnValue(battleState);
+        // Mock the first battleSegment get to return null so the function
+        // doesn't skip the startBattle update
+        vi.spyOn(game, "battleState", "get").mockReturnValueOnce(null);
+        // Choices made in the battle
+        const battleChoices: Record<string, ChoiceDescription> = {
+            [choiceNames.DEFENDER_AMBUSH]: {
+                playerID: factionPlayerIDs[battle.defender],
+                type: "yesno",
+                options: {
+                    description: YESNO_DESC.DEFENDER_AMBUSH,
+                },
+                value: false,
+            },
+            [choiceNames.FOIL_AMBUSH]: {
+                playerID: factionPlayerIDs[battle.attacker],
+                type: "yesno",
+                options: {
+                    description: YESNO_DESC.FOIL_AMBUSH,
+                },
+                value: false,
+            },
+        };
+        const battleRolls = [3, 2]; // Example rolls for the battle
+        addResolvedChoices(battleChoices);
+        rolls = battleRolls;
+
+        vi.spyOn(game, "dealHits").mockResolvedValue(undefined);
     });
     test("throws an error if battle is illegal ", () => {
         vi.spyOn(game, "isBattleLegal").mockReturnValue(false);
         expect(() => game.battle(battle)).toThrow();
     });
-    test("if battleState.battleSegment is not null, skips to that segment ", () => {});
 
-    describe("RootGame.battle - hit counting", () => {
-        test("attacker deals hits equal to the higher roll", () => {});
+    test("progresses through battle segments in the correct order", () => {
+        const startBattleUpdateSpy = updateStateTypeSpies.startBattle;
+        const battleSegmentSpy = updateStateTypeSpies.battleSegmentChange;
+        const hitCountUpdateSpy = updateStateTypeSpies.pendingHitsChange;
+        const endBattleUpdateSpy = updateStateTypeSpies.endBattle;
 
-        test("defender deals hits equal to the lower roll", () => {});
+        const dealHitsSpy = vi.spyOn(game, "dealHits").mockResolvedValue(undefined);
 
-        test("equal rolls give both sides the same number of hits", () => {});
-
-        test("rolled hits are capped by attacker warrior count", () => {});
-
-        test("rolled hits are capped by defender warrior count", () => {});
-
-        test("defenseless: attacker deals extra hit when defender has no warriors", () => {});
+        const eventRecord: string[] = [];
+        startBattleUpdateSpy.mockImplementation(() => {
+            eventRecord.push("startBattle");
+        });
+        battleSegmentSpy.mockImplementation((event: RootGameUpdate) => {
+            assertIsType<RootGameUpdate & { type: "battleSegmentChange" }>(event);
+            eventRecord.push("battleSegmentChange " + event.options.newBattleSegment);
+        });
+        hitCountUpdateSpy.mockImplementation(() => {
+            eventRecord.push("pendingHitsChange");
+        });
+        endBattleUpdateSpy.mockImplementation(() => {
+            eventRecord.push("endBattle");
+        });
+        dealHitsSpy.mockImplementation(async () => {
+            eventRecord.push("dealHits");
+        });
+        game.battle(battle);
+        const battlePhaseTypes: BattlePhaseType[] = [
+            "ambush",
+            "before-roll",
+            "roll",
+            "after-roll",
+            "hits",
+        ];
+        const expectedSequence = [
+            "startBattle",
+            "battleSegmentChange " + battlePhaseTypes[0],
+            "battleSegmentChange " + battlePhaseTypes[1],
+        ];
     });
+
+    test("if battleState is not null, skips to the defined battle segment ", () => {});
 
     describe("RootGame.battle - ambush ", () => {
         test("defender can play ambush matching the clearing suit to deal 2 immediate hits", () => {});
@@ -2548,6 +2646,20 @@ describe("RootGame.battle", () => {
         test("battle ends immediately if no attacking warriors remain after ambush, even if the attacker has other pieces", () => {});
 
         test("battle continues as normal if at least 1 attacking warrior remains after ambush", () => {});
+    });
+
+    describe("RootGame.battle - hit counting", () => {
+        test("attacker deals hits equal to the higher roll", () => {});
+
+        test("defender deals hits equal to the lower roll", () => {});
+
+        test("equal rolls give both sides the same number of hits", () => {});
+
+        test("rolled hits are capped by attacker warrior count", () => {});
+
+        test("rolled hits are capped by defender warrior count", () => {});
+
+        test("defenseless: attacker deals extra hit when defender has no warriors", () => {});
     });
 });
 //#endregion

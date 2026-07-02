@@ -137,6 +137,10 @@ export class RootGame {
     // for delegating state updates to the appropriate modules (e.g. Board,
     // PlayerFaction).
 
+    // dealHits works the same way. It handles prompting choices for hit
+    // resolution, and then calls updateState to apply the hits and any
+    // resulting events.
+
     // These functions are also responsible for handling any events triggered by
     // the action.
 

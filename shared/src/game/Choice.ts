@@ -27,6 +27,11 @@ export const RAND_PICKX_DESC = Object.freeze({
     CARDS_TO_RETURN: "cards-to-return",
 } as const);
 
+export const YESNO_DESC = Object.freeze({
+    DEFENDER_AMBUSH: "defender-ambush",
+    FOIL_AMBUSH: "foil-ambush",
+} as const);
+
 export const PLAYER_CHOICE_DESC = Object.freeze({
     STARTING_FACTION: "Pick a faction to play as",
     HIRELING_SETUP: "Pick a hireling to setup",

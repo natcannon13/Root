@@ -599,7 +599,7 @@ export function makeBattleState(overrides?: Partial<BattleState>): MockProxy<Bat
         battle: makeBattle(),
         pendingAttackerHits: 0,
         pendingDefenderHits: 0,
-        battleSegment: null,
+        battleSegment: makeBattlePhaseType(),
         ...overrides,
     });
 }

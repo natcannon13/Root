@@ -1,9 +1,9 @@
 import type { PhaseType, PlayerFactionType } from "../Enums";
 
 export class TimeStep {
-    currentTurn: PlayerFactionType | "none";
-    phase: PhaseType;
-    phaseSegment: "start" | "main" | "end";
+    readonly currentTurn: PlayerFactionType | "none";
+    readonly phase: PhaseType;
+    readonly phaseSegment: "start" | "main" | "end";
 
     constructor(
         currentTurn: PlayerFactionType | "none" = "none",
