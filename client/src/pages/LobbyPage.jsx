@@ -1,4 +1,9 @@
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import useGameStore from "../state/gameStore";
+import { getSession } from "../session/playerSession";
+import { attemptRejoinFromRoute } from "../websocket/rejoin";
 
 import SeatCard from "../components/SeatCard";
 import ChatBox from "../components/ChatBox";
@@ -13,6 +18,9 @@ const gridStyle = {
 }
 
 function LobbyPage() {
+  const navigate = useNavigate();
+  const { lobbyId, seatIndex: seatIndexParam } = useParams();
+  const seatIndexFromRoute = Number(seatIndexParam);
 
   const lobby = useGameStore(
     state => state.lobby
@@ -22,6 +30,27 @@ function LobbyPage() {
     state => state.seatIndex
   );
 
+  const chatError = useGameStore(
+    state => state.chatError
+  );
+
+  useEffect(() => {
+    attemptRejoinFromRoute();
+
+    const timeout = setTimeout(() => {
+      if (useGameStore.getState().lobby) return;
+      const session = getSession(lobbyId, seatIndexFromRoute);
+      if (!session?.playerName) {
+        navigate(`/join/${lobbyId}/${seatIndexFromRoute}`);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timeout);
+  }, [lobbyId, seatIndexFromRoute, navigate]);
+
+  if (chatError) {
+    return <div>Error: {chatError}</div>;
+  }
 
   if (!lobby) {
     return <div>Loading lobby...</div>;

@@ -41,6 +41,17 @@ function handleMessage(ws, data, lobbyManager){
                 }
             }));
 
+            if (lobby.status === "playing" && lobby.game) {
+                ws.send(JSON.stringify({
+                    type: "GAME_STARTED",
+                    payload: {
+                        lobby: lobby.getLobbyData(),
+                        seatIndex: seat.index,
+                        game: lobby.game.getState()
+                    }
+                }));
+            }
+
             break;
         }
 
@@ -98,6 +109,12 @@ function handleMessage(ws, data, lobbyManager){
             ws.lobby.chat.addMessage(msg);
             ws.lobby.broadcastChat(msg.toPayload());
             break;
+        }
+
+        case "ACTION_TAKEN":{
+            if(!ws.lobby || !ws.seat){
+                return;
+            }
         }
 
     }

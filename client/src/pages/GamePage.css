@@ -1,12 +1,11 @@
 .game-page {
     display: grid;
 
-    grid-template-columns: 1fr 350px;
-    grid-template-rows: 1fr 240px;
+    grid-template-columns: 990px 1fr;
+    grid-template-rows: 900px 1fr;
 
     grid-template-areas:
-        "board sidebar"
-        "bottom sidebar";
+        "board sidebar";
 
     width: 100vw;
     height: 100vh;
@@ -27,9 +26,16 @@
     grid-area: sidebar;
 
     display: grid;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: 1fr 1fr 2fr;
 
     border-left: 1px solid #888;
+}
+
+.bottom-sidebar{
+    grid-area:auto;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
 }
 
 .action-area {
@@ -39,17 +45,6 @@
 
 .chat-area {
     overflow: hidden;
-}
-
-/* ---------- Bottom ---------- */
-
-.bottom-bar {
-    grid-area: bottom;
-
-    display: grid;
-    grid-template-columns: 250px 1fr;
-
-    border-top: 1px solid #888;
 }
 
 .game-info-area {

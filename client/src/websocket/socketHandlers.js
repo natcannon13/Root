@@ -1,6 +1,8 @@
 import socket from "./socket.js";
 
 import useGameStore from "../state/gameStore.js";
+import { saveSession } from "../session/playerSession.js";
+import { attemptRejoinFromRoute } from "./rejoin.js";
 
 export function initializeSocketHandlers(navigate) {
 
@@ -11,6 +13,8 @@ export function initializeSocketHandlers(navigate) {
     useGameStore
       .getState()
       .setSocketConnected(true);
+
+    attemptRejoinFromRoute();
   };
 
   socket.onclose = () => {
@@ -24,6 +28,7 @@ export function initializeSocketHandlers(navigate) {
 
   if (socket.readyState === WebSocket.OPEN) {
     useGameStore.getState().setSocketConnected(true);
+    attemptRejoinFromRoute();
   } else if (socket.readyState === WebSocket.CLOSED) {
     useGameStore.getState().setSocketConnected(false);
   }
@@ -42,6 +47,10 @@ export function initializeSocketHandlers(navigate) {
         useGameStore.getState().setSeatIndex(data.payload.seatIndex);
 
         const { lobby, seatIndex } = data.payload;
+        const playerName = lobby.seats[seatIndex]?.playerName;
+        if (playerName) {
+          saveSession(lobby.lobbyId, seatIndex, playerName);
+        }
         const onGamePage = window.location.pathname.startsWith("/game/");
 
         if (lobby.status === "waiting" && !onGamePage) {
